@@ -1335,13 +1335,17 @@ function App() {
   const [selectedTask, setSelectedTask] = useState(null);
 
   // Project path for protocol launcher (per project, stored in localStorage)
-  const [projectPath, setProjectPathState] = useState(() => {
+  const [projectPath, setProjectPathState] = useState('');
+  const [launchedId, setLaunchedId] = useState(null);
+
+  // Re-read project path when projectName changes (after connection)
+  useEffect(() => {
+    if (!projectName) return;
     try {
       const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
-      return paths[projectName] || '';
-    } catch { return ''; }
-  });
-  const [launchedId, setLaunchedId] = useState(null);
+      setProjectPathState(paths[projectName] || '');
+    } catch {}
+  }, [projectName]);
 
   // If not connected, show picker
   if (!connected || !data) {
