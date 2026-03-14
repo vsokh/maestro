@@ -42,6 +42,10 @@ export function App() {
     setUndoEntry(null);
   }, [undoEntry, save]);
 
+  // --- Extracted hooks (must be called before any early returns) ---
+  const taskActions = useTaskActions({ data, save, dirHandle, snapshotBeforeAction });
+  const queueActions = useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction });
+
   // Re-read project path when projectName changes (after connection)
   useEffect(() => {
     if (!projectName) return;
@@ -69,10 +73,6 @@ export function App() {
   const queue = data.queue || [];
   const taskNotes = data.taskNotes || {};
   const activity = data.activity || [];
-
-  // --- Extracted hooks ---
-  const taskActions = useTaskActions({ data, save, dirHandle, snapshotBeforeAction });
-  const queueActions = useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction });
 
   // Wrap deleteTask to clear selection
   const handleDeleteTask = (id) => {
