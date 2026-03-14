@@ -124,6 +124,39 @@ export async function readAttachmentUrl(projectHandle, taskId, filename) {
   } catch { return null; }
 }
 
+// Read all progress files from .devmanager/progress/
+export async function readProgressFiles(projectHandle) {
+  try {
+    const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
+    const progDir = await dmDir.getDirectoryHandle('progress');
+    const entries = {};
+    for await (const [name, handle] of progDir.entries()) {
+      if (name.endsWith('.json') && handle.kind === 'file') {
+        try {
+          const file = await handle.getFile();
+          const text = await file.text();
+          const taskId = parseInt(name.replace('.json', ''), 10);
+          if (!isNaN(taskId)) {
+            entries[taskId] = JSON.parse(text);
+          }
+        } catch {}
+      }
+    }
+    return entries;
+  } catch {
+    return {};
+  }
+}
+
+// Delete a progress file after merging
+export async function deleteProgressFile(projectHandle, taskId) {
+  try {
+    const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
+    const progDir = await dmDir.getDirectoryHandle('progress');
+    await progDir.removeEntry(taskId + '.json');
+  } catch {}
+}
+
 export function createDefaultState(projectName) {
   return {
     savedAt: new Date().toISOString(),

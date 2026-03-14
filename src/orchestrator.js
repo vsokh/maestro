@@ -12,7 +12,7 @@ You are the tech lead for this project. The manager creates tasks and queues wor
 
 ## State file: \`.devmanager/state.json\`
 
-All project state. Dev Manager writes to it, you read and write back. Dev Manager polls every 3s.
+All project state. Dev Manager owns this file (single writer). You READ it at the start to get the queue, but you write progress updates to per-task files in \`.devmanager/progress/\` instead. See "Writing progress updates" below.
 
 ---
 
@@ -23,7 +23,7 @@ Read \`.devmanager/state.json\`. Pick first item from \`queue\`.
 
 If empty: "Nothing queued. Add tasks in Dev Manager."
 
-Set the task status to \`in-progress\` and \`progress: "Reading queue..."\` in state.json.
+Write to \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Reading queue..." }\`
 
 ### 2. Understand the task
 
@@ -33,7 +33,7 @@ Queue item format: \`{ "task": N, "taskName": "...", "notes": "..." }\`
 
 ### 3. Plan the approach
 
-Update progress: \`progress: "Exploring codebase..."\`
+Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Exploring codebase..." }\`
 
 Use an Explore agent to understand the codebase context:
 
@@ -41,7 +41,7 @@ Use an Explore agent to understand the codebase context:
 Agent(subagent_type="Explore", prompt="Find all files related to [feature]. I need to understand [what].")
 \`\`\`
 
-Update progress: \`progress: "Planning approach..."\`
+Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Planning approach..." }\`
 
 Based on the exploration, decide:
 - What files need to change
@@ -66,7 +66,7 @@ Manager says: "Frontend code exists. Needs Google provider config + reliability 
 
 ### 4. Delegate to sub-agent (only after approval)
 
-Update progress: \`progress: "Delegating to sub-agent..."\`
+Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Delegating to sub-agent..." }\`
 
 Launch an implementation agent:
 
@@ -86,7 +86,7 @@ The prompt to the sub-agent should include:
 
 ### 5. Review the result
 
-Update progress: \`progress: "Reviewing results..."\`
+Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Reviewing results..." }\`
 
 When the sub-agent returns:
 - Check if it completed all requirements
@@ -95,11 +95,11 @@ When the sub-agent returns:
 
 ### 6. Report back
 
-Update \`.devmanager/state.json\`:
-- Remove executed item from \`queue\`
-- Update task in \`tasks\` array: \`status: "done"\`, \`completedAt: "YYYY-MM-DD"\`, clear \`progress\`
+Write completion to \`.devmanager/progress/{taskId}.json\`:
 - Get commit info: \`git log -1 --format=%h\` for commitRef, count files from \`git diff --stat HEAD~1\` for filesChanged
-- Add to \`activity\`: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "{taskName} completed", "commitRef": "{hash}", "filesChanged": {count} }\`
+- Write: \`{ "status": "done", "completedAt": "YYYY-MM-DD", "commitRef": "{hash}", "filesChanged": {count} }\`
+
+Dev Manager will automatically merge this into state.json, update the task status, remove it from the queue, add an activity entry, and delete the progress file.
 
 Then check if there are more items in the queue. If yes, ask: "Next up: {taskName}. Continue?"
 
@@ -201,13 +201,21 @@ Agent(description="Handle OAuth errors", prompt="...")
 
 ## Writing progress updates
 
-At each step, update the task in \`.devmanager/state.json\`:
-1. Read the current state
-2. Find the task in the \`tasks\` array
-3. Update \`status\` and \`progress\` fields
-4. Write the file back
+**Do NOT read/modify/write \`state.json\` for progress.** Multiple tasks may run in parallel, so writing to state.json causes conflicts.
 
-This lets Dev Manager show live progress (it polls every 3s).
+Instead, write progress to a per-task file: \`.devmanager/progress/{taskId}.json\`
+
+Dev Manager polls these files every 3s and merges them into the UI automatically.
+
+### During execution (in-progress steps)
+
+Write to \`.devmanager/progress/{taskId}.json\`:
+\`\`\`json
+{
+  "status": "in-progress",
+  "progress": "Exploring codebase..."
+}
+\`\`\`
 
 Example progress values:
 - "Reading queue..."
@@ -218,13 +226,32 @@ Example progress values:
 - "Reviewing results..."
 - "Writing results..."
 
+### On completion (final step)
+
+Write to \`.devmanager/progress/{taskId}.json\`:
+\`\`\`json
+{
+  "status": "done",
+  "completedAt": "YYYY-MM-DD",
+  "commitRef": "<git log -1 --format=%h>",
+  "filesChanged": <count from git diff --stat HEAD~1>
+}
+\`\`\`
+
+Dev Manager will merge this into state.json, add an activity entry, remove the task from the queue, and clean up the progress file.
+
+### Important
+- You still READ \`state.json\` at the start to get the queue and task info
+- You ONLY WRITE to \`.devmanager/progress/{taskId}.json\` during execution
+- Dev Manager is the single writer of \`state.json\` — this prevents file conflicts when multiple tasks run in parallel
+
 ---
 
 ## Key principles
 
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
 2. **Delegate, don't implement.** Use sub-agents for code changes. You plan and review.
-3. **Always write back.** Update state.json after every operation so Dev Manager stays in sync.
+3. **Always write progress.** Update \`.devmanager/progress/{taskId}.json\` at every step so Dev Manager stays in sync. Never write to state.json directly — Dev Manager handles the merge.
 4. **Always wait for approval.** Present the plan, then STOP. Never launch sub-agents without explicit user go-ahead.
 5. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
 6. **Everything in \`.devmanager/\`.** Specs, state — all Dev Manager files stay in one folder.

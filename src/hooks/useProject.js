@@ -9,6 +9,8 @@ import {
   writeState,
   createDefaultState,
   ensureOrchestratorSkill,
+  readProgressFiles,
+  deleteProgressFile,
 } from '../fs.js';
 
 export function useProject() {
@@ -136,17 +138,83 @@ export function useProject() {
     }, 500);
   }, [dirHandle]);
 
-  // Poll for external changes (every 3s)
+  // Poll for external changes (every 3s) + merge per-task progress files
   useEffect(() => {
     if (!connected || !dirHandle) return;
     pollTimer.current = setInterval(async () => {
       const result = await readState(dirHandle);
       if (!result) return;
+
+      let stateData = result.data;
+      let stateChanged = false;
+
       // If file was modified after our last write, it's an external change
       if (result.lastModified > lastWriteTime.current + 1000) {
         lastWriteTime.current = result.lastModified;
-        setData(result.data);
-        if (result.data.project) setProjectName(result.data.project);
+        stateChanged = true;
+      }
+
+      // Read per-task progress files (always, regardless of state.json changes)
+      const progressEntries = await readProgressFiles(dirHandle);
+      let needsWrite = false;
+
+      if (Object.keys(progressEntries).length > 0) {
+        const tasks = [...(stateData.tasks || [])];
+        const activity = [...(stateData.activity || [])];
+        let queue = [...(stateData.queue || [])];
+
+        for (const [taskId, prog] of Object.entries(progressEntries)) {
+          const id = Number(taskId);
+          const idx = tasks.findIndex(t => t.id === id);
+          if (idx === -1) continue;
+
+          if (prog.status === 'done') {
+            // Merge completion into state
+            tasks[idx] = {
+              ...tasks[idx],
+              status: 'done',
+              completedAt: prog.completedAt || new Date().toISOString().slice(0, 10),
+              progress: undefined,
+            };
+            // Remove from queue
+            queue = queue.filter(q => q.task !== id);
+            // Add activity entry
+            const actEntry = {
+              id: 'act_' + Date.now() + '_' + id,
+              time: Date.now(),
+              label: (tasks[idx].name || 'Task ' + id) + ' completed',
+            };
+            if (prog.commitRef) actEntry.commitRef = prog.commitRef;
+            if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
+            activity.unshift(actEntry);
+            // Delete the progress file
+            await deleteProgressFile(dirHandle, id);
+            needsWrite = true;
+          } else {
+            // In-progress: overlay in memory only (transient)
+            tasks[idx] = {
+              ...tasks[idx],
+              status: prog.status || tasks[idx].status,
+              progress: prog.progress || tasks[idx].progress,
+            };
+            stateChanged = true;
+          }
+        }
+
+        stateData = { ...stateData, tasks, activity: activity.slice(0, 20), queue };
+      }
+
+      // If any "done" progress files were merged, persist to state.json
+      if (needsWrite) {
+        stateData.savedAt = new Date().toISOString();
+        const ok = await writeState(dirHandle, stateData);
+        if (ok) lastWriteTime.current = Date.now();
+        stateChanged = true;
+      }
+
+      if (stateChanged) {
+        setData(stateData);
+        if (stateData.project) setProjectName(stateData.project);
         setStatus('synced');
         setTimeout(() => setStatus('connected'), 2000);
       }
