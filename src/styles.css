@@ -105,3 +105,88 @@ input, textarea { color: var(--text); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+
+/* Layout */
+.dm-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px 32px;
+}
+
+.dm-grid-top {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dm-grid-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dm-header {
+  padding: 14px 32px;
+}
+
+/* Detail panel */
+.dm-detail-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-detail-backdrop {
+  display: none;
+}
+
+/* Responsive: narrow screens */
+@media (max-width: 900px) {
+  .dm-container {
+    padding: 16px;
+  }
+
+  .dm-header {
+    padding: 14px 16px;
+  }
+
+  .dm-grid-top {
+    grid-template-columns: 1fr;
+  }
+
+  .dm-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  /* Detail panel becomes a slide-over overlay */
+  .dm-detail-panel {
+    display: none;
+  }
+
+  .dm-detail-panel.open {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(360px, 85vw);
+    height: 100vh;
+    z-index: 100;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  }
+
+  .dm-detail-backdrop.open {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.3);
+    z-index: 99;
+  }
+}

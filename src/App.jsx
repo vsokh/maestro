@@ -316,12 +316,10 @@ export function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header projectName={projectName} status={status} onDisconnect={disconnect} />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '24px 32px' }}>
+      <div className="dm-container">
 
         {/* Top row: Tasks + Detail */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 280px', gap: '16px', marginBottom: '16px',
-        }}>
+        <div className="dm-grid-top">
           <div style={{
             background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-sm)',
@@ -345,9 +343,12 @@ export function App() {
             </div>
           </div>
 
-          <div style={{
+          {selectedTask && (
+            <div className={'dm-detail-backdrop' + (selectedTask ? ' open' : '')} onClick={() => setSelectedTask(null)} />
+          )}
+          <div className={'dm-detail-panel' + (selectedTask ? ' open' : '')} style={{
             background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column',
+            boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Detail" />
             <TaskDetail
@@ -367,7 +368,7 @@ export function App() {
         </div>
 
         {/* Bottom row: Queue + Activity */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="dm-grid-bottom">
           <div style={{
             background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-sm)',

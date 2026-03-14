@@ -16,10 +16,9 @@ export function Header({ projectName, status, onDisconnect }) {
   }, [dark]);
 
   return (
-    <header style={{
+    <header className="dm-header" style={{
       background: 'var(--surface)',
       borderBottom: '1px solid var(--border)',
-      padding: '14px 32px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
