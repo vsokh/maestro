@@ -1,6 +1,22 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { readAttachmentUrl } from '../fs.js';
 
+const EPIC_PALETTE = [
+  { bg: "rgba(106,141,190,0.12)", text: "#6a8dbe", border: "rgba(106,141,190,0.3)" },
+  { bg: "rgba(196,132,90,0.12)", text: "#c4845a", border: "rgba(196,132,90,0.3)" },
+  { bg: "rgba(155,139,180,0.12)", text: "#9b8bb4", border: "rgba(155,139,180,0.3)" },
+  { bg: "rgba(90,158,114,0.12)", text: "#5a9e72", border: "rgba(90,158,114,0.3)" },
+  { bg: "rgba(180,120,120,0.12)", text: "#b47878", border: "rgba(180,120,120,0.3)" },
+  { bg: "rgba(120,165,165,0.12)", text: "#78a5a5", border: "rgba(120,165,165,0.3)" },
+  { bg: "rgba(170,150,100,0.12)", text: "#aa9664", border: "rgba(170,150,100,0.3)" },
+  { bg: "rgba(140,130,170,0.12)", text: "#8c82aa", border: "rgba(140,130,170,0.3)" },
+];
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -10,6 +26,15 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   const [thumbUrls, setThumbUrls] = useState({});
   const [localBlockedReason, setLocalBlockedReason] = useState('');
   const dragCounter = useRef(0);
+
+  const epicColorMap = useMemo(() => {
+    const map = {};
+    (epics || []).forEach(e => {
+      const idx = (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length;
+      map[e.name] = EPIC_PALETTE[idx];
+    });
+    return map;
+  }, [epics]);
 
   useEffect(() => {
     setLocalNote(notes || '');
@@ -341,6 +366,13 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
         <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
+        {task.group && epicColorMap[task.group] ? (
+          <span style={{
+            width: "8px", height: "8px", borderRadius: "50%",
+            background: epicColorMap[task.group].text,
+            display: "inline-block",
+          }} />
+        ) : null}
         <input
           value={task.group || ''}
           onInput={e => onUpdateTask(task.id, { group: e.target.value || undefined })}

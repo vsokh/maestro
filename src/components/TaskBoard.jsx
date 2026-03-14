@@ -144,6 +144,17 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     };
   };
 
+  // Epic progress stats across ALL tasks (not just pending)
+  const epicStats = useMemo(() => {
+    const stats = [];
+    for (const g of allGroups) {
+      const total = tasks.filter(t => t.group === g).length;
+      const done = tasks.filter(t => t.group === g && t.status === "done").length;
+      if (total > 0) stats.push({ name: g, total, done });
+    }
+    return stats;
+  }, [tasks, allGroups]);
+
   const renderTaskCard = (task) => (
             <div
               key={task.id}
@@ -218,6 +229,31 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
+        {epicStats.length > 0 ? (
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+            {epicStats.map(ep => {
+              const colors = epicColors[ep.name] || {};
+              const pct = ep.total > 0 ? (ep.done / ep.total) * 100 : 0;
+              return (
+                <div key={ep.name} style={{
+                  padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600,
+                  background: colors.bg || "var(--bg)", color: colors.text || "var(--text-light)",
+                  position: "relative", overflow: "hidden",
+                }}>
+                  <span>{ep.name} {ep.done}/{ep.total}</span>
+                  <div style={{
+                    position: "absolute", bottom: 0, left: 0, width: "100%", height: "3px",
+                    background: colors.border || "var(--border)", opacity: 0.3,
+                  }} />
+                  <div style={{
+                    position: "absolute", bottom: 0, left: 0, width: pct + "%", height: "3px",
+                    background: colors.text || "var(--accent)", transition: "width 0.3s",
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
         <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
           Up next
         </div>
@@ -305,10 +341,19 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                     background: (epicColors[groupName] || {}).bg || 'transparent',
                     display: 'inline-block',
                   }}
-                  onMouseOver={e => e.target.style.opacity = '0.7'}
-                  onMouseOut={e => e.target.style.opacity = '1'}
+                  onMouseOver={e => e.currentTarget.style.opacity = '0.7'}
+                  onMouseOut={e => e.currentTarget.style.opacity = '1'}
                 >
                   {groupName}
+                  {(() => {
+                    const total = tasks.filter(t => t.group === groupName).length;
+                    const done = tasks.filter(t => t.group === groupName && t.status === "done").length;
+                    return (
+                      <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
+                        {done}/{total}
+                      </span>
+                    );
+                  })()}
                 </div>
               )
             ) : null}
