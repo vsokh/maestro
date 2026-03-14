@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useProject } from './hooks/useProject.js';
-import { saveAttachment, deleteAttachment, ensureDevManagerDir, snapshotState } from './fs.js';
+import { useTaskActions } from './hooks/useTaskActions.js';
+import { useQueueActions } from './hooks/useQueueActions.js';
+import { snapshotState } from './fs.js';
 import { ProjectPicker } from './components/ProjectPicker.jsx';
 import { Header } from './components/Header.jsx';
 import { SectionHeader } from './components/SectionHeader.jsx';
@@ -9,49 +11,6 @@ import { TaskDetail } from './components/TaskDetail.jsx';
 import { CommandQueue } from './components/CommandQueue.jsx';
 import { ActivityFeed } from './components/ActivityFeed.jsx';
 import { UndoToast } from './components/UndoToast.jsx';
-
-// Topological sort: dependencies come before dependents
-function sortByDependencies(queueItems, allTasks) {
-  const taskMap = new Map(allTasks.map(t => [t.id, t]));
-  const queueIds = new Set(queueItems.map(q => q.task));
-
-  // Build adjacency: for each queued item, which other queued items must come before it?
-  const inDegree = new Map();
-  const edges = new Map(); // from → [to]
-  for (const item of queueItems) {
-    inDegree.set(item.task, 0);
-    edges.set(item.task, []);
-  }
-  for (const item of queueItems) {
-    const task = taskMap.get(item.task);
-    if (task && task.dependsOn) {
-      for (const depId of task.dependsOn) {
-        if (queueIds.has(depId)) {
-          edges.get(depId).push(item.task);
-          inDegree.set(item.task, (inDegree.get(item.task) || 0) + 1);
-        }
-      }
-    }
-  }
-
-  // Kahn's algorithm
-  const result = [];
-  const ready = queueItems.filter(q => (inDegree.get(q.task) || 0) === 0).map(q => q.task);
-  const itemMap = new Map(queueItems.map(q => [q.task, q]));
-  while (ready.length > 0) {
-    const id = ready.shift();
-    result.push(itemMap.get(id));
-    for (const next of (edges.get(id) || [])) {
-      inDegree.set(next, inDegree.get(next) - 1);
-      if (inDegree.get(next) === 0) ready.push(next);
-    }
-  }
-  // Append any remaining (cyclic) items at end
-  for (const item of queueItems) {
-    if (!result.includes(item)) result.push(item);
-  }
-  return result;
-}
 
 export function App() {
   const project = useProject();
@@ -62,7 +21,6 @@ export function App() {
 
   // Project path for protocol launcher (per project, stored in localStorage)
   const [projectPath, setProjectPathState] = useState('');
-  const [launchedId, setLaunchedId] = useState(null);
 
   // Undo stack: stores previous state before destructive operations
   const [undoEntry, setUndoEntry] = useState(null);
@@ -112,209 +70,25 @@ export function App() {
   const taskNotes = data.taskNotes || {};
   const activity = data.activity || [];
 
-  // Helpers to update data and trigger save
-  const updateData = (partial) => {
-    const next = { ...data, ...partial };
-    save(next);
-  };
+  // --- Extracted hooks ---
+  const taskActions = useTaskActions({ data, save, dirHandle, snapshotBeforeAction });
+  const queueActions = useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction });
 
-  const addActivity = (label) => {
-    const entry = { id: 'act_' + Date.now(), time: Date.now(), label };
-    const next = [entry, ...(data.activity || [])].slice(0, 20);
-    return next;
-  };
-
-  // Task handlers
-  const handleSelectTask = (id) => {
-    setSelectedTask(prev => prev === id ? null : id);
-  };
-
-  const handleUpdateTask = (id, updates) => {
-    const existing = tasks.find(t => t.id === id);
-    const enriched = { ...updates };
-    // Record every state change in history stack
-    if (updates.status && updates.status !== existing?.status) {
-      const history = [...(existing?.history || [])];
-      // Auto-add initial "created" entry if history is empty
-      if (history.length === 0 && existing?.createdAt) {
-        history.push({ status: 'created', at: existing.createdAt });
-      }
-      history.push({ status: updates.status, at: new Date().toISOString() });
-      enriched.history = history;
-    }
-    const newTasks = tasks.map(t => t.id === id ? { ...t, ...enriched } : t);
-    const newActivity = addActivity((existing?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'));
-    updateData({ tasks: newTasks, activity: newActivity });
-  };
-
-  const handleUpdateNotes = (id, note) => {
-    updateData({ taskNotes: { ...taskNotes, [id]: note } });
-  };
-
-  const handleAddTask = (taskData) => {
-    const maxId = tasks.reduce((max, t) => Math.max(max, typeof t.id === 'number' ? t.id : 0), 0);
-    const newTask = { ...taskData, id: maxId + 1, createdAt: new Date().toISOString() };
-    const newTasks = [...tasks, newTask];
-    const newActivity = addActivity('"' + newTask.name + '" added');
-    updateData({ tasks: newTasks, activity: newActivity });
-  };
-
-  const handleRenameGroup = (oldName, newName) => {
-    const newTasks = tasks.map(t => t.group === oldName ? { ...t, group: newName } : t);
-    const newEpics = epics.map(e => e.name === oldName ? { ...e, name: newName } : e);
-    updateData({ tasks: newTasks, epics: newEpics });
-  };
-
-  const handleUpdateEpics = (newEpics) => {
-    updateData({ epics: newEpics });
-  };
-
+  // Wrap deleteTask to clear selection
   const handleDeleteTask = (id) => {
-    const task = tasks.find(t => t.id === id);
-    snapshotBeforeAction((task?.name || 'Task') + ' deleted');
-    // Remove the task and clean up dependsOn references in other tasks
-    const newTasks = tasks.filter(t => t.id !== id).map(t =>
-      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => d !== id) } : t
-    );
-    const newQueue = queue.filter(q => q.task !== id);
-    const { [id]: _, ...newTaskNotes } = taskNotes;
-    const newActivity = addActivity((task?.name || 'Task') + ' deleted');
-    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
+    taskActions.handleDeleteTask(id);
     setSelectedTask(null);
   };
 
-  const handleAddAttachment = async (taskId, file) => {
-    if (!dirHandle) return;
-    try {
-      const filename = file.name;
-      const path = await saveAttachment(dirHandle, taskId, filename, file);
-      const attachment = { id: 'att_' + Date.now(), filename, path };
-      const task = tasks.find(t => t.id === taskId);
-      const attachments = [...(task?.attachments || []), attachment];
-      handleUpdateTask(taskId, { attachments });
-    } catch (err) {
-      console.error('Failed to save attachment:', err);
-    }
-  };
-
-  const handleDeleteAttachment = async (taskId, attachmentId) => {
-    if (!dirHandle) return;
-    snapshotBeforeAction('Attachment deleted');
-    try {
-      const task = tasks.find(t => t.id === taskId);
-      const att = (task?.attachments || []).find(a => a.id === attachmentId);
-      if (att) await deleteAttachment(dirHandle, taskId, att.filename);
-      const attachments = (task?.attachments || []).filter(a => a.id !== attachmentId);
-      handleUpdateTask(taskId, { attachments });
-    } catch (err) {
-      console.error('Failed to delete attachment:', err);
-    }
-  };
-
-  const handleQueue = (task) => {
-    if (queue.some(q => q.task === task.id)) return;
-    const unsorted = [...queue, {
-      task: task.id,
-      taskName: task.name,
-      notes: taskNotes[task.id] || '',
-    }];
-    const newQueue = sortByDependencies(unsorted, tasks);
-    const newActivity = addActivity(task.name + ' queued');
-    updateData({ queue: newQueue, activity: newActivity });
-  };
-
-  const handleQueueAll = () => {
-    const pending = tasks.filter(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id));
-    if (pending.length === 0) return;
-    const unsorted = [...queue, ...pending.map(t => ({
-      task: t.id,
-      taskName: t.name,
-      notes: taskNotes[t.id] || '',
-    }))];
-    const newQueue = sortByDependencies(unsorted, tasks);
-    const newActivity = addActivity(pending.length + ' tasks queued');
-    updateData({ queue: newQueue, activity: newActivity });
-  };
-
-  const handleRemoveFromQueue = (key) => {
-    const newQueue = queue.filter(q => q.task !== key);
-    updateData({ queue: newQueue });
-  };
-
-  const handleClearQueue = () => {
-    if (queue.length === 0) return;
-    snapshotBeforeAction('Queue cleared');
-    updateData({ queue: [] });
-  };
-
-  const launchProtocol = (url) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const handleArrange = () => {
-    if (!projectPath) return;
-    const path = projectPath.replace(/\\/g, '/');
-    const url = 'claudecode:' + path + '?/orchestrator arrange?Arrange tasks';
-    launchProtocol(url);
-  };
-
-  const handleLaunchPhase = async (items) => {
-    if (!projectPath || !dirHandle) return;
-    const dir = projectPath.replace(/\\/g, '\\');
-    const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
-    const shortTitle = (name) => {
-      const words = name.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
-      return words.slice(0, 2).join(' ') || name.split(/\s+/).slice(0, 2).join(' ');
-    };
-
-    try {
-      const dmDir = await ensureDevManagerDir(dirHandle);
-
-      // Write a per-task .cmd script for each item (avoids nested-quote issues)
-      for (const item of items) {
-        const taskScript = `@echo off\r\ntitle ${shortTitle(item.taskName)}\r\nclaude --dangerously-skip-permissions "${item.cmd}"\r\n`;
-        const fh = await dmDir.getFileHandle(`launch-${item.key}.cmd`, { create: true });
-        const w = await fh.createWritable();
-        await w.write(taskScript);
-        await w.close();
-      }
-
-      // Build wt.exe command referencing the per-task scripts
-      const tabArgs = items.map(item =>
-        `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k "${dir}\\.devmanager\\launch-${item.key}.cmd"`
-      ).join(' ; ');
-      const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
-
-      // Write .devmanager/launch.cmd
-      const fileHandle = await dmDir.getFileHandle('launch.cmd', { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(script);
-      await writable.close();
-    } catch (err) {
-      console.error('Failed to write launch scripts:', err);
-      return;
-    }
-
-    // Single protocol call
-    const path = projectPath.replace(/\\/g, '/');
-    launchProtocol('claudecode:' + path + '?__launch_file?Launch phase');
-
-    // Mark all as launched
-    items.forEach(item => {
-      setLaunchedId(item.key);
-    });
-    setTimeout(() => setLaunchedId(null), 3000);
+  // Task selection (local state only)
+  const handleSelectTask = (id) => {
+    setSelectedTask(prev => prev === id ? null : id);
   };
 
   const handleRemoveActivity = (id) => {
     snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
-    updateData({ activity: newActivity });
+    save({ ...data, activity: newActivity });
   };
 
   const setProjectPath = (path) => {
@@ -324,19 +98,6 @@ export function App() {
       paths[projectName] = path;
       localStorage.setItem('dm_project_paths', JSON.stringify(paths));
     } catch {}
-  };
-
-  const handleLaunchTask = (itemKey, cmd, taskName) => {
-    if (!projectPath) return; // UI shows "set path" prompt
-    const path = projectPath.replace(/\\/g, '/');
-    // Short tab title: first 2-3 meaningful words
-    const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
-    const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
-    const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
-    const url = 'claudecode:' + path + '?' + cmd + '?' + title;
-    launchProtocol(url);
-    setLaunchedId(itemKey);
-    setTimeout(() => setLaunchedId(null), 3000);
   };
 
   // Selected task data
@@ -360,14 +121,14 @@ export function App() {
                 tasks={tasks}
                 selectedTask={selectedTask}
                 onSelectTask={handleSelectTask}
-                onAddTask={handleAddTask}
-                onQueueAll={handleQueueAll}
-                onArrange={handleArrange}
+                onAddTask={taskActions.handleAddTask}
+                onQueueAll={queueActions.handleQueueAll}
+                onArrange={queueActions.handleArrange}
                 onPauseTask={pauseTask}
                 onCancelTask={cancelTask}
-                onRenameGroup={handleRenameGroup}
+                onRenameGroup={taskActions.handleRenameGroup}
                 epics={epics}
-                onUpdateEpics={handleUpdateEpics}
+                onUpdateEpics={taskActions.handleUpdateEpics}
                 queue={queue}
               />
             </div>
@@ -385,14 +146,14 @@ export function App() {
               task={selectedTaskData}
               tasks={tasks}
               epics={epics}
-              onQueue={handleQueue}
-              onUpdateTask={handleUpdateTask}
+              onQueue={queueActions.handleQueue}
+              onUpdateTask={taskActions.handleUpdateTask}
               onDeleteTask={handleDeleteTask}
               notes={taskNotes[selectedTask] || ''}
-              onUpdateNotes={handleUpdateNotes}
+              onUpdateNotes={taskActions.handleUpdateNotes}
               dirHandle={dirHandle}
-              onAddAttachment={handleAddAttachment}
-              onDeleteAttachment={handleDeleteAttachment}
+              onAddAttachment={taskActions.handleAddAttachment}
+              onDeleteAttachment={taskActions.handleDeleteAttachment}
             />
           </div>
         </div>
@@ -404,7 +165,7 @@ export function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onLaunchPhase={handleLaunchPhase} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} onQueueAll={handleQueueAll} onPauseTask={pauseTask} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+            <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} launchedId={queueActions.launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
           </div>
 
           <div style={{
