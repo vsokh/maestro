@@ -132,11 +132,15 @@ export function App() {
   const handleUpdateTask = (id, updates) => {
     const existing = tasks.find(t => t.id === id);
     const enriched = { ...updates };
-    if (updates.status === 'in-progress' && !existing?.startedAt) {
-      enriched.startedAt = new Date().toISOString();
-    }
-    if (updates.status === 'done' && !existing?.completedAt) {
-      enriched.completedAt = new Date().toISOString().slice(0, 10);
+    // Record every state change in history stack
+    if (updates.status && updates.status !== existing?.status) {
+      const history = [...(existing?.history || [])];
+      // Auto-add initial "created" entry if history is empty
+      if (history.length === 0 && existing?.createdAt) {
+        history.push({ status: 'created', at: existing.createdAt });
+      }
+      history.push({ status: updates.status, at: new Date().toISOString() });
+      enriched.history = history;
     }
     const newTasks = tasks.map(t => t.id === id ? { ...t, ...enriched } : t);
     const newActivity = addActivity((existing?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'));

@@ -186,7 +186,7 @@ export function useProject() {
             tasks[idx] = {
               ...tasks[idx],
               status: 'done',
-              completedAt: prog.completedAt || new Date().toISOString().slice(0, 10),
+              completedAt: prog.completedAt || new Date().toISOString(),
               commitRef: prog.commitRef || tasks[idx].commitRef || undefined,
               branch: prog.branch || tasks[idx].branch || undefined,
               progress: undefined,

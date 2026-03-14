@@ -299,70 +299,69 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       ) : null}
 
 
-      {task.createdAt ? (
-        <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Timeline
+      {(() => {
+        // Build history: from task.history array, or fallback to legacy timestamp fields
+        let history = task.history || [];
+        if (history.length === 0) {
+          if (task.createdAt) history.push({ status: 'created', at: task.createdAt });
+          if (task.startedAt) history.push({ status: 'in-progress', at: task.startedAt });
+          if (task.pausedAt) history.push({ status: 'paused', at: task.pausedAt });
+          if (task.completedAt) history.push({ status: 'done', at: task.completedAt });
+        }
+        if (history.length === 0) return null;
+
+        const dotColor = {
+          'created': 'var(--text-light)',
+          'pending': 'var(--text-light)',
+          'in-progress': 'var(--accent)',
+          'paused': '#9b8bb4',
+          'blocked': 'var(--danger, #c45)',
+          'done': 'var(--success)',
+        };
+        const label = {
+          'created': 'Created',
+          'pending': 'Pending',
+          'in-progress': 'Started',
+          'paused': 'Paused',
+          'blocked': 'Blocked',
+          'done': 'Completed',
+        };
+
+        return (
+          <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Timeline
+            </div>
+            {history.map((entry, i) => {
+              const next = history[i + 1];
+              const duration = next ? formatDuration(entry.at, next.at) : null;
+              const isLast = i === history.length - 1;
+              return (
+                <div key={i}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor[entry.status] || 'var(--text-light)', flexShrink: 0 }} />
+                      {!isLast && <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--border)' }} />}
+                    </div>
+                    <div style={{ paddingBottom: '4px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{label[entry.status] || entry.status}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(entry.at)}</div>
+                    </div>
+                  </div>
+                  {duration && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>{duration}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-light)', flexShrink: 0 }} />
-              {(task.startedAt || task.completedAt) && (
-                <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--border)' }} />
-              )}
-            </div>
-            <div style={{ paddingBottom: '4px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Created</div>
-              <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(task.createdAt)}</div>
-            </div>
-          </div>
-          {task.startedAt && formatDuration(task.createdAt, task.startedAt) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>
-                {formatDuration(task.createdAt, task.startedAt)}
-              </div>
-            </div>
-          )}
-          {task.startedAt && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
-                {task.completedAt && (
-                  <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--border)' }} />
-                )}
-              </div>
-              <div style={{ paddingBottom: '4px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Started</div>
-                <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(task.startedAt)}</div>
-              </div>
-            </div>
-          )}
-          {task.completedAt && task.startedAt && formatDuration(task.startedAt, task.completedAt) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>
-                {formatDuration(task.startedAt, task.completedAt)}
-              </div>
-            </div>
-          )}
-          {task.completedAt && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Completed</div>
-                <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(task.completedAt)}</div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : null}
+        );
+      })()}
 
       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
         <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
@@ -391,6 +390,21 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             <option key={e.name} value={e.name} />
           ))}
         </datalist>
+      </div>
+
+      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.supervision ? 'var(--amber)' : 'var(--text-light)' }}>
+          <input
+            type="checkbox"
+            checked={!!task.supervision}
+            onChange={e => onUpdateTask(task.id, { supervision: e.target.checked || undefined })}
+            style={{ accentColor: 'var(--amber)', cursor: 'pointer' }}
+          />
+          <span style={{ fontWeight: 600 }}>Needs review</span>
+        </label>
+        {task.supervision ? (
+          <span style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>Complex or risky — review plan carefully</span>
+        ) : null}
       </div>
 
       <div style={{ marginBottom: '16px' }}>
