@@ -334,7 +334,7 @@ export function App() {
         </div>
 
         {/* Bottom row: Queue + Activity */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={{
             background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
             boxShadow: 'var(--shadow-sm)',
