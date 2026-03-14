@@ -168,6 +168,11 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   }).join(', ')}
                 </div>
               ) : null}
+              {task.status === 'blocked' && task.blockedReason ? (
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Blocked: {task.blockedReason.length > 50 ? task.blockedReason.slice(0, 50) + '...' : task.blockedReason}
+                </div>
+              ) : null}
               {task.status === 'in-progress' && task.progress ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
                   <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', lineHeight: 1.3, flex: 1 }}>
