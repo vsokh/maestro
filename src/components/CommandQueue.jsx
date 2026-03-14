@@ -51,7 +51,7 @@ function computePhases(queue, tasks) {
   return phases;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, onQueueAll, launchedId, projectPath, onSetPath }) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll, launchedId, projectPath, onSetPath }) {
   const itemKey = (item) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
@@ -149,11 +149,11 @@ export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, onQueu
               <>
                 <span style={{ fontWeight: 400, opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>parallel</span>
                 <button
-                  onClick={() => {
-                    phaseItems.forEach((item, i) => {
-                      setTimeout(() => onLaunch(itemKey(item), cmdForItem(item), item.taskName), i * 300);
-                    });
-                  }}
+                  onClick={() => onLaunchPhase(phaseItems.map(item => ({
+                    key: itemKey(item),
+                    cmd: cmdForItem(item),
+                    taskName: item.taskName,
+                  })))}
                   title="Launch all tasks in this phase"
                   style={{
                     padding: '1px 8px', background: 'none', color: 'var(--accent)',

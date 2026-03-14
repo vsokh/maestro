@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useProject } from './hooks/useProject.js';
-import { saveAttachment, deleteAttachment } from './fs.js';
+import { saveAttachment, deleteAttachment, ensureDevManagerDir } from './fs.js';
 import { ProjectPicker } from './components/ProjectPicker.jsx';
 import { Header } from './components/Header.jsx';
 import { SectionHeader } from './components/SectionHeader.jsx';
@@ -216,6 +216,44 @@ export function App() {
     launchProtocol(url);
   };
 
+  const handleLaunchPhase = async (items) => {
+    if (!projectPath || !dirHandle) return;
+    const dir = projectPath.replace(/\\/g, '\\');
+    const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
+    const shortTitle = (name) => {
+      const words = name.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
+      return words.slice(0, 2).join(' ') || name.split(/\s+/).slice(0, 2).join(' ');
+    };
+
+    // Build wt.exe command with multiple new-tab segments
+    const tabArgs = items.map(item =>
+      `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k claude --dangerously-skip-permissions "${item.cmd}"`
+    ).join(' ; ');
+    const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
+
+    // Write .devmanager/launch.cmd
+    try {
+      const dmDir = await ensureDevManagerDir(dirHandle);
+      const fileHandle = await dmDir.getFileHandle('launch.cmd', { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(script);
+      await writable.close();
+    } catch (err) {
+      console.error('Failed to write launch.cmd:', err);
+      return;
+    }
+
+    // Single protocol call
+    const path = projectPath.replace(/\\/g, '/');
+    launchProtocol('claudecode:' + path + '?__launch_file?Launch phase');
+
+    // Mark all as launched
+    items.forEach(item => {
+      setLaunchedId(item.key);
+    });
+    setTimeout(() => setLaunchedId(null), 3000);
+  };
+
   const handleRemoveActivity = (id) => {
     const newActivity = activity.filter(a => a.id !== id);
     updateData({ activity: newActivity });
@@ -302,7 +340,7 @@ export function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} onQueueAll={handleQueueAll} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onLaunchPhase={handleLaunchPhase} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} onQueueAll={handleQueueAll} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
           </div>
 
           <div style={{

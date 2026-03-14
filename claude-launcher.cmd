@@ -38,6 +38,12 @@ if defined title set "title=!title:+= !"
 if not defined cmd set "cmd=/orchestrator next"
 if not defined title set "title=Claude Code"
 
+:: Special: __launch_file runs .devmanager/launch.cmd (multi-tab launch)
+if "!cmd!"=="__launch_file" (
+  call "!dir!\.devmanager\launch.cmd"
+  exit /b
+)
+
 :: Launch as new tab in existing Windows Terminal (or new window if none open)
 :: --suppressApplicationTitle prevents claude from overriding the tab name
 start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k claude --dangerously-skip-permissions "!cmd!"
