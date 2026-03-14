@@ -1,22 +1,8 @@
 import React, { useMemo } from 'react';
 
-function eventType(label) {
-  if (/completed|done/i.test(label)) return 'completed';
-  if (/queued/i.test(label)) return 'queued';
-  if (/deleted|removed/i.test(label)) return 'deleted';
-  if (/added|created/i.test(label)) return 'added';
-  if (/marked/i.test(label)) return 'updated';
-  return 'default';
+function isCompleted(label) {
+  return /completed|done/i.test(label);
 }
-
-const DOT_COLORS = {
-  completed: 'var(--success)',
-  queued: 'var(--accent)',
-  deleted: 'var(--danger)',
-  added: 'var(--amber)',
-  updated: 'var(--text-light)',
-  default: 'var(--text-light)',
-};
 
 export function ActivityFeed({ activity }) {
   const entries = useMemo(() => {
@@ -30,7 +16,7 @@ export function ActivityFeed({ activity }) {
         return {
           key: a.id,
           label: a.label,
-          type: eventType(a.label),
+          completed: isCompleted(a.label),
           commitRef: a.commitRef || null,
           filesChanged: a.filesChanged || null,
           isToday,
@@ -62,7 +48,7 @@ export function ActivityFeed({ activity }) {
           {/* Colored dot */}
           <span style={{
             width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: DOT_COLORS[e.type],
+            background: e.completed ? 'var(--success)' : 'var(--border)',
           }} />
 
           {/* Label */}
