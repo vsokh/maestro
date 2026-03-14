@@ -212,7 +212,7 @@ export function App() {
   const handleArrange = () => {
     if (!projectPath) return;
     const path = projectPath.replace(/\\/g, '/');
-    const url = 'claudecode:' + path + '?/orchestrator arrange?Arrange tasks';
+    const url = 'claudecode:' + path + '?/orchestrator+arrange?Arrange+tasks';
     launchProtocol(url);
   };
 
@@ -245,7 +245,7 @@ export function App() {
 
     // Single protocol call
     const path = projectPath.replace(/\\/g, '/');
-    launchProtocol('claudecode:' + path + '?__launch_file?Launch phase');
+    launchProtocol('claudecode:' + path + '?__launch_file?Launch+phase');
 
     // Mark all as launched
     items.forEach(item => {
@@ -274,8 +274,8 @@ export function App() {
     // Short tab title: first 2-3 meaningful words
     const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
     const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
-    const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
-    const url = 'claudecode:' + path + '?' + cmd + '?' + title;
+    const title = words.slice(0, 2).join('+') || taskName.split(/\s+/).slice(0, 2).join('+');
+    const url = 'claudecode:' + path + '?' + cmd.replace(/ /g, '+') + '?' + title;
     launchProtocol(url);
     setLaunchedId(itemKey);
     setTimeout(() => setLaunchedId(null), 3000);
