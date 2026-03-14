@@ -1181,7 +1181,7 @@ function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, projectP
                 padding: '6px 12px', borderBottom: '1px solid var(--border)',
               }}>
                 <button
-                  onClick=${() => onLaunch(key, cmdForItem(item))}
+                  onClick=${() => onLaunch(key, cmdForItem(item), item.taskName)}
                   title=${projectPath ? 'Launch in terminal' : 'Set project path first'}
                   style=${{
                     padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
@@ -1435,10 +1435,14 @@ function App() {
     } catch {}
   };
 
-  const handleLaunchTask = (itemKey, cmd) => {
+  const handleLaunchTask = (itemKey, cmd, taskName) => {
     if (!projectPath) return; // UI shows "set path" prompt
     const path = projectPath.replace(/\\/g, '/');
-    const url = 'claudecode:' + path + '?' + cmd;
+    // Short tab title: first 2-3 meaningful words
+    const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
+    const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
+    const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
+    const url = 'claudecode:' + path + '?' + cmd + '?' + title;
     window.open(url, '_self');
     setLaunchedId(itemKey);
     setTimeout(() => setLaunchedId(null), 3000);

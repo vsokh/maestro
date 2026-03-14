@@ -2,8 +2,8 @@
 setlocal enabledelayedexpansion
 
 :: Claude Code launcher — called by claudecode:// protocol handler
-:: URL format: claudecode:<path>?<command>
-:: Example:    claudecode:C:/Users/vsoko/Projects/therapy-desk?/orchestrator task 14
+:: URL format: claudecode:<path>?<command>?<tab-title>
+:: Example:    claudecode:C:/Users/vsoko/Projects/therapy-desk?/orchestrator task 14?Auth system
 
 set "raw=%~1"
 
@@ -14,12 +14,14 @@ set "raw=!raw:claudecode:=!"
 :strip
 if "!raw:~0,1!"=="/" set "raw=!raw:~1!" & goto strip
 
-:: Split on ? — path is before, command is after
+:: Split on ? — path, command, title
 set "dir="
 set "cmd="
-for /f "tokens=1,* delims=?" %%a in ("!raw!") do (
+set "title="
+for /f "tokens=1,2,3 delims=?" %%a in ("!raw!") do (
   set "dir=%%a"
   set "cmd=%%b"
+  set "title=%%c"
 )
 
 :: Convert forward slashes to backslashes in path
@@ -29,9 +31,12 @@ set "dir=!dir:/=\!"
 set "dir=!dir:%%20= !"
 if defined cmd set "cmd=!cmd:%%20= !"
 if defined cmd set "cmd=!cmd:+= !"
+if defined title set "title=!title:%%20= !"
+if defined title set "title=!title:+= !"
 
-:: Default command if none provided
+:: Defaults
 if not defined cmd set "cmd=/orchestrator next"
+if not defined title set "title=Claude Code"
 
-:: Launch Windows Terminal with Claude Code
-start "" wt.exe -d "!dir!" cmd /k claude "!cmd!"
+:: Launch Windows Terminal with named tab
+start "" wt.exe --title "!title!" -d "!dir!" cmd /k claude "!cmd!"
