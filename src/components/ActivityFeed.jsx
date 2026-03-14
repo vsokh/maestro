@@ -68,7 +68,7 @@ export function ActivityFeed({ activity, onRemove }) {
           ) : null}
           {e.filesChanged ? (
             <span style={{ fontSize: '10px', color: 'var(--text-light)', flexShrink: 0 }}>
-              {e.filesChanged}f
+              {e.filesChanged} files
             </span>
           ) : null}
 
