@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-03-14T18:03:14.549Z",
+  "savedAt": "2026-03-14T21:24:53.516Z",
   "project": "dev-manager",
   "tasks": [
     {
@@ -21,8 +21,10 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": []
+      "status": "done",
+      "dependsOn": [],
+      "startedAt": "2026-03-14T20:52:18.183Z",
+      "completedAt": "2026-03-14"
     },
     {
       "id": 3,
@@ -32,8 +34,10 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": []
+      "status": "done",
+      "dependsOn": [],
+      "startedAt": "2026-03-14T20:52:30.916Z",
+      "completedAt": "2026-03-14"
     },
     {
       "id": 4,
@@ -54,8 +58,11 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": []
+      "status": "paused",
+      "dependsOn": [],
+      "startedAt": "2026-03-14T21:23:10.048Z",
+      "completedAt": "2026-03-14",
+      "blockedReason": ""
     },
     {
       "id": 6,
@@ -65,8 +72,11 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": []
+      "status": "done",
+      "dependsOn": [],
+      "startedAt": "2026-03-14T21:22:17.947Z",
+      "completedAt": "2026-03-14",
+      "blockedReason": ""
     },
     {
       "id": 7,
@@ -76,8 +86,10 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": []
+      "status": "in-progress",
+      "dependsOn": [],
+      "progress": "Reviewing results...",
+      "startedAt": "2026-03-14T20:52:10.955Z"
     },
     {
       "id": 8,
@@ -98,19 +110,10 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": []
-    },
-    {
-      "id": 10,
-      "name": "Attachment captions",
-      "fullName": "Add captions and notes to screenshot attachments",
-      "description": "Screenshots can be attached but can't be annotated. Add a caption text field per attachment so the manager can explain what to look at in each screenshot.",
-      "skills": [
-        "senior-frontend"
-      ],
-      "status": "pending",
-      "dependsOn": []
+      "status": "in-progress",
+      "dependsOn": [],
+      "progress": "Reviewing results...",
+      "startedAt": "2026-03-14T20:52:10.955Z"
     },
     {
       "id": 11,
@@ -120,8 +123,12 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "pending",
-      "dependsOn": [3]
+      "status": "done",
+      "dependsOn": [
+        3
+      ],
+      "startedAt": "2026-03-14T20:54:20.395Z",
+      "completedAt": "2026-03-14"
     }
   ],
   "features": [],
@@ -129,89 +136,104 @@
   "taskNotes": {},
   "activity": [
     {
-      "id": "act_1773612000000",
-      "time": 1773612000000,
-      "label": "Tasks arranged into dependency graph"
+      "id": "act_1773523493516",
+      "time": 1773523493516,
+      "label": "Task timeline and history marked paused"
     },
     {
-      "id": "act_1773511391665",
-      "time": 1773511391665,
-      "label": "10 tasks queued"
+      "id": "act_1773523398204",
+      "time": 1773523398204,
+      "label": "Task timeline and history marked pending"
     },
     {
-      "id": "act_1773511260000",
-      "time": 1773511260000,
-      "label": "Tasks arranged into dependency graph"
+      "id": "act_1773523395942",
+      "time": 1773523395942,
+      "label": "Task timeline and history marked blocked"
     },
     {
-      "id": "act_1773511185636_1",
-      "time": 1773511185636,
-      "label": "Analyze our project, what other features would be useful for us completed"
+      "id": "act_1773523394423",
+      "time": 1773523394423,
+      "label": "Task timeline and history marked done"
     },
     {
-      "id": "act_1773510900010",
-      "time": 1773510900010,
-      "label": "\"Responsive layout\" added"
+      "id": "act_1773523392224",
+      "time": 1773523392224,
+      "label": "Task timeline and history marked paused"
     },
     {
-      "id": "act_1773510900009",
-      "time": 1773510900009,
-      "label": "\"Attachment captions\" added"
+      "id": "act_1773523390048",
+      "time": 1773523390048,
+      "label": "Task timeline and history marked in-progress"
     },
     {
-      "id": "act_1773510900008",
-      "time": 1773510900008,
-      "label": "\"State backup and undo\" added"
+      "id": "act_1773523360571",
+      "time": 1773523360571,
+      "label": "Blocked reason field marked done"
     },
     {
-      "id": "act_1773510900007",
-      "time": 1773510900007,
-      "label": "\"Activity feed filtering\" added"
+      "id": "act_1773523360008",
+      "time": 1773523360008,
+      "label": "Blocked reason field marked paused"
     },
     {
-      "id": "act_1773510900006",
-      "time": 1773510900006,
-      "label": "\"Feature-task linking\" added"
+      "id": "act_1773523359355",
+      "time": 1773523359355,
+      "label": "Blocked reason field marked in-progress"
     },
     {
-      "id": "act_1773510900005",
-      "time": 1773510900005,
-      "label": "\"Blocked reason field\" added"
+      "id": "act_1773523358713",
+      "time": 1773523358713,
+      "label": "Blocked reason field marked pending"
     },
     {
-      "id": "act_1773510900004",
-      "time": 1773510900004,
-      "label": "\"Task timeline and history\" added"
+      "id": "act_1773523355098",
+      "time": 1773523355098,
+      "label": "Blocked reason field marked blocked"
     },
     {
-      "id": "act_1773510900003",
-      "time": 1773510900003,
-      "label": "\"Spec editor in UI\" added"
+      "id": "act_1773523351742",
+      "time": 1773523351742,
+      "label": "Blocked reason field marked done"
     },
     {
-      "id": "act_1773510900002",
-      "time": 1773510900002,
-      "label": "\"Task search and filter\" added"
+      "id": "act_1773523351129",
+      "time": 1773523351129,
+      "label": "Blocked reason field marked paused"
     },
     {
-      "id": "act_1773510900001",
-      "time": 1773510900001,
-      "label": "\"Editable task description\" added"
+      "id": "act_1773523350469",
+      "time": 1773523350469,
+      "label": "Blocked reason field marked in-progress"
     },
     {
-      "id": "act_1773510804860",
-      "time": 1773510804860,
-      "label": "Analyze our project, what other features would be useful for us queued"
+      "id": "act_1773523349878",
+      "time": 1773523349878,
+      "label": "Blocked reason field marked pending"
     },
     {
-      "id": "act_1773510802416",
-      "time": 1773510802416,
-      "label": "\"Analyze our project, what other features would be useful for us\" added"
+      "id": "act_1773523349800",
+      "time": 1773523349800,
+      "label": "Blocked reason field updated"
     },
     {
-      "id": "act_init",
-      "time": 1773510777321,
-      "label": "Project initialized"
+      "id": "act_1773523343566",
+      "time": 1773523343566,
+      "label": "Blocked reason field updated"
+    },
+    {
+      "id": "act_1773523340416",
+      "time": 1773523340416,
+      "label": "Blocked reason field marked blocked"
+    },
+    {
+      "id": "act_1773523339158",
+      "time": 1773523339158,
+      "label": "Blocked reason field marked done"
+    },
+    {
+      "id": "act_1773523338497",
+      "time": 1773523338497,
+      "label": "Blocked reason field marked paused"
     }
   ]
 }

@@ -167,9 +167,10 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       onDrop={handleDrop}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <button
-          onClick={() => {
-            const next = statusOptions[(currentIdx + 1) % statusOptions.length];
+        <select
+          value={task.status}
+          onChange={e => {
+            const next = e.target.value;
             const updates = { status: next };
             if (task.status === 'blocked' && next !== 'blocked') {
               updates.blockedReason = '';
@@ -178,11 +179,25 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             onUpdateTask(task.id, updates);
           }}
           className={`badge ${badgeClass}`}
-          style={{ cursor: 'pointer', border: 'none', fontFamily: 'var(--font)', transition: 'all 0.15s' }}
-          title="Click to cycle status"
+          style={{
+            cursor: 'pointer', border: 'none', fontFamily: 'var(--font)',
+            transition: 'all 0.15s', appearance: 'none', padding: '4px 20px 4px 10px',
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'8\' height=\'5\'%3E%3Cpath d=\'M0 0l4 5 4-5z\' fill=\'currentColor\'/%3E%3C/svg%3E")',
+            backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center',
+            outline: 'none',
+          }}
         >
-          {task.status} &#8635;
-        </button>
+          {statusOptions.map(s => {
+            const colors = {
+              'pending': '#888',
+              'in-progress': 'var(--accent)',
+              'paused': '#9b8bb4',
+              'done': 'var(--success)',
+              'blocked': 'var(--danger, #c45)',
+            };
+            return <option key={s} value={s} style={{ background: 'var(--surface)', color: colors[s] || 'var(--text)' }}>{s}</option>;
+          })}
+        </select>
         {pastedFeedback && (
           <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, animation: 'fadeIn 0.2s' }}>
             Pasted!
