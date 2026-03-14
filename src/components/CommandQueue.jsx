@@ -174,12 +174,16 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     <div>
       {queue.map(renderItem)}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-        {onQueueAll && (tasks || []).some(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id)) ? (
-          <button onClick={onQueueAll} style={{
+        {queue.length > 1 && onLaunchPhase ? (
+          <button onClick={() => onLaunchPhase(queue.map(item => ({
+            key: itemKey(item),
+            cmd: cmdForItem(item),
+            taskName: item.taskName,
+          })))} style={{
             padding: '4px 10px', background: 'none', color: 'var(--dm-accent)',
             border: '1px solid var(--dm-accent)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
             fontFamily: 'var(--dm-font)', cursor: 'pointer',
-          }}>Queue all</button>
+          }}>&#9654; Launch all</button>
         ) : null}
         <button onClick={onClear} style={{
           padding: '4px 10px', background: 'none', color: 'var(--dm-text-light)',
@@ -336,13 +340,6 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         </div>
       ))}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-        {onQueueAll && (tasks || []).some(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id)) ? (
-          <button onClick={onQueueAll} style={{
-            padding: '4px 10px', background: 'none', color: 'var(--dm-accent)',
-            border: '1px solid var(--dm-accent)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
-            fontFamily: 'var(--dm-font)', cursor: 'pointer',
-          }}>Queue all</button>
-        ) : null}
         <button onClick={onClear} style={{
           padding: '4px 10px', background: 'none', color: 'var(--dm-text-light)',
           border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
