@@ -66,11 +66,6 @@ export function ActivityFeed({ activity, onRemove }) {
               padding: '0 5px', borderRadius: '3px', flexShrink: 0,
             }}>{e.commitRef}</span>
           ) : null}
-          {e.filesChanged ? (
-            <span style={{ fontSize: '10px', color: 'var(--text-light)', flexShrink: 0 }}>
-              {e.filesChanged} files changed
-            </span>
-          ) : null}
 
           {/* Timestamp */}
           <span style={{
