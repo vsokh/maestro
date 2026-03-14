@@ -39,4 +39,5 @@ if not defined cmd set "cmd=/orchestrator next"
 if not defined title set "title=Claude Code"
 
 :: Launch as new tab in existing Windows Terminal (or new window if none open)
-start "" wt.exe -w 0 new-tab --title "!title!" -d "!dir!" cmd /k claude "!cmd!"
+:: --suppressApplicationTitle prevents claude from overriding the tab name
+start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k claude "!cmd!"
