@@ -9,11 +9,13 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   const [pastedFeedback, setPastedFeedback] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [thumbUrls, setThumbUrls] = useState({});
+  const [localBlockedReason, setLocalBlockedReason] = useState('');
   const dragCounter = useRef(0);
 
   useEffect(() => {
     setLocalNote(notes || '');
     setLocalDescription(task?.description || '');
+    setLocalBlockedReason(task?.blockedReason || '');
     setEditing(false);
   }, [task?.id, notes]);
 
@@ -109,6 +111,27 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     }
   }, [task, onAddAttachment, handleImageFile]);
 
+
+  const formatDate = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
+  const formatDuration = (from, to) => {
+    if (!from || !to) return null;
+    const ms = new Date(to) - new Date(from);
+    if (ms < 0 || isNaN(ms)) return null;
+    const mins = Math.floor(ms / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    if (days > 0) return days + 'd ' + (hrs % 24) + 'h';
+    if (hrs > 0) return hrs + 'h ' + (mins % 60) + 'm';
+    return mins + 'm';
+  };
+
   if (!task) return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -150,7 +173,12 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         <button
           onClick={() => {
             const next = statusOptions[(currentIdx + 1) % statusOptions.length];
-            onUpdateTask(task.id, { status: next });
+            const updates = { status: next };
+            if (task.status === 'blocked' && next !== 'blocked') {
+              updates.blockedReason = '';
+              setLocalBlockedReason('');
+            }
+            onUpdateTask(task.id, updates);
           }}
           className={`badge ${badgeClass}`}
           style={{ cursor: 'pointer', border: 'none', fontFamily: 'var(--font)', transition: 'all 0.15s' }}
@@ -172,6 +200,25 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           fontWeight: 500, lineHeight: 1.4,
         }}>
           {task.progress}
+        </div>
+      ) : null}
+
+      {task.status === 'blocked' ? (
+        <div style={{ marginBottom: '12px' }}>
+          <input
+            value={localBlockedReason}
+            onInput={e => setLocalBlockedReason(e.target.value)}
+            onBlur={() => onUpdateTask(task.id, { blockedReason: localBlockedReason })}
+            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
+            placeholder="Why is this blocked?"
+            style={{
+              width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
+              padding: '6px 8px', border: '1px solid var(--border)', borderRadius: '6px',
+              background: 'var(--bg)', outline: 'none',
+              transition: 'border-color 0.15s', lineHeight: 1.5,
+            }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          />
         </div>
       ) : null}
 
