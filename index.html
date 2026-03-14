@@ -1143,7 +1143,7 @@ function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, notes, o
   `;
 }
 
-function CommandQueue({ queue, onLaunch, onCopy, onRemove, onClear, copiedId, launchState, projectPath, onSetPath }) {
+function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, projectPath, onSetPath }) {
   const itemKey = (item) => item.task || item.cardId;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
@@ -1155,6 +1155,12 @@ function CommandQueue({ queue, onLaunch, onCopy, onRemove, onClear, copiedId, la
     }
   };
 
+  // Build command for a queue item
+  const cmdForItem = (item) => {
+    if (item.task) return '/orchestrator task ' + item.task;
+    return '/orchestrator next';
+  };
+
   return h`
     <div>
       ${queue.length === 0 ? h`
@@ -1162,97 +1168,99 @@ function CommandQueue({ queue, onLaunch, onCopy, onRemove, onClear, copiedId, la
           padding: '20px 16px', textAlign: 'center', color: 'var(--text-light)', fontSize: '12px',
           lineHeight: 1.6,
         }}>
-          Queue tasks from the detail panel, then launch the orchestrator.
+          Queue tasks from the detail panel, then launch each in its own terminal.
         </div>
       ` : h`
         <div>
-          ${queue.map((item, i) => h`
-            <div key=${itemKey(item)} style=${{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 12px', borderBottom: '1px solid var(--border)',
-            }}>
-              <div style=${{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ${item.cardId ? h`
-                  <span class="badge" style=${{ fontSize: '9px', background: 'var(--amber-light)', color: 'var(--amber)', flexShrink: 0 }}>new</span>
-                ` : null}
-                <span style=${{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${item.taskName}</span>
+          ${queue.map((item) => {
+            const key = itemKey(item);
+            const isLaunched = launchedId === key;
+            return h`
+              <div key=${key} style=${{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '6px 12px', borderBottom: '1px solid var(--border)',
+              }}>
+                <button
+                  onClick=${() => onLaunch(key, cmdForItem(item))}
+                  title=${projectPath ? 'Launch in terminal' : 'Set project path first'}
+                  style=${{
+                    padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
+                    color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+                    fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                    flexShrink: 0, lineHeight: 1,
+                  }}
+                >${isLaunched ? '✓' : '▶'}</button>
+                <div style=${{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ${item.cardId ? h`
+                    <span class="badge" style=${{ fontSize: '9px', background: 'var(--amber-light)', color: 'var(--amber)', flexShrink: 0 }}>new</span>
+                  ` : null}
+                  <span style=${{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${item.taskName}</span>
+                </div>
+                <button
+                  onClick=${() => onRemove(key)}
+                  title="Remove from queue"
+                  style=${{
+                    padding: '2px 6px', background: 'none', border: 'none',
+                    cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
+                    lineHeight: 1,
+                  }}
+                >x</button>
               </div>
-              <button
-                onClick=${() => onRemove(itemKey(item))}
-                title="Remove from queue"
-                style=${{
-                  padding: '2px 6px', background: 'none', border: 'none',
-                  cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
-                  lineHeight: 1,
-                }}
-              >x</button>
-            </div>
-          `)}
-          <div style=${{ display: 'flex', gap: '8px', padding: '10px 12px' }}>
-            <button onClick=${onLaunch} style=${{
-              flex: 1, padding: '8px 12px',
-              background: launchState === 'launched' ? 'var(--success)' : 'var(--accent)',
-              color: 'white',
-              border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '13px',
-              fontWeight: 600, cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-            }}>${launchState === 'launched' ? 'Launched!' : h`${'▶'} Launch orchestrator`}</button>
-            <button onClick=${() => onCopy(null)} title="Copy command" style=${{
-              padding: '8px 10px', background: 'var(--surface)', color: copiedId === 'all' ? 'var(--success)' : 'var(--text-light)',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
-              fontWeight: 500, cursor: 'pointer',
-            }}>${copiedId === 'all' ? '✓' : '⧉'}</button>
-            <button onClick=${onClear} style=${{
-              padding: '8px 10px', background: 'var(--surface)', color: 'var(--text-light)',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
-              fontWeight: 500, fontFamily: 'var(--font)', cursor: 'pointer',
-            }}>Clear</button>
-          </div>
+            `;
+          })}
 
-          ${editingPath ? h`
-            <div style=${{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '6px' }}>
-              <input
-                type="text"
-                value=${pathInput}
-                onInput=${(e) => setPathInput(e.target.value)}
-                onKeyDown=${(e) => e.key === 'Enter' && handleSavePath()}
-                placeholder="C:\\Users\\you\\Projects\\my-project"
-                style=${{
-                  flex: 1, padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace',
-                  border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg)', color: 'var(--text)',
-                }}
-              />
-              <button onClick=${handleSavePath} style=${{
-                padding: '6px 10px', background: 'var(--accent)', color: 'white',
-                border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-                fontWeight: 600, cursor: 'pointer',
-              }}>Save</button>
-              <button onClick=${() => setEditingPath(false)} style=${{
-                padding: '6px 8px', background: 'none', color: 'var(--text-light)',
-                border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-                cursor: 'pointer',
-              }}>Cancel</button>
-            </div>
+          <div style=${{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick=${onClear} style=${{
+              padding: '4px 10px', background: 'none', color: 'var(--text-light)',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+              fontFamily: 'var(--font)', cursor: 'pointer',
+            }}>Clear queue</button>
+          </div>
+        </div>
+      `}
+
+      ${editingPath ? h`
+        <div style=${{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '6px' }}>
+          <input
+            type="text"
+            value=${pathInput}
+            onInput=${(e) => setPathInput(e.target.value)}
+            onKeyDown=${(e) => e.key === 'Enter' && handleSavePath()}
+            placeholder="C:\\Users\\you\\Projects\\my-project"
+            autoFocus
+            style=${{
+              flex: 1, padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg)', color: 'var(--text)',
+            }}
+          />
+          <button onClick=${handleSavePath} style=${{
+            padding: '6px 10px', background: 'var(--accent)', color: 'white',
+            border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+            fontWeight: 600, cursor: 'pointer',
+          }}>Save</button>
+          <button onClick=${() => setEditingPath(false)} style=${{
+            padding: '6px 8px', background: 'none', color: 'var(--text-light)',
+            border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+            cursor: 'pointer',
+          }}>Cancel</button>
+        </div>
+      ` : h`
+        <div style=${{
+          padding: '4px 12px 6px', display: 'flex', alignItems: 'center', gap: '6px',
+          fontSize: '11px', color: 'var(--text-light)', borderTop: queue.length > 0 ? 'none' : '1px solid var(--border)',
+        }}>
+          ${projectPath ? h`
+            <span style=${{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, opacity: 0.7 }}>${projectPath}</span>
+            <button onClick=${() => { setPathInput(projectPath); setEditingPath(true); }} style=${{
+              background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer',
+              fontSize: '11px', textDecoration: 'underline', flexShrink: 0,
+            }}>edit</button>
           ` : h`
-            <div style=${{
-              padding: '4px 12px 8px', display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '11px', color: 'var(--text-light)',
-            }}>
-              ${projectPath ? h`
-                <span style=${{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>${projectPath}</span>
-                <button onClick=${() => { setPathInput(projectPath); setEditingPath(true); }} style=${{
-                  background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer',
-                  fontSize: '11px', textDecoration: 'underline', flexShrink: 0,
-                }}>edit</button>
-              ` : h`
-                <button onClick=${() => setEditingPath(true)} style=${{
-                  background: 'none', border: 'none', color: 'var(--amber)', cursor: 'pointer',
-                  fontSize: '11px', textDecoration: 'underline',
-                }}>Set project path to enable one-click launch</button>
-              `}
-            </div>
+            <button onClick=${() => setEditingPath(true)} style=${{
+              background: 'none', border: 'none', color: 'var(--amber)', cursor: 'pointer',
+              fontSize: '11px', textDecoration: 'underline',
+            }}>Set project path to enable launch</button>
           `}
         </div>
       `}
@@ -1312,7 +1320,6 @@ function App() {
 
   // Selection state (local only)
   const [selectedTask, setSelectedTask] = useState(null);
-  const [copiedId, setCopiedId] = useState(null);
 
   // If not connected, show picker
   if (!connected || !data) {
@@ -1410,14 +1417,14 @@ function App() {
     updateData({ queue: [] });
   };
 
-  // Project path for protocol launcher
+  // Project path for protocol launcher (per project, stored in localStorage)
   const [projectPath, setProjectPathState] = useState(() => {
     try {
       const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
       return paths[projectName] || '';
     } catch { return ''; }
   });
-  const [launchState, setLaunchState] = useState(null); // null | 'launched'
+  const [launchedId, setLaunchedId] = useState(null);
 
   const setProjectPath = (path) => {
     setProjectPathState(path);
@@ -1428,28 +1435,13 @@ function App() {
     } catch {}
   };
 
-  const handleLaunch = () => {
-    if (!projectPath) return; // shouldn't happen — UI shows "set path" instead
-    const url = 'claudecode:' + projectPath.replace(/\\/g, '/');
-    window.open(url, '_blank');
-    setLaunchState('launched');
-    setTimeout(() => setLaunchState(null), 3000);
-  };
-
-  const handleCopyCommand = async () => {
-    const text = '/orchestrator next';
-    setCopiedId('all');
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleLaunchTask = (itemKey, cmd) => {
+    if (!projectPath) return; // UI shows "set path" prompt
+    const path = projectPath.replace(/\\/g, '/');
+    const url = 'claudecode:' + path + '?' + cmd;
+    window.open(url, '_self');
+    setLaunchedId(itemKey);
+    setTimeout(() => setLaunchedId(null), 3000);
   };
 
   // Selected task/draft data
@@ -1515,7 +1507,7 @@ function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <${SectionHeader} title="Queue" count=${queue.length > 0 ? queue.length : null} />
-            <${CommandQueue} queue=${queue} onLaunch=${handleLaunch} onCopy=${handleCopyCommand} onRemove=${handleRemoveFromQueue} onClear=${handleClearQueue} copiedId=${copiedId} launchState=${launchState} projectPath=${projectPath} onSetPath=${setProjectPath} />
+            <${CommandQueue} queue=${queue} onLaunch=${handleLaunchTask} onRemove=${handleRemoveFromQueue} onClear=${handleClearQueue} launchedId=${launchedId} projectPath=${projectPath} onSetPath=${setProjectPath} />
           </div>
 
           <div style=${{

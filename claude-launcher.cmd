@@ -2,22 +2,36 @@
 setlocal enabledelayedexpansion
 
 :: Claude Code launcher — called by claudecode:// protocol handler
-:: Receives URL like: claudecode:C:/Users/vsoko/Projects/therapy-desk
+:: URL format: claudecode:<path>?<command>
+:: Example:    claudecode:C:/Users/vsoko/Projects/therapy-desk?/orchestrator task 14
 
-set "url=%~1"
+set "raw=%~1"
 
 :: Strip protocol prefix
-set "dir=!url:claudecode:=!"
+set "raw=!raw:claudecode:=!"
 
 :: Remove leading slashes (browsers may add them)
 :strip
-if "!dir:~0,1!"=="/" set "dir=!dir:~1!" & goto strip
+if "!raw:~0,1!"=="/" set "raw=!raw:~1!" & goto strip
 
-:: Convert forward slashes to backslashes
+:: Split on ? — path is before, command is after
+set "dir="
+set "cmd="
+for /f "tokens=1,* delims=?" %%a in ("!raw!") do (
+  set "dir=%%a"
+  set "cmd=%%b"
+)
+
+:: Convert forward slashes to backslashes in path
 set "dir=!dir:/=\!"
 
 :: URL-decode spaces
 set "dir=!dir:%%20= !"
+if defined cmd set "cmd=!cmd:%%20= !"
+if defined cmd set "cmd=!cmd:+= !"
+
+:: Default command if none provided
+if not defined cmd set "cmd=/orchestrator next"
 
 :: Launch Windows Terminal with Claude Code
-start "" wt.exe -d "!dir!" cmd /k claude "/orchestrator next"
+start "" wt.exe -d "!dir!" cmd /k claude "!cmd!"
