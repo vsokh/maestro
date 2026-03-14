@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f0eb;
+      --surface: #fefcf9;
+      --text: #3d3a37;
+      --text-muted: #635e5a;
+      --text-light: #8a857f;
+      --border: #e0dbd5;
+      --accent: #6a8dbe;
+      --accent-light: #e8f0f8;
+      --amber: #c4845a;
+      --amber-light: #f5ebe3;
+      --success: #5a9e72;
+      --success-light: #e6f4eb;
+      --danger: #c47a7a;
+      --warning: #d4a44a;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      --font: 'Onest', -apple-system, system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #root { min-height: 100vh; }
+
+    /* Utility */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .badge-done { background: var(--success-light); color: var(--success); }
+    .badge-pending { background: var(--amber-light); color: var(--amber); }
+    .badge-blocked { background: #f0eded; color: var(--text-light); }
+    .badge-accent { background: var(--accent-light); color: var(--accent); }
+    .badge-amber { background: var(--amber-light); color: var(--amber); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19",
+      "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime",
+      "react-dom/client": "https://esm.sh/react-dom@19/client",
+      "htm": "https://esm.sh/htm@3"
+    }
+  }
+  </script>
+
+  <script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import htm from 'htm';
+
+const h = htm.bind(React.createElement);
+const { useState, useMemo, useCallback, useRef, useEffect } = React;
+
+// ─── File System Access API ───
+
+const FS_DB_NAME = 'devmanager_fs';
+const FS_STORE = 'handles';
+const STATE_DIR = '.devmanager';
+const STATE_FILENAME = 'state.json';
+
+function openFsDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FS_DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(FS_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveDirHandle(handle) {
+  const db = await openFsDb();
+  const tx = db.transaction(FS_STORE, 'readwrite');
+  tx.objectStore(FS_STORE).put(handle, 'projectDir');
+  return new Promise(r => { tx.oncomplete = r; });
+}
+
+async function loadDirHandle() {
+  const db = await openFsDb();
+  const tx = db.transaction(FS_STORE, 'readonly');
+  const req = tx.objectStore(FS_STORE).get('projectDir');
+  return new Promise(r => { req.onsuccess = () => r(req.result || null); });
+}
+
+async function clearDirHandle() {
+  const db = await openFsDb();
+  const tx = db.transaction(FS_STORE, 'readwrite');
+  tx.objectStore(FS_STORE).delete('projectDir');
+}
+
+async function verifyHandle(handle) {
+  if (!handle) return false;
+  try {
+    const perm = await handle.queryPermission({ mode: 'readwrite' });
+    return perm === 'granted';
+  } catch { return false; }
+}
+
+async function requestAccess(handle) {
+  if (!handle) return false;
+  try {
+    const perm = await handle.requestPermission({ mode: 'readwrite' });
+    return perm === 'granted';
+  } catch { return false; }
+}
+
+async function ensureDevManagerDir(projectHandle) {
+  return await projectHandle.getDirectoryHandle(STATE_DIR, { create: true });
+}
+
+async function ensureOrchestratorSkill(projectHandle) {
+  try {
+    // Check if .claude/skills/orchestrator/SKILL.md already exists
+    const claude = await projectHandle.getDirectoryHandle('.claude', { create: true });
+    const skills = await claude.getDirectoryHandle('skills', { create: true });
+    const orch = await skills.getDirectoryHandle('orchestrator', { create: true });
+    try {
+      await orch.getFileHandle('SKILL.md');
+      return; // already exists, don't overwrite
+    } catch {}
+    // Create it
+    const fileHandle = await orch.getFileHandle('SKILL.md', { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(ORCHESTRATOR_SKILL_TEMPLATE);
+    await writable.close();
+  } catch { /* permission issues, skip silently */ }
+}
+
+async function writeState(projectHandle, data) {
+  try {
+    const dir = await ensureDevManagerDir(projectHandle);
+    const fileHandle = await dir.getFileHandle(STATE_FILENAME, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(data, null, 2));
+    await writable.close();
+    return true;
+  } catch { return false; }
+}
+
+async function readState(projectHandle) {
+  try {
+    const dir = await projectHandle.getDirectoryHandle(STATE_DIR);
+    const fileHandle = await dir.getFileHandle(STATE_FILENAME);
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    return { data: JSON.parse(text), lastModified: file.lastModified };
+  } catch {
+    return null;
+  }
+}
+
+const ORCHESTRATOR_SKILL_TEMPLATE = `---
+name: orchestrator
+description: "Project workflow coordinator. Reads queue from Dev Manager, executes tasks, creates specs, writes back results. TRIGGER on: orchestrator, what's next, plan work, project status, execute queue."
+---
+
+# Orchestrator
+
+You coordinate work between the Dev Manager (browser) and Claude Code. The manager queues tasks in Dev Manager, you execute them here.
+
+## State file: \`.devmanager/state.json\`
+
+Read this file for all project state. The Dev Manager writes to it, you read and write back. Dev Manager polls every 3s and auto-syncs.
+
+## \`/orchestrator next\` (primary command)
+
+1. Read \`.devmanager/state.json\`
+2. Pick first item from \`queue\` array
+3. Handle by type:
+
+**Existing task** \`{ "task": N, "taskName": "...", "notes": "..." }\`:
+- Read spec at \`specs/tasks/{NN}-*.md\` if it exists
+- Read \`notes\` field — manager's instructions (HIGH PRIORITY, follow them)
+- Present plan, wait for approval, then execute
+- After: remove from queue, update task status in \`tasks\` array, add to \`activity\` and \`sessions\`
+
+**New task (draft)** \`{ "action": "promote-and-execute", "cardId": "...", "taskName": "...", "description": "...", "skills": [...], "notes": "..." }\`:
+- Assign next ID (max existing + 1)
+- Create spec at \`specs/tasks/{NN}-{slug}.md\`
+- Add to \`tasks\` array in state.json
+- Execute using spec + manager notes
+- After: remove from queue, remove from \`drafts\`, update status, add to \`activity\` and \`sessions\`
+
+**Empty queue**: Check \`drafts\` array, list them if any. Otherwise: "Nothing queued."
+
+## \`/orchestrator status\`
+
+Read \`.devmanager/state.json\` + \`git log --oneline -10\`. Output: pending tasks, shipped features, queue count.
+
+## \`/orchestrator task N\`
+
+Read manager notes from \`taskNotes[N]\`, read spec file, present execution plan. Notes override spec on conflicts. Do NOT auto-execute.
+
+## Write-back protocol
+
+After every operation, update \`.devmanager/state.json\`:
+- \`tasks\` — update status, add promoted drafts
+- \`queue\` — remove executed items
+- \`drafts\` — remove promoted drafts
+- \`activity\` — append: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "..." }\`
+- \`sessions\` — append completion records
+- \`features\` — add new feature groups when work ships
+
+## Spec file format (for promoted drafts)
+
+\`\`\`markdown
+# Task {N}: {title}
+
+> {description}
+
+## Manager notes
+{notes}
+
+## Approach
+[Fill based on codebase analysis]
+
+## Files to modify
+- [identified files]
+\`\`\`
+`;
+
+function createDefaultState(projectName) {
+  return {
+    savedAt: new Date().toISOString(),
+    project: projectName,
+    tasks: [],
+    features: [],
+    drafts: [],
+    queue: [],
+    taskNotes: {},
+    draftNotes: {},
+    activity: [{ id: 'act_init', time: Date.now(), label: 'Project initialized' }],
+    sessions: [],
+  };
+}
+
+// ─── useProject hook ───
+
+function useProject() {
+  const [dirHandle, setDirHandle] = useState(null);
+  const [connected, setConnected] = useState(false);
+  const [status, setStatus] = useState('disconnected'); // disconnected | connecting | connected | synced | error
+  const [projectName, setProjectName] = useState('');
+  const [data, setData] = useState(null);
+  const [lastProjectName, setLastProjectName] = useState(() => {
+    try { return localStorage.getItem('dm_last_project') || ''; } catch { return ''; }
+  });
+
+  const saveTimer = useRef(null);
+  const lastWriteTime = useRef(0);
+  const pollTimer = useRef(null);
+  const dataRef = useRef(null);
+
+  // Keep dataRef in sync
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  // On mount: try to restore saved handle (but don't auto-connect -- need user gesture for permission)
+  useEffect(() => {
+    (async () => {
+      const handle = await loadDirHandle();
+      if (handle && await verifyHandle(handle)) {
+        // Permission already granted, auto-connect
+        await connectWithHandle(handle);
+      }
+    })();
+  }, []);
+
+  const connectWithHandle = useCallback(async (handle) => {
+    setStatus('connecting');
+    const name = handle.name;
+    setProjectName(name);
+    setLastProjectName(name);
+    try { localStorage.setItem('dm_last_project', name); } catch {}
+
+    // Try reading existing state
+    const existing = await readState(handle);
+    let stateData;
+    if (existing) {
+      stateData = existing.data;
+      lastWriteTime.current = existing.lastModified;
+    } else {
+      // Create fresh state
+      stateData = createDefaultState(name);
+      await writeState(handle, stateData);
+      lastWriteTime.current = Date.now();
+    }
+
+    // Use project name from state if available
+    if (stateData.project) setProjectName(stateData.project);
+
+    // Ensure orchestrator skill exists in the project
+    await ensureOrchestratorSkill(handle);
+
+    await saveDirHandle(handle);
+    setDirHandle(handle);
+    setData(stateData);
+    setConnected(true);
+    setStatus('connected');
+  }, []);
+
+  const connect = useCallback(async () => {
+    setStatus('connecting');
+
+    // Try restoring saved handle first
+    let handle = await loadDirHandle();
+    if (handle) {
+      if (await verifyHandle(handle) || await requestAccess(handle)) {
+        await connectWithHandle(handle);
+        return;
+      }
+    }
+
+    // Pick new directory
+    if (!window.showDirectoryPicker) {
+      setStatus('error');
+      return;
+    }
+    try {
+      handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      await connectWithHandle(handle);
+    } catch (e) {
+      if (e.name !== 'AbortError') setStatus('error');
+      else setStatus('disconnected');
+    }
+  }, [connectWithHandle]);
+
+  const reconnect = useCallback(async () => {
+    const handle = await loadDirHandle();
+    if (handle) {
+      if (await requestAccess(handle)) {
+        await connectWithHandle(handle);
+        return;
+      }
+    }
+    // If handle doesn't work, fall back to picker
+    await connect();
+  }, [connect, connectWithHandle]);
+
+  const disconnect = useCallback(() => {
+    clearTimeout(saveTimer.current);
+    clearInterval(pollTimer.current);
+    setDirHandle(null);
+    setConnected(false);
+    setData(null);
+    setProjectName('');
+    setStatus('disconnected');
+    clearDirHandle();
+  }, []);
+
+  // Save function (debounced)
+  const save = useCallback((newData) => {
+    const updated = { ...newData, savedAt: new Date().toISOString() };
+    setData(updated);
+    if (!dirHandle) return;
+
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      const ok = await writeState(dirHandle, updated);
+      if (ok) lastWriteTime.current = Date.now();
+      setStatus(ok ? 'connected' : 'error');
+    }, 500);
+  }, [dirHandle]);
+
+  // Poll for external changes (every 3s)
+  useEffect(() => {
+    if (!connected || !dirHandle) return;
+    pollTimer.current = setInterval(async () => {
+      const result = await readState(dirHandle);
+      if (!result) return;
+      // If file was modified after our last write, it's an external change
+      if (result.lastModified > lastWriteTime.current + 1000) {
+        lastWriteTime.current = result.lastModified;
+        setData(result.data);
+        if (result.data.project) setProjectName(result.data.project);
+        setStatus('synced');
+        setTimeout(() => setStatus('connected'), 2000);
+      }
+    }, 3000);
+    return () => clearInterval(pollTimer.current);
+  }, [connected, dirHandle]);
+
+  return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName };
+}
+
+// ─── Skill auto-suggest ───
+
+const SKILL_KEYWORDS = [
+  { skills: ['qa-tester'], words: ['test', 'qa', 'check ui', 'verify', 'screenshot', 'visual'] },
+  { skills: ['en-ua-auditor'], words: ['translat', 'i18n', 'string', 'locali', 'uk/en', 'en/uk'] },
+  { skills: ['ui-ux-design', 'frontend-design'], words: ['design', 'ui', 'ux', 'layout', 'style', 'css', 'visual', 'polish'] },
+  { skills: ['senior-frontend'], words: ['component', 'page', 'react', 'hook', 'feature', 'form', 'modal', 'sidebar', 'button'] },
+  { skills: ['databases', 'backend-development'], words: ['schema', 'database', 'table', 'migration', 'rls', 'sql', 'supabase'] },
+  { skills: ['backend-development'], words: ['api', 'auth', 'storage', 'bucket', 'rpc', 'policy'] },
+  { skills: ['video-recorder'], words: ['video', 'demo', 'record', 'playwright'] },
+  { skills: ['debugging'], words: ['debug', 'fix', 'bug', 'broken', 'crash', 'error'] },
+  { skills: ['refactoring-expert'], words: ['refactor', 'cleanup', 'extract', 'simplif'] },
+];
+
+function suggestSkills(text) {
+  if (!text) return { skills: [], matches: [] };
+  const lower = text.toLowerCase();
+  const matched = new Set();
+  const matchedWords = [];
+  for (const { skills, words } of SKILL_KEYWORDS) {
+    const hits = words.filter(w => lower.includes(w));
+    if (hits.length > 0) {
+      skills.forEach(s => matched.add(s));
+      matchedWords.push(...hits.map(w => ({ word: w, skills })));
+    }
+  }
+  return { skills: [...matched], matches: matchedWords };
+}
+
+// ─── Components ───
+
+function ProjectPicker({ onConnect, onReconnect, lastProjectName, status }) {
+  return h`
+    <div style=${{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: '32px',
+    }}>
+      <div style=${{ textAlign: 'center' }}>
+        <h1 style=${{ fontWeight: 700, fontSize: '28px', color: 'var(--text)', marginBottom: '8px' }}>Dev Manager</h1>
+        <p style=${{ color: 'var(--text-light)', fontSize: '14px' }}>Open a project folder to get started</p>
+      </div>
+
+      <button
+        onClick=${onConnect}
+        disabled=${status === 'connecting'}
+        style=${{
+          padding: '14px 36px',
+          background: 'var(--accent)',
+          color: 'white',
+          border: 'none',
+          borderRadius: 'var(--radius)',
+          fontSize: '16px',
+          fontWeight: 600,
+          fontFamily: 'var(--font)',
+          cursor: status === 'connecting' ? 'wait' : 'pointer',
+          boxShadow: 'var(--shadow-md)',
+          transition: 'all 0.2s',
+          opacity: status === 'connecting' ? 0.7 : 1,
+        }}
+        onMouseOver=${e => { if (status !== 'connecting') e.target.style.opacity = '0.9'; }}
+        onMouseOut=${e => e.target.style.opacity = status === 'connecting' ? '0.7' : '1'}
+      >
+        ${status === 'connecting' ? 'Connecting...' : 'Open project'}
+      </button>
+
+      ${lastProjectName ? h`
+        <button
+          onClick=${onReconnect}
+          style=${{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'var(--font)',
+            padding: '8px 16px', borderRadius: 'var(--radius-sm)',
+            transition: 'all 0.15s',
+          }}
+          onMouseOver=${e => { e.target.style.color = 'var(--accent)'; e.target.style.background = 'var(--accent-light)'; }}
+          onMouseOut=${e => { e.target.style.color = 'var(--text-muted)'; e.target.style.background = 'none'; }}
+        >
+          Last opened: ${lastProjectName}
+        </button>
+      ` : null}
+
+      ${status === 'error' ? h`
+        <div style=${{ color: 'var(--danger)', fontSize: '13px' }}>
+          Could not connect. Make sure your browser supports the File System Access API.
+        </div>
+      ` : null}
+    </div>
+  `;
+}
+
+function Header({ projectName, status, onDisconnect }) {
+  return h`
+    <header style=${{
+      background: 'var(--surface)',
+      borderBottom: '1px solid var(--border)',
+      padding: '14px 32px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      boxShadow: 'var(--shadow-sm)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 10,
+    }}>
+      <div style=${{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick=${onDisconnect}
+          title="Switch project"
+          style=${{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-light)', fontSize: '14px', fontFamily: 'var(--font)',
+            padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
+          }}
+          onMouseOver=${e => { e.target.style.color = 'var(--accent)'; e.target.style.background = 'var(--accent-light)'; }}
+          onMouseOut=${e => { e.target.style.color = 'var(--text-light)'; e.target.style.background = 'none'; }}
+        >\u2190</button>
+        <span style=${{ fontWeight: 700, fontSize: '18px', color: 'var(--text)' }}>${projectName}</span>
+        <span style=${{ color: 'var(--text-light)', fontSize: '14px' }}>/</span>
+        <span style=${{ fontWeight: 500, fontSize: '16px', color: 'var(--text-muted)' }}>Dev Manager</span>
+      </div>
+      <div>
+        ${status === 'synced' ? h`
+          <span style=${{ fontSize: '12px', color: 'var(--accent)', fontWeight: 500, transition: 'opacity 0.3s' }}>
+            Synced from Claude!
+          </span>
+        ` : status === 'error' ? h`
+          <span style=${{ fontSize: '11px', color: 'var(--danger)' }}>Sync error</span>
+        ` : status === 'connected' ? h`
+          <span style=${{ fontSize: '11px', color: 'var(--success)' }}>\u2022 Connected</span>
+        ` : null}
+      </div>
+    </header>
+  `;
+}
+
+function SectionHeader({ title, count, extra }) {
+  return h`
+    <div style=${{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '10px 16px', borderBottom: '1px solid var(--border)',
+    }}>
+      <span style=${{ fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+        ${title}
+      </span>
+      <div style=${{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        ${count != null ? h`
+          <span style=${{ fontSize: '11px', color: 'var(--text-light)' }}>${count}</span>
+        ` : null}
+        ${extra || null}
+      </div>
+    </div>
+  `;
+}
+
+function CardForm({ card, onSave, onCancel }) {
+  const [title, setTitle] = useState(card?.title || '');
+  const [description, setDescription] = useState(card?.description || '');
+  const [manualSkills, setManualSkills] = useState(card?.skills?.join(', ') || '');
+  const [userEditedSkills, setUserEditedSkills] = useState(!!card?.skills?.length);
+
+  const { skills: suggested, matches } = useMemo(() => suggestSkills(title + ' ' + description), [title, description]);
+  const displaySkills = userEditedSkills ? manualSkills : suggested.join(', ');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    const finalSkills = userEditedSkills
+      ? manualSkills.split(',').map(s => s.trim()).filter(Boolean)
+      : suggested;
+    onSave({
+      id: card?.id || 'card_' + Date.now(),
+      title: title.trim(),
+      description: description.trim(),
+      skills: finalSkills,
+      createdAt: card?.createdAt || new Date().toISOString(),
+    });
+  };
+
+  const inputStyle = {
+    width: '100%', padding: '6px 8px', fontSize: '13px', fontFamily: 'var(--font)',
+    border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--surface)',
+    outline: 'none',
+  };
+
+  return h`
+    <form onSubmit=${handleSubmit} style=${{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius)', padding: '16px', marginBottom: '16px',
+      boxShadow: 'var(--shadow-md)',
+    }}>
+      <input
+        value=${title} onInput=${e => setTitle(e.target.value)}
+        placeholder="Task title..." autoFocus
+        style=${{ ...inputStyle, fontWeight: 600, marginBottom: '8px' }}
+      />
+      <textarea
+        value=${description} onInput=${e => setDescription(e.target.value)}
+        placeholder="Description (what needs to be done)..."
+        rows="2"
+        style=${{ ...inputStyle, marginBottom: '8px', resize: 'vertical' }}
+      />
+      <div style=${{ marginBottom: '12px' }}>
+        <div style=${{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+          <span style=${{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>Skills</span>
+          ${!userEditedSkills && suggested.length > 0 ? h`
+            <span style=${{ fontSize: '10px', color: 'var(--accent)', fontStyle: 'italic' }}>auto-detected</span>
+          ` : null}
+        </div>
+        <input
+          value=${displaySkills}
+          onInput=${e => { setManualSkills(e.target.value); setUserEditedSkills(true); }}
+          onFocus=${() => { if (!userEditedSkills) { setManualSkills(suggested.join(', ')); setUserEditedSkills(true); } }}
+          placeholder="Auto-detected from title, or type manually..."
+          style=${{ ...inputStyle, fontSize: '12px', color: userEditedSkills ? 'var(--text)' : 'var(--accent)' }}
+        />
+        ${suggested.length > 0 && !userEditedSkills ? h`
+          <div style=${{ marginTop: '6px' }}>
+            <div style=${{ fontSize: '10px', color: 'var(--text-light)', lineHeight: 1.5 }}>
+              matched: ${matches.map(m => h`
+                <code key=${m.word} style=${{
+                  background: 'var(--accent-light)', padding: '0 4px', borderRadius: '3px',
+                  fontSize: '10px', fontFamily: 'monospace', marginRight: '3px',
+                  color: 'var(--accent)',
+                }}>"${m.word}"</code>
+              `)}
+            </div>
+          </div>
+        ` : null}
+      </div>
+      <div style=${{ display: 'flex', gap: '8px' }}>
+        ${onCancel ? h`
+          <button type="button" onClick=${onCancel} style=${{
+            padding: '6px 12px', background: 'var(--bg)', color: 'var(--text-muted)',
+            border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
+            fontWeight: 500, fontFamily: 'var(--font)', cursor: 'pointer',
+          }}>Cancel</button>
+        ` : null}
+        <button type="submit" style=${{
+          flex: 1, padding: '6px 12px', background: 'var(--accent)', color: 'white',
+          border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '12px',
+          fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer',
+        }}>${card ? 'Save' : 'Add task'}</button>
+      </div>
+    </form>
+  `;
+}
+
+function TaskBoard({ tasks, features, drafts, selectedTask, onSelectTask, onAddDraft, onDeleteDraft }) {
+  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  return h`
+    <div>
+      <div style=${{ marginBottom: '16px' }}>
+        <div style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+          Up next
+        </div>
+        <div style=${{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          ${pendingTasks.map(task => h`
+            <div
+              key=${task.id}
+              onClick=${() => onSelectTask(task.id)}
+              style=${{
+                background: 'var(--surface)',
+                border: selectedTask === task.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+                cursor: 'pointer', transition: 'all 0.15s',
+                boxShadow: selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)',
+                minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
+              }}
+              onMouseOver=${e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
+              onMouseOut=${e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
+            >
+              <div style=${{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <span class="badge badge-pending" style=${{ fontSize: '10px' }}>${task.status}</span>
+              </div>
+              <div style=${{ fontWeight: 600, fontSize: '13px' }}>${task.name}</div>
+            </div>
+          `)}
+          ${drafts.map(card => h`
+            <div
+              key=${card.id}
+              onClick=${() => onSelectTask('draft:' + card.id)}
+              style=${{
+                background: 'var(--surface)',
+                border: selectedTask === 'draft:' + card.id ? '2px solid var(--amber)' : '1px dashed var(--amber)',
+                borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+                cursor: 'pointer', transition: 'all 0.15s',
+                boxShadow: selectedTask === 'draft:' + card.id ? '0 2px 8px rgba(196,132,90,0.2)' : 'var(--shadow-sm)',
+                minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
+              }}
+              onMouseOver=${e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
+              onMouseOut=${e => e.currentTarget.style.boxShadow = selectedTask === 'draft:' + card.id ? '0 2px 8px rgba(196,132,90,0.2)' : 'var(--shadow-sm)'}
+            >
+              <div style=${{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span class="badge" style=${{ fontSize: '10px', background: 'var(--amber-light)', color: 'var(--amber)' }}>draft</span>
+                <button onClick=${(e) => { e.stopPropagation(); onDeleteDraft(card.id); }} title="Remove" style=${{
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px',
+                  color: 'var(--text-light)', padding: '0 2px', lineHeight: 1,
+                }}>x</button>
+              </div>
+              <div style=${{ fontWeight: 600, fontSize: '13px' }}>${card.title}</div>
+            </div>
+          `)}
+          ${pendingTasks.length === 0 && drafts.length === 0 && !showNewForm ? h`
+            <div style=${{
+              padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
+              width: '100%',
+            }}>
+              No tasks yet
+            </div>
+          ` : null}
+          ${!showNewForm ? h`
+            <div
+              onClick=${() => setShowNewForm(true)}
+              style=${{
+                border: '2px dashed var(--border)',
+                borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+                cursor: 'pointer', transition: 'all 0.15s',
+                minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-light)', fontSize: '13px', fontWeight: 500,
+              }}
+              onMouseOver=${e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+              onMouseOut=${e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-light)'; }}
+            >+ Add task</div>
+          ` : null}
+        </div>
+        ${showNewForm ? h`
+          <div style=${{ marginTop: '12px', maxWidth: '380px' }}>
+            <${CardForm}
+              card=${null}
+              onSave=${(card) => { onAddDraft(card); setShowNewForm(false); }}
+              onCancel=${() => setShowNewForm(false)}
+            />
+          </div>
+        ` : null}
+      </div>
+
+      ${features.length > 0 ? h`
+        <div>
+          <div
+            onClick=${() => setShowCompleted(p => !p)}
+            style=${{
+              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+              padding: '8px 0', userSelect: 'none',
+            }}
+          >
+            <span style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Shipped
+            </span>
+            <span style=${{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: '20px', height: '20px', borderRadius: '50%',
+              background: 'var(--success-light)', color: 'var(--success)',
+              fontSize: '11px', fontWeight: 700,
+            }}>${features.length}</span>
+            <span style=${{ fontSize: '11px', color: 'var(--text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>\u25BC</span>
+          </div>
+          ${showCompleted ? h`
+            <div style=${{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' }}>
+              ${features.map(f => h`
+                <div key=${f.id} style=${{
+                  background: 'var(--success-light)', border: '1px solid #c3dfc9',
+                  borderRadius: 'var(--radius-sm)', padding: '10px 14px',
+                  minWidth: '140px', flex: '1 1 140px', maxWidth: '220px',
+                }}>
+                  <div style=${{ fontWeight: 600, fontSize: '13px', color: 'var(--success)', marginBottom: '2px' }}>
+                    ${f.name}
+                  </div>
+                  ${f.description ? h`
+                    <div style=${{ fontSize: '11px', color: '#5a9e72', opacity: 0.8, lineHeight: 1.4 }}>
+                      ${f.description}
+                    </div>
+                  ` : null}
+                </div>
+              `)}
+            </div>
+          ` : null}
+        </div>
+      ` : null}
+    </div>
+  `;
+}
+
+function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, notes, onUpdateNotes, draftNotes, onUpdateDraftNotes }) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [localNote, setLocalNote] = useState('');
+
+  const item = task || draft;
+  const isDraft = !!draft;
+  const itemId = isDraft ? draft.id : task?.id;
+  const currentNotes = isDraft ? draftNotes : notes;
+
+  useEffect(() => {
+    setLocalNote(currentNotes || '');
+    setEditing(false);
+  }, [itemId, currentNotes]);
+
+  if (!item) return h`
+    <div style=${{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      height: '100%', color: 'var(--text-light)', fontSize: '13px',
+      padding: '40px 20px', textAlign: 'center', gap: '8px',
+    }}>
+      <div style=${{ fontSize: '24px', opacity: 0.4 }}>\u25CE</div>
+      Click a task to see details
+    </div>
+  `;
+
+  if (isDraft) {
+    return h`
+      <div style=${{ padding: '20px', overflow: 'auto', height: '100%' }}>
+        <div style=${{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <span class="badge" style=${{ fontSize: '10px', background: 'var(--amber-light)', color: 'var(--amber)' }}>draft</span>
+        </div>
+
+        <h3 style=${{ fontSize: '14px', fontWeight: 600, marginBottom: '6px', lineHeight: 1.4, padding: '4px 0' }}>
+          ${draft.title}
+        </h3>
+
+        ${draft.description ? h`
+          <div style=${{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
+            ${draft.description}
+          </div>
+        ` : null}
+
+        ${draft.skills && draft.skills.length > 0 ? h`
+          <div style=${{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            ${draft.skills.map(s => h`
+              <span key=${s} class="badge badge-accent" style=${{ fontSize: '10px' }}>${s}</span>
+            `)}
+          </div>
+        ` : null}
+
+        <div style=${{ marginBottom: '16px' }}>
+          <div style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Notes for Claude
+          </div>
+          <textarea
+            value=${localNote}
+            onInput=${e => setLocalNote(e.target.value)}
+            onBlur=${() => onUpdateDraftNotes(draft.id, localNote)}
+            placeholder="Any extra instructions..."
+            rows="4"
+            style=${{
+              width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
+              padding: '8px', border: '1px solid var(--border)', borderRadius: '6px',
+              background: 'var(--bg)', resize: 'vertical', outline: 'none',
+              transition: 'border-color 0.15s', lineHeight: 1.5,
+            }}
+            onFocus=${e => e.target.style.borderColor = 'var(--amber)'}
+          />
+        </div>
+
+        <button
+          onClick=${() => onQueueDraft(draft)}
+          style=${{
+            width: '100%', padding: '8px 16px',
+            background: 'var(--amber)', color: 'white',
+            border: 'none', borderRadius: 'var(--radius-sm)',
+            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font)',
+            cursor: 'pointer', transition: 'opacity 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}
+          onMouseOver=${e => e.target.style.opacity = '0.85'}
+          onMouseOut=${e => e.target.style.opacity = '1'}
+        >
+          Queue \u25B6
+        </button>
+      </div>
+    `;
+  }
+
+  const statusOptions = ['done', 'pending', 'blocked'];
+  const currentIdx = statusOptions.indexOf(task.status);
+
+  return h`
+    <div style=${{ padding: '20px', overflow: 'auto', height: '100%' }}>
+      <div style=${{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+        <button
+          onClick=${() => {
+            const next = statusOptions[(currentIdx + 1) % statusOptions.length];
+            onUpdateTask(task.id, { status: next });
+          }}
+          class="badge ${task.status === 'done' ? 'badge-done' : task.status === 'blocked' ? 'badge-blocked' : 'badge-pending'}"
+          style=${{ cursor: 'pointer', border: 'none', fontFamily: 'var(--font)', transition: 'all 0.15s' }}
+          title="Click to cycle status"
+        >
+          ${task.status} \u21BB
+        </button>
+      </div>
+
+      ${editing ? h`
+        <input
+          value=${editName}
+          onInput=${e => setEditName(e.target.value)}
+          onBlur=${() => { onUpdateTask(task.id, { fullName: editName, name: editName.length > 20 ? editName.slice(0,20) : editName }); setEditing(false); }}
+          onKeyDown=${e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditing(false); }}
+          autoFocus
+          style=${{
+            width: '100%', fontSize: '14px', fontWeight: 600, lineHeight: 1.4,
+            padding: '4px 8px', border: '1px solid var(--accent)', borderRadius: '4px',
+            fontFamily: 'var(--font)', background: 'var(--surface)', marginBottom: '16px',
+            outline: 'none',
+          }}
+        />
+      ` : h`
+        <h3
+          onClick=${() => { setEditName(task.fullName || task.name); setEditing(true); }}
+          style=${{
+            fontSize: '14px', fontWeight: 600, marginBottom: '16px', lineHeight: 1.4,
+            cursor: 'pointer', padding: '4px 8px', borderRadius: '4px',
+            transition: 'background 0.15s',
+          }}
+          onMouseOver=${e => e.target.style.background = 'var(--bg)'}
+          onMouseOut=${e => e.target.style.background = 'transparent'}
+          title="Click to edit"
+        >
+          ${task.fullName || task.name}
+        </h3>
+      `}
+
+      ${task.skills && task.skills.length > 0 ? h`
+        <div style=${{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
+          ${task.skills.map(s => h`
+            <span key=${s} class="badge badge-accent" style=${{ fontSize: '10px' }}>${s}</span>
+          `)}
+        </div>
+      ` : null}
+
+      <div style=${{ marginBottom: '16px' }}>
+        <div style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Notes for Claude
+        </div>
+        <textarea
+          value=${localNote}
+          onInput=${e => setLocalNote(e.target.value)}
+          onBlur=${() => onUpdateNotes(task.id, localNote)}
+          placeholder="Add notes..."
+          rows="4"
+          style=${{
+            width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
+            padding: '8px', border: '1px solid var(--border)', borderRadius: '6px',
+            background: 'var(--bg)', resize: 'vertical', outline: 'none',
+            transition: 'border-color 0.15s', lineHeight: 1.5,
+          }}
+          onFocus=${e => e.target.style.borderColor = 'var(--accent)'}
+        />
+      </div>
+
+      ${task.status === 'pending' ? h`
+        <button
+          onClick=${() => onQueue(task)}
+          style=${{
+            width: '100%', padding: '8px 16px',
+            background: 'var(--accent)', color: 'white',
+            border: 'none', borderRadius: 'var(--radius-sm)',
+            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font)',
+            cursor: 'pointer', transition: 'opacity 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}
+          onMouseOver=${e => e.target.style.opacity = '0.85'}
+          onMouseOut=${e => e.target.style.opacity = '1'}
+        >
+          Queue \u25B6
+        </button>
+      ` : null}
+    </div>
+  `;
+}
+
+function CommandQueue({ queue, onCopy, onRemove, onClear, copiedId }) {
+  const itemKey = (item) => item.task || item.cardId;
+  return h`
+    <div>
+      ${queue.length === 0 ? h`
+        <div style=${{
+          padding: '20px 16px', textAlign: 'center', color: 'var(--text-light)', fontSize: '12px',
+          lineHeight: 1.6,
+        }}>
+          Queue tasks from the detail panel, then run <code style=${{
+            background: 'var(--bg)', padding: '1px 6px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px',
+          }}>/orchestrator next</code> in Claude Code.
+        </div>
+      ` : h`
+        <div>
+          ${queue.map((item, i) => h`
+            <div key=${itemKey(item)} style=${{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 12px', borderBottom: '1px solid var(--border)',
+            }}>
+              <div style=${{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ${item.cardId ? h`
+                  <span class="badge" style=${{ fontSize: '9px', background: 'var(--amber-light)', color: 'var(--amber)', flexShrink: 0 }}>new</span>
+                ` : null}
+                <span style=${{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${item.taskName}</span>
+              </div>
+              <button
+                onClick=${() => onRemove(itemKey(item))}
+                title="Remove from queue"
+                style=${{
+                  padding: '2px 6px', background: 'none', border: 'none',
+                  cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
+                  lineHeight: 1,
+                }}
+              >x</button>
+            </div>
+          `)}
+          <div style=${{ display: 'flex', gap: '8px', padding: '10px 12px' }}>
+            <button onClick=${() => onCopy(null)} style=${{
+              flex: 1, padding: '8px 12px',
+              background: copiedId === 'all' ? 'var(--success)' : 'var(--accent)',
+              color: 'white',
+              border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '13px',
+              fontWeight: 600, fontFamily: 'monospace', cursor: 'pointer',
+              transition: 'all 0.2s', letterSpacing: '-0.3px',
+            }}>${copiedId === 'all' ? 'Copied!' : '/orchestrator next'}</button>
+            <button onClick=${onClear} style=${{
+              padding: '8px 10px', background: 'var(--surface)', color: 'var(--text-light)',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
+              fontWeight: 500, fontFamily: 'var(--font)', cursor: 'pointer',
+            }}>Clear</button>
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function ActivityFeed({ sessions, activity }) {
+  const entries = useMemo(() => {
+    const items = [];
+
+    for (const s of sessions) {
+      if (s.status === 'completed' && s.taskName) {
+        const d = new Date(s.timestamp);
+        items.push({
+          key: s.id,
+          time: d.getTime(),
+          label: s.taskName + ' completed',
+          date: d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
+        });
+      }
+    }
+
+    for (const a of activity) {
+      items.push({
+        key: a.id,
+        time: a.time,
+        label: a.label,
+        date: new Date(a.time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      });
+    }
+
+    items.sort((a, b) => b.time - a.time);
+    return items.slice(0, 12);
+  }, [sessions, activity]);
+
+  if (entries.length === 0) {
+    return h`
+      <div style=${{
+        padding: '20px 16px', textAlign: 'center', color: 'var(--text-light)', fontSize: '12px',
+      }}>
+        No activity yet
+      </div>
+    `;
+  }
+
+  return h`
+    <div style=${{ padding: '4px 0' }}>
+      ${entries.map(e => h`
+        <div key=${e.key} style=${{
+          display: 'flex', alignItems: 'baseline', gap: '8px',
+          padding: '6px 16px', fontSize: '12px',
+        }}>
+          <span style=${{ color: 'var(--text-light)', fontSize: '11px', flexShrink: 0, minWidth: '48px' }}>${e.date}</span>
+          <span style=${{ color: 'var(--text-muted)' }}>${e.label}</span>
+        </div>
+      `)}
+    </div>
+  `;
+}
+
+// ─── Main App ───
+
+function App() {
+  const project = useProject();
+  const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName } = project;
+
+  // Selection state (local only)
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
+  // If not connected, show picker
+  if (!connected || !data) {
+    return h`<${ProjectPicker}
+      onConnect=${connect}
+      onReconnect=${reconnect}
+      lastProjectName=${lastProjectName}
+      status=${status}
+    />`;
+  }
+
+  // Convenience accessors
+  const tasks = data.tasks || [];
+  const features = data.features || [];
+  const drafts = data.drafts || [];
+  const queue = data.queue || [];
+  const taskNotes = data.taskNotes || {};
+  const draftNotes = data.draftNotes || {};
+  const activity = data.activity || [];
+  const sessions = data.sessions || [];
+
+  // Helpers to update data and trigger save
+  const updateData = (partial) => {
+    const next = { ...data, ...partial };
+    save(next);
+  };
+
+  const addActivity = (label) => {
+    const entry = { id: 'act_' + Date.now(), time: Date.now(), label };
+    const next = [entry, ...(data.activity || [])].slice(0, 20);
+    return next;
+  };
+
+  // Task handlers
+  const handleSelectTask = (id) => {
+    setSelectedTask(prev => prev === id ? null : id);
+  };
+
+  const handleUpdateTask = (id, updates) => {
+    const newTasks = tasks.map(t => t.id === id ? { ...t, ...updates } : t);
+    const newActivity = addActivity((tasks.find(t => t.id === id)?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'));
+    updateData({ tasks: newTasks, activity: newActivity });
+  };
+
+  const handleUpdateNotes = (id, note) => {
+    updateData({ taskNotes: { ...taskNotes, [id]: note } });
+  };
+
+  const handleUpdateDraftNotes = (cardId, note) => {
+    updateData({ draftNotes: { ...draftNotes, [cardId]: note } });
+  };
+
+  const handleAddDraft = (card) => {
+    const newDrafts = [...drafts, card];
+    const newActivity = addActivity('Draft "' + card.title + '" added');
+    updateData({ drafts: newDrafts, activity: newActivity });
+  };
+
+  const handleDeleteDraft = (id) => {
+    const newDrafts = drafts.filter(c => c.id !== id);
+    updateData({ drafts: newDrafts });
+  };
+
+  const handleQueue = (task) => {
+    if (queue.some(q => q.task === task.id)) return;
+    const newQueue = [...queue, {
+      task: task.id,
+      taskName: task.name,
+      skills: task.skills,
+      notes: taskNotes[task.id] || '',
+    }];
+    const newActivity = addActivity(task.name + ' queued');
+    updateData({ queue: newQueue, activity: newActivity });
+  };
+
+  const handleQueueDraft = (card) => {
+    if (queue.some(q => q.cardId === card.id)) return;
+    const newQueue = [...queue, {
+      action: 'promote-and-execute',
+      cardId: card.id,
+      taskName: card.title,
+      description: card.description || '',
+      skills: card.skills || [],
+      notes: draftNotes[card.id] || '',
+    }];
+    const newActivity = addActivity(card.title + ' queued');
+    updateData({ queue: newQueue, activity: newActivity });
+  };
+
+  const handleRemoveFromQueue = (key) => {
+    const newQueue = queue.filter(q => (q.task || q.cardId) !== key);
+    updateData({ queue: newQueue });
+  };
+
+  const handleClearQueue = () => {
+    updateData({ queue: [] });
+  };
+
+  const handleCopyCommand = async () => {
+    const text = '/orchestrator next';
+    setCopiedId('all');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Selected task/draft data
+  const selectedTaskData = typeof selectedTask === 'string' && selectedTask.startsWith('draft:')
+    ? null
+    : tasks.find(t => t.id === selectedTask) || null;
+
+  const selectedDraftData = typeof selectedTask === 'string' && selectedTask.startsWith('draft:')
+    ? drafts.find(c => c.id === selectedTask.slice(6)) || null
+    : null;
+
+  return h`
+    <div style=${{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <${Header} projectName=${projectName} status=${status} onDisconnect=${disconnect} />
+
+      <div style=${{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '24px 32px' }}>
+
+        <!-- Top row: Tasks + Detail -->
+        <div style=${{
+          display: 'grid', gridTemplateColumns: '1fr 280px', gap: '16px', marginBottom: '16px',
+        }}>
+          <div style=${{
+            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <${SectionHeader} title="Product" />
+            <div style=${{ padding: '16px' }}>
+              <${TaskBoard}
+                tasks=${tasks}
+                features=${features}
+                drafts=${drafts}
+                selectedTask=${selectedTask}
+                onSelectTask=${handleSelectTask}
+                onAddDraft=${handleAddDraft}
+                onDeleteDraft=${handleDeleteDraft}
+              />
+            </div>
+          </div>
+
+          <div style=${{
+            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column',
+          }}>
+            <${SectionHeader} title="Detail" />
+            <${TaskDetail}
+              task=${selectedTaskData}
+              draft=${selectedDraftData}
+              onQueue=${handleQueue}
+              onQueueDraft=${handleQueueDraft}
+              onUpdateTask=${handleUpdateTask}
+              notes=${taskNotes[selectedTask] || ''}
+              onUpdateNotes=${handleUpdateNotes}
+              draftNotes=${selectedDraftData ? (draftNotes[selectedDraftData.id] || '') : ''}
+              onUpdateDraftNotes=${handleUpdateDraftNotes}
+            />
+          </div>
+        </div>
+
+        <!-- Bottom row: Queue + Activity -->
+        <div style=${{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '16px' }}>
+          <div style=${{
+            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <${SectionHeader} title="Queue" count=${queue.length > 0 ? queue.length : null} />
+            <${CommandQueue} queue=${queue} onCopy=${handleCopyCommand} onRemove=${handleRemoveFromQueue} onClear=${handleClearQueue} copiedId=${copiedId} />
+          </div>
+
+          <div style=${{
+            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <${SectionHeader} title="Activity" />
+            <${ActivityFeed} sessions=${sessions} activity=${activity} />
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Mount ───
+createRoot(document.getElementById('root')).render(h`<${App} />`);
+  </script>
+</body>
+</html>
