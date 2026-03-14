@@ -16,6 +16,11 @@ export function App() {
   const project = useProject();
   const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask } = project;
 
+  // Set browser tab title to project name
+  useEffect(() => {
+    document.title = projectName || 'Dev Manager';
+  }, [projectName]);
+
   // Selection state (local only)
   const [selectedTask, setSelectedTask] = useState(null);
 
