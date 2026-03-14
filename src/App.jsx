@@ -179,7 +179,7 @@ export function App() {
   };
 
   const handleQueueAll = () => {
-    const pending = tasks.filter(t => t.status === 'pending' && !queue.some(q => q.task === t.id));
+    const pending = tasks.filter(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id));
     if (pending.length === 0) return;
     const unsorted = [...queue, ...pending.map(t => ({
       task: t.id,
@@ -225,21 +225,31 @@ export function App() {
       return words.slice(0, 2).join(' ') || name.split(/\s+/).slice(0, 2).join(' ');
     };
 
-    // Build wt.exe command with multiple new-tab segments
-    const tabArgs = items.map(item =>
-      `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k "title ${shortTitle(item.taskName)} && claude --dangerously-skip-permissions ${item.cmd}"`
-    ).join(' ; ');
-    const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
-
-    // Write .devmanager/launch.cmd
     try {
       const dmDir = await ensureDevManagerDir(dirHandle);
+
+      // Write a per-task .cmd script for each item (avoids nested-quote issues)
+      for (const item of items) {
+        const taskScript = `@echo off\r\ntitle ${shortTitle(item.taskName)}\r\nclaude --dangerously-skip-permissions "${item.cmd}"\r\n`;
+        const fh = await dmDir.getFileHandle(`launch-${item.key}.cmd`, { create: true });
+        const w = await fh.createWritable();
+        await w.write(taskScript);
+        await w.close();
+      }
+
+      // Build wt.exe command referencing the per-task scripts
+      const tabArgs = items.map(item =>
+        `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k "${dir}\\.devmanager\\launch-${item.key}.cmd"`
+      ).join(' ; ');
+      const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
+
+      // Write .devmanager/launch.cmd
       const fileHandle = await dmDir.getFileHandle('launch.cmd', { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(script);
       await writable.close();
     } catch (err) {
-      console.error('Failed to write launch.cmd:', err);
+      console.error('Failed to write launch scripts:', err);
       return;
     }
 

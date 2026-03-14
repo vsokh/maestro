@@ -163,7 +163,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     <div>
       {queue.map(renderItem)}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-        {onQueueAll && (tasks || []).some(t => t.status === 'pending' && !queue.some(q => q.task === t.id)) ? (
+        {onQueueAll && (tasks || []).some(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id)) ? (
           <button onClick={onQueueAll} style={{
             padding: '4px 10px', background: 'none', color: 'var(--accent)',
             border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
@@ -318,7 +318,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         </div>
       ))}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-        {onQueueAll && (tasks || []).some(t => t.status === 'pending' && !queue.some(q => q.task === t.id)) ? (
+        {onQueueAll && (tasks || []).some(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id)) ? (
           <button onClick={onQueueAll} style={{
             padding: '4px 10px', background: 'none', color: 'var(--accent)',
             border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',

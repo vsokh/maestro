@@ -143,6 +143,12 @@ Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "pro
 
 ### 6. Delegate to sub-agent
 
+**Before launching**, verify you are on the correct branch:
+\`\`\`bash
+git branch --show-current  # must show task-{taskId}-{slug}, NOT master
+\`\`\`
+If it shows \`master\`, checkout the branch first. **NEVER delegate while on master.**
+
 Launch an implementation agent:
 
 \`\`\`
@@ -152,13 +158,22 @@ Agent(
 )
 \`\`\`
 
-The prompt to the sub-agent should include:
+The prompt to the sub-agent **MUST** include these lines verbatim:
+
+\`\`\`
+CRITICAL: You are on branch \`task-{taskId}-{slug}\`.
+- Verify with \`git branch --show-current\` before making any changes.
+- If you are on master, run \`git checkout task-{taskId}-{slug}\` first.
+- NEVER commit to master. All commits go to this feature branch.
+- Commit your changes to this branch when done.
+\`\`\`
+
+Also include:
 - What to implement (from spec + manager notes)
 - Which files to modify (from your exploration)
 - Technical constraints (from CLAUDE.md, project conventions)
 - What NOT to do (avoid over-engineering, follow existing patterns)
 - Run \`npm run build\` (or equivalent) to verify
-- **You are on branch \`task-{taskId}-{slug}\`.** Commit your changes to this branch.
 
 ### 6. Review the result
 

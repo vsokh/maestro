@@ -176,7 +176,7 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
               Arrange tasks
             </button>
             {(() => {
-              const pendingNotQueued = tasks.filter(t => t.status === 'pending' && !(queue || []).some(q => q.task === t.id));
+              const pendingNotQueued = tasks.filter(t => (t.status === 'pending' || t.status === 'paused') && !(queue || []).some(q => q.task === t.id));
               if (pendingNotQueued.length === 0) return null;
               return (
                 <button

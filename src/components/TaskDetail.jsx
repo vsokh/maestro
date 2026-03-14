@@ -360,7 +360,7 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
         );
       })()}
 
-      {task.status === 'pending' ? (
+      {task.status === 'pending' || task.status === 'paused' ? (
         <button
           onClick={() => onQueue(task)}
           style={{
