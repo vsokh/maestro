@@ -65,10 +65,13 @@ Single source of truth for the bidirectional sync.
   ],
   "taskNotes": { "1": "manager instructions..." },
   "draftNotes": { "card_123": "extra context..." },
-  "activity": [{ "id": "act_123", "time": 1234567890, "label": "..." }],
-  "sessions": [{ "id": "sess_1", "timestamp": "ISO-8601", "taskName": "...", "status": "completed", "summary": "..." }]
+  "activity": [{ "id": "act_123", "time": 1234567890, "label": "Google login completed" }]
 }
 ```
+
+### Specs directory: `.devmanager/specs/`
+
+When the orchestrator promotes a draft task, it creates a spec file at `.devmanager/specs/{NN}-{slug}.md`. Everything Dev Manager creates stays inside `.devmanager/`.
 
 ## Orchestrator skill (tech lead)
 
@@ -94,7 +97,7 @@ The orchestrator:
 | `TaskDetail` | Detail panel for selected task/draft: status, name, notes, queue button |
 | `CardForm` | New task form with skill auto-suggest from keywords |
 | `CommandQueue` | Queue list + `/orchestrator next` copy button |
-| `ActivityFeed` | Recent actions from sessions + local activity |
+| `ActivityFeed` | Recent activity log (single `activity` array — no separate sessions) |
 
 ## File system access
 

@@ -9,9 +9,14 @@ You are the tech lead for this project. The manager creates tasks and queues wor
 
 **You do NOT implement code yourself.** You delegate to sub-agents via the Agent tool and review their work.
 
-## State file: `.devmanager/state.json`
+## Everything lives in `.devmanager/`
 
-All project state. Dev Manager writes to it, you read and write back. Dev Manager polls every 3s.
+| File | Purpose |
+|------|---------|
+| `.devmanager/state.json` | All project state — bidirectional sync with Dev Manager |
+| `.devmanager/specs/{NN}-{slug}.md` | Task specs — created by orchestrator when promoting drafts |
+
+Dev Manager writes to `state.json` (500ms debounce), you read and write back (Dev Manager polls every 3s).
 
 ---
 
@@ -25,11 +30,11 @@ If empty: check `drafts`. If drafts exist, list them. Otherwise: "Nothing queued
 ### 2. Understand the task
 
 **Existing task** `{ "task": N, "taskName": "...", "notes": "..." }`:
-- Read spec at `specs/tasks/{NN}-*.md` if it exists
+- Read spec at `.devmanager/specs/{NN}-*.md` if it exists
 - Read `notes` — manager's instructions (HIGH PRIORITY)
 
 **Draft task** `{ "action": "promote-and-execute", "cardId": "...", "taskName": "...", "description": "...", "notes": "..." }`:
-- Promote first: assign next ID, create spec file, add to `tasks` array
+- Promote first: assign next ID, create spec at `.devmanager/specs/{NN}-{slug}.md`, add to `tasks` array
 - Then proceed as existing task
 
 ### 3. Plan the approach
@@ -93,7 +98,6 @@ Update `.devmanager/state.json`:
 - Update task in `tasks` array: `status: "done"`, `completedAt: "YYYY-MM-DD"`
 - Remove promoted draft from `drafts` if applicable
 - Add to `activity`: `{ "id": "act_{timestamp}", "time": {ms}, "label": "{taskName} completed" }`
-- Add to `sessions`: `{ "id": "sess_{timestamp}", "timestamp": "ISO", "taskName": "...", "status": "completed", "summary": "..." }`
 
 Then check if there are more items in the queue. If yes, ask: "Next up: {taskName}. Continue?"
 
@@ -142,6 +146,8 @@ Agent(description="Handle OAuth errors", prompt="...")
 
 ## Spec file format (for promoted drafts)
 
+Create at `.devmanager/specs/{NN}-{slug}.md`:
+
 ```markdown
 # Task {N}: {title}
 
@@ -159,6 +165,28 @@ Agent(description="Handle OAuth errors", prompt="...")
 
 ---
 
+## State file format
+
+```json
+{
+  "project": "ProjectName",
+  "tasks": [{ "id": 1, "name": "...", "fullName": "...", "status": "pending|done|blocked" }],
+  "features": [{ "id": "...", "name": "...", "description": "..." }],
+  "drafts": [{ "id": "card_123", "title": "...", "description": "...", "skills": [] }],
+  "queue": [
+    { "task": 1, "taskName": "...", "notes": "..." },
+    { "action": "promote-and-execute", "cardId": "card_123", "taskName": "...", "description": "...", "notes": "..." }
+  ],
+  "taskNotes": { "1": "manager instructions..." },
+  "draftNotes": {},
+  "activity": [
+    { "id": "act_123", "time": 1710412800000, "label": "Google login completed" }
+  ]
+}
+```
+
+---
+
 ## Key principles
 
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
@@ -166,3 +194,4 @@ Agent(description="Handle OAuth errors", prompt="...")
 3. **Always write back.** Update state.json after every operation so Dev Manager stays in sync.
 4. **Always wait for approval.** Present the plan, then STOP. Never launch sub-agents without explicit user go-ahead.
 5. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
+6. **Everything in `.devmanager/`.** Specs, state — all Dev Manager files stay in one folder.

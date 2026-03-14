@@ -63,6 +63,7 @@
     }
 
     #root { min-height: 100vh; }
+    input, textarea { color: var(--text); }
 
     /* Utility */
     .badge {
@@ -216,6 +217,7 @@ async function readState(projectHandle) {
   }
 }
 
+// Read from orchestrator-skill.md at build time? No — keep embedded for single-file simplicity.
 const ORCHESTRATOR_SKILL_TEMPLATE = `---
 name: orchestrator
 description: "Tech lead that reads the Dev Manager queue, plans work, delegates to sub-agents, reviews results, and reports back. TRIGGER on: orchestrator, what's next, plan work, project status, execute queue."
@@ -243,11 +245,11 @@ If empty: check \`drafts\`. If drafts exist, list them. Otherwise: "Nothing queu
 ### 2. Understand the task
 
 **Existing task** \`{ "task": N, "taskName": "...", "notes": "..." }\`:
-- Read spec at \`specs/tasks/{NN}-*.md\` if it exists
+- Read spec at \`.devmanager/specs/{NN}-*.md\` if it exists
 - Read \`notes\` — manager's instructions (HIGH PRIORITY)
 
 **Draft task** \`{ "action": "promote-and-execute", "cardId": "...", "taskName": "...", "description": "...", "notes": "..." }\`:
-- Promote first: assign next ID, create spec file, add to \`tasks\` array
+- Promote first: assign next ID, create spec at \`.devmanager/specs/{NN}-{slug}.md\`, add to \`tasks\` array
 - Then proceed as existing task
 
 ### 3. Plan the approach
@@ -311,7 +313,6 @@ Update \`.devmanager/state.json\`:
 - Update task in \`tasks\` array: \`status: "done"\`, \`completedAt: "YYYY-MM-DD"\`
 - Remove promoted draft from \`drafts\` if applicable
 - Add to \`activity\`: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "{taskName} completed" }\`
-- Add to \`sessions\`: \`{ "id": "sess_{timestamp}", "timestamp": "ISO", "taskName": "...", "status": "completed", "summary": "..." }\`
 
 Then check if there are more items in the queue. If yes, ask: "Next up: {taskName}. Continue?"
 
@@ -384,6 +385,7 @@ Agent(description="Handle OAuth errors", prompt="...")
 3. **Always write back.** Update state.json after every operation so Dev Manager stays in sync.
 4. **Always wait for approval.** Present the plan, then STOP. Never launch sub-agents without explicit user go-ahead.
 5. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
+6. **Everything in \`.devmanager/\`.** Specs, state — all Dev Manager files stay in one folder.
 `;
 
 function createDefaultState(projectName) {
@@ -397,7 +399,6 @@ function createDefaultState(projectName) {
     taskNotes: {},
     draftNotes: {},
     activity: [{ id: 'act_init', time: Date.now(), label: 'Project initialized' }],
-    sessions: [],
   };
 }
 
@@ -680,6 +681,7 @@ function Header({ projectName, status, onDisconnect }) {
           onMouseOut=${e => { e.target.style.color = 'var(--text-light)'; e.target.style.background = 'none'; }}
         >${'\u2190'}</button>
         <span style=${{ fontWeight: 700, fontSize: '18px', color: 'var(--text)' }}>${projectName}</span>
+        <div style=${{ width: '6px', height: '6px', borderRadius: '50%', background: status === 'error' ? 'var(--danger)' : 'var(--success)', flexShrink: 0 }} title=${status === 'error' ? 'Sync error' : 'Connected'} />
         <span style=${{ color: 'var(--text-light)', fontSize: '14px' }}>/</span>
         <span style=${{ fontWeight: 500, fontSize: '16px', color: 'var(--text-muted)' }}>Dev Manager</span>
       </div>
@@ -1204,34 +1206,24 @@ function CommandQueue({ queue, onCopy, onRemove, onClear, copiedId }) {
   `;
 }
 
-function ActivityFeed({ sessions, activity }) {
+function ActivityFeed({ activity }) {
   const entries = useMemo(() => {
-    const items = [];
-
-    for (const s of sessions) {
-      if (s.status === 'completed' && s.taskName) {
-        const d = new Date(s.timestamp);
-        items.push({
-          key: s.id,
-          time: d.getTime(),
-          label: s.taskName + ' completed',
-          date: d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
-        });
-      }
-    }
-
-    for (const a of activity) {
-      items.push({
-        key: a.id,
-        time: a.time,
-        label: a.label,
-        date: new Date(a.time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    return [...activity]
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 12)
+      .map(a => {
+        const d = new Date(a.time);
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        return {
+          key: a.id,
+          label: a.label,
+          date: isToday
+            ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+            : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        };
       });
-    }
-
-    items.sort((a, b) => b.time - a.time);
-    return items.slice(0, 12);
-  }, [sessions, activity]);
+  }, [activity]);
 
   if (entries.length === 0) {
     return h`
@@ -1286,7 +1278,6 @@ function App() {
   const taskNotes = data.taskNotes || {};
   const draftNotes = data.draftNotes || {};
   const activity = data.activity || [];
-  const sessions = data.sessions || [];
 
   // Helpers to update data and trigger save
   const updateData = (partial) => {
@@ -1452,7 +1443,7 @@ function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <${SectionHeader} title="Activity" />
-            <${ActivityFeed} sessions=${sessions} activity=${activity} />
+            <${ActivityFeed} activity=${activity} />
           </div>
         </div>
       </div>
