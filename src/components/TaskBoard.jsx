@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CardForm } from './CardForm.jsx';
 
-export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue }) {
+export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask }) {
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -34,6 +34,14 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
         border: isSelected ? '2px solid var(--success)' : '1px solid var(--success)',
         boxShadow: isSelected ? '0 2px 8px rgba(90,158,114,0.2)' : 'var(--shadow-sm)',
         opacity: 0.75,
+      };
+    }
+    if (task.status === 'paused') {
+      return {
+        ...base,
+        border: isSelected ? '2px solid #9b8bb4' : '1px dashed #9b8bb4',
+        boxShadow: isSelected ? '0 2px 8px rgba(155,139,180,0.2)' : 'var(--shadow-sm)',
+        opacity: 0.85,
       };
     }
     if (task.status === 'blocked') {
@@ -78,8 +86,42 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
                 </div>
               ) : null}
               {task.status === 'in-progress' && task.progress ? (
-                <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', marginTop: '4px', lineHeight: 1.3 }}>
-                  {task.progress}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                  <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', lineHeight: 1.3, flex: 1 }}>
+                    {task.progress}
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onPauseTask(task.id); }}
+                    title="Pause — save progress, resume later"
+                    style={{
+                      padding: '1px 6px', background: 'none', border: '1px solid var(--border)',
+                      borderRadius: '3px', cursor: 'pointer', color: 'var(--text-light)',
+                      fontSize: '10px', fontFamily: 'var(--font)', lineHeight: 1.4,
+                      flexShrink: 0, transition: 'all 0.15s',
+                    }}
+                    onMouseOver={e => { e.target.style.borderColor = '#9b8bb4'; e.target.style.color = '#9b8bb4'; }}
+                    onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-light)'; }}
+                  >&#9646;&#9646;</button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onCancelTask(task.id); }}
+                    title="Cancel — discard progress, reset to pending"
+                    style={{
+                      padding: '1px 6px', background: 'none', border: '1px solid var(--border)',
+                      borderRadius: '3px', cursor: 'pointer', color: 'var(--text-light)',
+                      fontSize: '10px', fontFamily: 'var(--font)', lineHeight: 1.4,
+                      flexShrink: 0, transition: 'all 0.15s',
+                    }}
+                    onMouseOver={e => { e.target.style.borderColor = 'var(--danger)'; e.target.style.color = 'var(--danger)'; }}
+                    onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-light)'; }}
+                  >✕</button>
+                </div>
+              ) : null}
+              {task.status === 'paused' ? (
+                <div style={{ fontSize: '11px', color: '#9b8bb4', marginTop: '4px', lineHeight: 1.3 }}>
+                  {task.lastProgress || 'Paused'}
+                  {task.branch ? (
+                    <div style={{ fontSize: '9px', fontFamily: 'monospace', opacity: 0.7, marginTop: '2px' }}>{task.branch}</div>
+                  ) : null}
                 </div>
               ) : null}
             </div>

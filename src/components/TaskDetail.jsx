@@ -118,12 +118,13 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
     </div>
   );
 
-  const statusOptions = ['pending', 'in-progress', 'done', 'blocked'];
+  const statusOptions = ['pending', 'in-progress', 'paused', 'done', 'blocked'];
   const currentIdx = statusOptions.indexOf(task.status);
 
   const badgeClass = task.status === 'done' ? 'badge-done'
     : task.status === 'blocked' ? 'badge-blocked'
     : task.status === 'in-progress' ? 'badge-in-progress'
+    : task.status === 'paused' ? 'badge-paused'
     : 'badge-pending';
 
   const attachments = task.attachments || [];

@@ -5,7 +5,10 @@ setlocal enabledelayedexpansion
 :: URL format: claudecode:<path>?<command>?<tab-title>
 :: Example:    claudecode:C:/Users/vsoko/Projects/therapy-desk?/orchestrator task 14?Auth system
 
-set "raw=%~1"
+:: Capture full command line (%* preserves spaces that %~1 would split on)
+set "raw=%*"
+:: Strip surrounding quotes if present
+set "raw=!raw:"=!"
 
 :: Strip protocol prefix
 set "raw=!raw:claudecode:=!"
@@ -44,7 +47,15 @@ if "!cmd!"=="__launch_file" (
   exit /b
 )
 
+:: Write temp script to avoid cmd.exe nested-quote hell
+:: Quoting "/orchestrator arrange" as a single arg only works in a standalone script
+set "tmpfile=%TEMP%\claude-launch-%RANDOM%.cmd"
+(
+  echo @echo off
+  echo title !title!
+  echo claude --dangerously-skip-permissions "!cmd!"
+) > "!tmpfile!"
+
 :: Launch as new tab in existing Windows Terminal (or new window if none open)
 :: --suppressApplicationTitle prevents claude from overriding the tab name
-:: "title" command persists the name after claude exits
-start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k "title !title! && claude --dangerously-skip-permissions "!cmd!""
+start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k "!tmpfile!"

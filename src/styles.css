@@ -72,6 +72,7 @@ input, textarea { color: var(--text); }
 .badge-blocked { background: var(--border); color: var(--text-light); }
 .badge-accent { background: var(--accent-light); color: var(--accent); }
 .badge-in-progress { background: var(--accent-light); color: var(--accent); }
+.badge-paused { background: rgba(155,139,180,0.12); color: #9b8bb4; }
 .badge-amber { background: var(--amber-light); color: var(--amber); }
 
 /* In-progress task card pulse */

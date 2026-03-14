@@ -31,7 +31,25 @@ Queue item format: \`{ "task": N, "taskName": "...", "notes": "..." }\`
 - Read spec at \`.devmanager/specs/{NN}-*.md\` if it exists
 - Read \`notes\` — manager's instructions (HIGH PRIORITY)
 
-### 3. Plan the approach
+### 3. Check for previous work (resume detection)
+
+Before planning, check two things:
+
+1. Notes file: \`.devmanager/notes/{taskId}.md\` — exploration findings, plan, progress checklist
+2. Branch: \`git branch --list "task-{taskId}-*"\` — code changes
+
+**If branch + notes exist:**
+- **Resumed task with code.** Check out the branch. Read the notes file for context and remaining work.
+- Present summary: "Resuming task {N}. Previous progress: [from notes]"
+- Skip exploration. Jump to step 6 (delegate) for remaining unchecked items.
+
+**If only notes exist (no branch):**
+- **Resumed task, exploration done.** Read the notes — plan and findings are already there.
+- Present the plan to the user for approval. Skip exploration.
+
+**If nothing exists** — fresh task. Continue with step 4.
+
+### 4. Plan the approach (fresh tasks only)
 
 Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Exploring codebase..." }\`
 
@@ -48,7 +66,34 @@ Based on the exploration, decide:
 - What's the technical approach
 - Are there risks or dependencies
 
-Present a brief plan to the user. Example:
+**Save exploration notes immediately** to \`.devmanager/notes/{taskId}.md\`:
+
+\`\`\`markdown
+# Task {taskId}: {taskName}
+
+## Manager notes
+{notes from queue item}
+
+## Exploration findings
+- {what you found in the codebase}
+- {relevant files and their roles}
+- {existing patterns to follow}
+
+## Proposed plan
+1. Step one
+2. Step two
+3. Step three
+
+## Files to modify
+- path/to/file.ts — {what changes}
+
+## Risks / open questions
+- {anything unclear}
+\`\`\`
+
+This file is on master (not a branch) so it survives even if the session ends before plan approval. It lives alongside state.json in the project directory.
+
+Present the plan to the user. Example:
 \`\`\`
 ## Google login
 
@@ -64,9 +109,39 @@ Manager says: "Frontend code exists. Needs Google provider config + reliability 
 
 **STOP HERE.** Wait for the user to approve the plan. Do NOT launch sub-agents until the user says go. They may want to adjust the approach, add constraints, or change priorities.
 
-### 4. Delegate to sub-agent (only after approval)
+### 5. Create a feature branch (only after approval)
+
+Before any code changes, create an isolated branch for this task:
+
+\`\`\`bash
+git checkout -b task-{taskId}-{slug}
+\`\`\`
+
+**Branch naming is CRITICAL.** The slug MUST be a descriptive kebab-case summary of the task name — NOT just the task number.
+- \`task-13-google-login\` ✅
+- \`task-7-student-leader\` ✅
+- \`task-13\` ❌ WRONG — tells nothing about what the branch does
+- \`task\` ❌ WRONG
+
+Generate the slug: take the task name, lowercase it, replace spaces with hyphens, remove special chars, max 30 chars.
+
+This keeps parallel tasks isolated — each agent works on its own branch.
+
+**Update the notes file** — add \`## Branch\` and convert the plan into a checklist:
+
+\`\`\`markdown
+## Branch
+task-{taskId}-{slug}
+
+## Status
+- [ ] Step one
+- [ ] Step two
+- [ ] Step three
+\`\`\`
 
 Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Delegating to sub-agent..." }\`
+
+### 6. Delegate to sub-agent
 
 Launch an implementation agent:
 
@@ -83,8 +158,9 @@ The prompt to the sub-agent should include:
 - Technical constraints (from CLAUDE.md, project conventions)
 - What NOT to do (avoid over-engineering, follow existing patterns)
 - Run \`npm run build\` (or equivalent) to verify
+- **You are on branch \`task-{taskId}-{slug}\`.** Commit your changes to this branch.
 
-### 5. Review the result
+### 6. Review the result
 
 Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Reviewing results..." }\`
 
@@ -93,11 +169,39 @@ When the sub-agent returns:
 - If it ran the build successfully
 - If anything looks wrong, either fix it yourself or launch another agent
 
-### 6. Report back
+**Update the notes file** — check off completed steps in the \`## Status\` checklist, add findings to \`## Notes\`. This file lives on master at \`.devmanager/notes/{taskId}.md\` and is always readable regardless of which branch you're on.
+
+This ensures that if the session is interrupted, the next session can pick up exactly where this one left off.
+
+### 7. Merge back to master
+
+Update \`.devmanager/progress/{taskId}.json\`: \`{ "status": "in-progress", "progress": "Merging to master..." }\`
+
+\`\`\`bash
+git checkout master
+git pull --ff-only 2>/dev/null   # catch up with other merged tasks
+git merge task-{taskId}-{slug} --no-edit
+\`\`\`
+
+**If merge succeeds:**
+- Delete the branch: \`git branch -d task-{taskId}-{slug}\`
+- Continue to step 8 (report back)
+
+**If merge conflicts:**
+- Abort: \`git merge --abort\`
+- Go back to the branch: \`git checkout task-{taskId}-{slug}\`
+- Try rebasing: \`git rebase master\`
+  - If rebase succeeds → \`git checkout master && git merge task-{taskId}-{slug} --no-edit\` → delete branch
+  - If rebase also conflicts → \`git rebase --abort\` → report to user:
+    "Task done on branch \`task-{taskId}-{slug}\`. Needs manual merge — conflicts with recent changes."
+    Still write the done progress file (with \`branch\` field) so Dev Manager picks it up.
+
+### 8. Report back
 
 Write completion to \`.devmanager/progress/{taskId}.json\`:
 - Get commit info: \`git log -1 --format=%h\` for commitRef, count files from \`git diff --stat HEAD~1\` for filesChanged
 - Write: \`{ "status": "done", "completedAt": "YYYY-MM-DD", "commitRef": "{hash}", "filesChanged": {count} }\`
+- If merge failed, add: \`"branch": "task-{taskId}-{slug}"\` so the manager knows
 
 Dev Manager will automatically merge this into state.json, update the task status, remove it from the queue, add an activity entry, and delete the progress file.
 
@@ -255,6 +359,7 @@ Dev Manager will merge this into state.json, add an activity entry, remove the t
 2. **Delegate, don't implement.** Use sub-agents for code changes. You plan and review.
 3. **Always write progress.** Update \`.devmanager/progress/{taskId}.json\` at every step so Dev Manager stays in sync. Never write to state.json directly — Dev Manager handles the merge.
 4. **Always wait for approval.** Present the plan, then STOP. Never launch sub-agents without explicit user go-ahead.
-5. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
-6. **Everything in \`.devmanager/\`.** Specs, state — all Dev Manager files stay in one folder.
+5. **Branch per task.** Always create \`task-{id}-{slug}\` branch before coding. Merge back to master when done. This enables safe parallel execution.
+6. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
+7. **Everything in \`.devmanager/\`.** Specs, state — all Dev Manager files stay in one folder.
 `;

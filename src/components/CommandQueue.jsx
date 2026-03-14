@@ -51,7 +51,7 @@ function computePhases(queue, tasks) {
   return phases;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll, launchedId, projectPath, onSetPath }) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll, onPauseTask, launchedId, projectPath, onSetPath }) {
   const itemKey = (item) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
@@ -66,29 +66,86 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
   // Build command for a queue item
   const cmdForItem = (item) => '/orchestrator task ' + item.task;
 
+  const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
+
+  const isWaiting = (task) => {
+    const p = (task.progress || '').toLowerCase();
+    return /waiting|approval|planning/.test(p);
+  };
+
+  const getItemStatus = (item) => {
+    const task = taskMap.get(item.task);
+    if (!task) return 'queued';
+    if (task.status === 'paused') return 'paused';
+    if (task.status !== 'in-progress') return 'queued';
+    return isWaiting(task) ? 'waiting' : 'working';
+  };
+
+  const getButtonStyle = (item) => {
+    const status = getItemStatus(item);
+    const isLaunched = launchedId === itemKey(item);
+    if (isLaunched) return { bg: 'var(--success)', icon: '\u2713' };
+    if (status === 'paused') return { bg: '#9b8bb4', icon: '\u25B6' }; // purple play = resume
+    if (status === 'waiting') return { bg: 'var(--amber)', icon: '\u25CF' };
+    if (status === 'working') return { bg: 'var(--accent)', icon: '\u25CF' };
+    return { bg: 'var(--accent)', icon: '\u25B6' };
+  };
+
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
   const renderItem = (item) => {
     const key = itemKey(item);
     const isLaunched = launchedId === key;
+    const status = getItemStatus(item);
+    const btn = getButtonStyle(item);
+    const task = taskMap.get(item.task);
+    const isActive = status === 'waiting' || status === 'working';
+    const isPaused = status === 'paused';
+    const rowBg = isActive ? (status === 'waiting' ? 'rgba(196,132,90,0.06)' : 'rgba(106,141,190,0.06)')
+      : isPaused ? 'rgba(155,139,180,0.06)' : undefined;
     return (
       <div key={key} style={{
         display: 'flex', alignItems: 'center', gap: '6px',
         padding: '6px 12px', borderBottom: '1px solid var(--border)',
+        background: rowBg,
       }}>
         <button
           onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-          title={projectPath ? 'Launch in terminal' : 'Set project path first'}
+          title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
+          className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
           style={{
-            padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
+            padding: '4px 8px', background: btn.bg,
             color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
             fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
             flexShrink: 0, lineHeight: 1,
           }}
-        >{isLaunched ? '\u2713' : '\u25B6'}</button>
+        >{btn.icon}</button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
+          {isActive && task?.progress ? (
+            <span className="progress-text-shimmer" style={{
+              fontSize: '10px', display: 'block', marginTop: '1px',
+              color: status === 'waiting' ? 'var(--amber)' : 'var(--accent)',
+            }}>{task.progress}</span>
+          ) : null}
+          {isPaused ? (
+            <span style={{
+              fontSize: '10px', display: 'block', marginTop: '1px',
+              color: '#9b8bb4',
+            }}>{task?.lastProgress || 'Paused — click ▶ to resume'}</span>
+          ) : null}
         </div>
+        {isActive && onPauseTask ? (
+          <button
+            onClick={() => onPauseTask(item.task)}
+            title="Pause — save progress, resume later"
+            style={{
+              padding: '2px 6px', background: 'none', border: 'none',
+              cursor: 'pointer', color: '#9b8bb4', fontSize: '12px',
+              lineHeight: 1, flexShrink: 0,
+            }}
+          >&#9646;&#9646;</button>
+        ) : null}
         <button
           onClick={() => onRemove(key)}
           title="Remove from queue"
@@ -173,8 +230,18 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             const isLast = itemIdx === phaseItems.length - 1;
             const key = itemKey(item);
             const isLaunched = launchedId === key;
+            const status = getItemStatus(item);
+            const btn = getButtonStyle(item);
+            const task = taskMap.get(item.task);
+            const isActive = status === 'waiting' || status === 'working';
+            const isPaused = status === 'paused';
+            const rowBg = isActive ? (status === 'waiting' ? 'rgba(196,132,90,0.06)' : 'rgba(106,141,190,0.06)')
+              : isPaused ? 'rgba(155,139,180,0.06)' : undefined;
             return (
-              <div key={key} style={{ display: 'flex', alignItems: 'stretch' }}>
+              <div key={key} style={{
+                display: 'flex', alignItems: 'stretch',
+                background: rowBg,
+              }}>
                 {/* Tree connector */}
                 <div style={{
                   width: '24px', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -200,17 +267,41 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                 }}>
                   <button
                     onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-                    title={projectPath ? 'Launch in terminal' : 'Set project path first'}
+                    title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
+                    className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
                     style={{
-                      padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
+                      padding: '4px 8px', background: btn.bg,
                       color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
                       fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
                       flexShrink: 0, lineHeight: 1,
                     }}
-                  >{isLaunched ? '\u2713' : '\u25B6'}</button>
+                  >{btn.icon}</button>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
+                    {isActive && task?.progress ? (
+                      <span className="progress-text-shimmer" style={{
+                        fontSize: '10px', display: 'block', marginTop: '1px',
+                        color: status === 'waiting' ? 'var(--amber)' : 'var(--accent)',
+                      }}>{task.progress}</span>
+                    ) : null}
+                    {isPaused ? (
+                      <span style={{
+                        fontSize: '10px', display: 'block', marginTop: '1px',
+                        color: '#9b8bb4',
+                      }}>{task?.lastProgress || 'Paused — click ▶ to resume'}</span>
+                    ) : null}
                   </div>
+                  {isActive && onPauseTask ? (
+                    <button
+                      onClick={() => onPauseTask(item.task)}
+                      title="Pause — save progress, resume later"
+                      style={{
+                        padding: '2px 6px', background: 'none', border: 'none',
+                        cursor: 'pointer', color: '#9b8bb4', fontSize: '12px',
+                        lineHeight: 1, flexShrink: 0,
+                      }}
+                    >&#9646;&#9646;</button>
+                  ) : null}
                   <button
                     onClick={() => onRemove(key)}
                     title="Remove from queue"

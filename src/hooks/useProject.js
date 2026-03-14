@@ -222,5 +222,53 @@ export function useProject() {
     return () => clearInterval(pollTimer.current);
   }, [connected, dirHandle]);
 
-  return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle };
+  // Pause a running task: save branch/progress info, delete progress file, set status to paused
+  const pauseTask = useCallback(async (taskId) => {
+    if (!dirHandle) return;
+    // Read the progress file first to capture current state
+    const progressEntries = await readProgressFiles(dirHandle);
+    const prog = progressEntries[taskId];
+
+    await deleteProgressFile(dirHandle, taskId);
+
+    // Update state: save branch + last progress, set status to paused
+    setData(prev => {
+      if (!prev) return prev;
+      const tasks = (prev.tasks || []).map(t => {
+        if (t.id !== taskId) return t;
+        return {
+          ...t,
+          status: 'paused',
+          progress: undefined,
+          lastProgress: prog?.progress || t.progress || null,
+          branch: t.branch || ('task-' + taskId),
+        };
+      });
+      const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
+      // Persist immediately
+      writeState(dirHandle, updated).then(ok => {
+        if (ok) lastWriteTime.current = Date.now();
+      });
+      return updated;
+    });
+  }, [dirHandle]);
+
+  // Cancel a running task: delete progress file, reset to pending (discard progress)
+  const cancelTask = useCallback(async (taskId) => {
+    if (!dirHandle) return;
+    await deleteProgressFile(dirHandle, taskId);
+    setData(prev => {
+      if (!prev) return prev;
+      const tasks = (prev.tasks || []).map(t =>
+        t.id === taskId ? { ...t, status: 'pending', progress: undefined, lastProgress: undefined, branch: undefined } : t
+      );
+      const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
+      writeState(dirHandle, updated).then(ok => {
+        if (ok) lastWriteTime.current = Date.now();
+      });
+      return updated;
+    });
+  }, [dirHandle]);
+
+  return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask };
 }

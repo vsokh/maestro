@@ -54,7 +54,7 @@ function sortByDependencies(queueItems, allTasks) {
 
 export function App() {
   const project = useProject();
-  const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle } = project;
+  const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask } = project;
 
   // Selection state (local only)
   const [selectedTask, setSelectedTask] = useState(null);
@@ -212,7 +212,7 @@ export function App() {
   const handleArrange = () => {
     if (!projectPath) return;
     const path = projectPath.replace(/\\/g, '/');
-    const url = 'claudecode:' + path + '?/orchestrator+arrange?Arrange+tasks';
+    const url = 'claudecode:' + path + '?/orchestrator arrange?Arrange tasks';
     launchProtocol(url);
   };
 
@@ -245,7 +245,7 @@ export function App() {
 
     // Single protocol call
     const path = projectPath.replace(/\\/g, '/');
-    launchProtocol('claudecode:' + path + '?__launch_file?Launch+phase');
+    launchProtocol('claudecode:' + path + '?__launch_file?Launch phase');
 
     // Mark all as launched
     items.forEach(item => {
@@ -274,8 +274,8 @@ export function App() {
     // Short tab title: first 2-3 meaningful words
     const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
     const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
-    const title = words.slice(0, 2).join('+') || taskName.split(/\s+/).slice(0, 2).join('+');
-    const url = 'claudecode:' + path + '?' + cmd.replace(/ /g, '+') + '?' + title;
+    const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
+    const url = 'claudecode:' + path + '?' + cmd + '?' + title;
     launchProtocol(url);
     setLaunchedId(itemKey);
     setTimeout(() => setLaunchedId(null), 3000);
@@ -308,6 +308,8 @@ export function App() {
                 onAddTask={handleAddTask}
                 onQueueAll={handleQueueAll}
                 onArrange={handleArrange}
+                onPauseTask={pauseTask}
+                onCancelTask={cancelTask}
                 queue={queue}
               />
             </div>
@@ -340,7 +342,7 @@ export function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onLaunchPhase={handleLaunchPhase} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} onQueueAll={handleQueueAll} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onLaunchPhase={handleLaunchPhase} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} onQueueAll={handleQueueAll} onPauseTask={pauseTask} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
           </div>
 
           <div style={{
