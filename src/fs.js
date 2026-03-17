@@ -1,5 +1,6 @@
 import { ORCHESTRATOR_SKILL_TEMPLATE } from './orchestrator.js';
 import { CODEHEALTH_SKILL_TEMPLATE } from './codehealth.js';
+import { AUTOFIX_SKILL_TEMPLATE } from './autofix.js';
 
 const FS_DB_NAME = 'devmanager_fs';
 const FS_STORE = 'handles';
@@ -74,29 +75,62 @@ export async function ensureDevManagerDir(projectHandle) {
   return await projectHandle.getDirectoryHandle(STATE_DIR, { create: true });
 }
 
-export async function ensureOrchestratorSkill(projectHandle) {
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash.toString(36);
+}
+
+async function deploySkill(projectHandle, skillName, filename, template) {
   try {
     const claude = await projectHandle.getDirectoryHandle('.claude', { create: true });
     const skills = await claude.getDirectoryHandle('skills', { create: true });
-    const orch = await skills.getDirectoryHandle('orchestrator', { create: true });
-    // Always write latest template — single source of truth is the app
-    const fileHandle = await orch.getFileHandle('SKILL.md', { create: true });
+    const dir = await skills.getDirectoryHandle(skillName, { create: true });
+
+    const hash = simpleHash(template);
+
+    // Check existing hash — skip deploy if unchanged
+    try {
+      const hashFile = await dir.getFileHandle('.hash');
+      const file = await hashFile.getFile();
+      if ((await file.text()).trim() === hash) return false;
+    } catch {} // no hash file yet — deploy needed
+
+    // Write skill file
+    const fileHandle = await dir.getFileHandle(filename, { create: true });
     const writable = await fileHandle.createWritable();
-    await writable.write(ORCHESTRATOR_SKILL_TEMPLATE);
+    await writable.write(template);
     await writable.close();
-  } catch { /* permission issues, skip silently */ }
+
+    // Write hash file
+    const hashHandle = await dir.getFileHandle('.hash', { create: true });
+    const hw = await hashHandle.createWritable();
+    await hw.write(hash);
+    await hw.close();
+
+    return true;
+  } catch { return false; }
+}
+
+export async function ensureOrchestratorSkill(projectHandle) {
+  return deploySkill(projectHandle, 'orchestrator', 'SKILL.md', ORCHESTRATOR_SKILL_TEMPLATE);
 }
 
 export async function ensureCodehealthSkill(projectHandle) {
-  try {
-    const claude = await projectHandle.getDirectoryHandle('.claude', { create: true });
-    const skills = await claude.getDirectoryHandle('skills', { create: true });
-    const ch = await skills.getDirectoryHandle('codehealth', { create: true });
-    const fileHandle = await ch.getFileHandle('skill.md', { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(CODEHEALTH_SKILL_TEMPLATE);
-    await writable.close();
-  } catch { /* permission issues, skip silently */ }
+  return deploySkill(projectHandle, 'codehealth', 'skill.md', CODEHEALTH_SKILL_TEMPLATE);
+}
+
+export async function ensureAutofixSkill(projectHandle) {
+  return deploySkill(projectHandle, 'autofix', 'SKILL.md', AUTOFIX_SKILL_TEMPLATE);
+}
+
+export async function syncSkills(projectHandle) {
+  await ensureOrchestratorSkill(projectHandle);
+  await ensureCodehealthSkill(projectHandle);
+  await ensureAutofixSkill(projectHandle);
 }
 
 export async function writeState(projectHandle, data) {
