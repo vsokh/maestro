@@ -9,6 +9,7 @@ import {
   writeState,
   createDefaultState,
   ensureOrchestratorSkill,
+  ensureCodehealthSkill,
   readProgressFiles,
   deleteProgressFile,
 } from '../fs.js';
@@ -69,8 +70,9 @@ export function useProject() {
     // Remember this tab's project so refresh reconnects to the right one
     try { sessionStorage.setItem('dm_tab_project', resolvedName); } catch {}
 
-    // Ensure orchestrator skill exists in the project
+    // Ensure skills exist in the project
     await ensureOrchestratorSkill(handle);
+    await ensureCodehealthSkill(handle);
 
     await saveDirHandle(handle, resolvedName);
     setDirHandle(handle);

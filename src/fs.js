@@ -1,4 +1,5 @@
 import { ORCHESTRATOR_SKILL_TEMPLATE } from './orchestrator.js';
+import { CODEHEALTH_SKILL_TEMPLATE } from './codehealth.js';
 
 const FS_DB_NAME = 'devmanager_fs';
 const FS_STORE = 'handles';
@@ -82,6 +83,18 @@ export async function ensureOrchestratorSkill(projectHandle) {
     const fileHandle = await orch.getFileHandle('SKILL.md', { create: true });
     const writable = await fileHandle.createWritable();
     await writable.write(ORCHESTRATOR_SKILL_TEMPLATE);
+    await writable.close();
+  } catch { /* permission issues, skip silently */ }
+}
+
+export async function ensureCodehealthSkill(projectHandle) {
+  try {
+    const claude = await projectHandle.getDirectoryHandle('.claude', { create: true });
+    const skills = await claude.getDirectoryHandle('skills', { create: true });
+    const ch = await skills.getDirectoryHandle('codehealth', { create: true });
+    const fileHandle = await ch.getFileHandle('skill.md', { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(CODEHEALTH_SKILL_TEMPLATE);
     await writable.close();
   } catch { /* permission issues, skip silently */ }
 }

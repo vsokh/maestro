@@ -67,7 +67,7 @@ function trendFromScores(current, previous) {
   return 'stable';
 }
 
-function Tooltip({ text, children }) {
+function Tooltip({ text, children, style: wrapStyle }) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const ref = useRef(null);
@@ -84,7 +84,7 @@ function Tooltip({ text, children }) {
         ref={ref}
         onMouseEnter={handleEnter}
         onMouseLeave={() => setShow(false)}
-        style={{ cursor: 'help', borderBottom: '1px dashed var(--dm-border)' }}
+        style={{ cursor: 'help', borderBottom: '1px dashed var(--dm-border)', ...wrapStyle }}
       >
         {children}
       </span>
@@ -228,6 +228,10 @@ function drawPoly(ctx, cx, cy, R, n, start, step, scores, fill, stroke, lineWidt
 // ── Timeline Chart ──
 function TimelineChart({ history, width = 360, height = 200 }) {
   const canvasRef = useRef(null);
+  const wrapRef = useRef(null);
+  const [hover, setHover] = useState(null); // { idx, x, y }
+
+  const pad = useMemo(() => ({ t: 16, r: 16, b: 40, l: 32 }), []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -247,7 +251,6 @@ function TimelineChart({ history, width = 360, height = 200 }) {
     const accentColor = cs.getPropertyValue('--dm-accent').trim() || '#6a8dbe';
     const surfaceColor = cs.getPropertyValue('--dm-surface').trim() || '#fefcf9';
 
-    const pad = { t: 16, r: 16, b: 40, l: 32 };
     const plotW = width - pad.l - pad.r;
     const plotH = height - pad.t - pad.b;
 
@@ -289,6 +292,19 @@ function TimelineChart({ history, width = 360, height = 200 }) {
 
     const stepX = plotW / (n - 1);
 
+    // Hover highlight
+    if (hover !== null) {
+      const hx = pad.l + hover.idx * stepX;
+      ctx.beginPath();
+      ctx.moveTo(hx, pad.t);
+      ctx.lineTo(hx, pad.t + plotH);
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     // Line + area
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
@@ -310,8 +326,9 @@ function TimelineChart({ history, width = 360, height = 200 }) {
     for (let i = 0; i < n; i++) {
       const px = pad.l + i * stepX;
       const py = pad.t + plotH - (history[i].overallScore / 10) * plotH;
+      const isHovered = hover !== null && hover.idx === i;
       ctx.beginPath();
-      ctx.arc(px, py, 3.5, 0, 2 * Math.PI);
+      ctx.arc(px, py, isHovered ? 5 : 3.5, 0, 2 * Math.PI);
       ctx.fillStyle = accentColor;
       ctx.fill();
       ctx.strokeStyle = surfaceColor;
@@ -326,9 +343,104 @@ function TimelineChart({ history, width = 360, height = 200 }) {
       ctx.font = '9px monospace';
       ctx.fillText(history[i].commitRef, px, height - pad.b + 14);
     }
-  }, [history, width, height]);
+  }, [history, width, height, hover, pad]);
 
-  return <canvas ref={canvasRef} style={{ maxWidth: '100%' }} />;
+  const handleMouseMove = (e) => {
+    if (!history || history.length < 2) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const plotW = width - pad.l - pad.r;
+    const n = history.length;
+    const stepX = plotW / (n - 1);
+    // find nearest point
+    let closest = -1;
+    let closestDist = Infinity;
+    for (let i = 0; i < n; i++) {
+      const px = pad.l + i * stepX;
+      const d = Math.abs(mx - px);
+      if (d < closestDist) { closestDist = d; closest = i; }
+    }
+    if (closestDist < stepX * 0.6 && closest > 0) {
+      const px = pad.l + closest * stepX;
+      const plotH = height - pad.t - pad.b;
+      const py = pad.t + plotH - (history[closest].overallScore / 10) * plotH;
+      setHover({ idx: closest, x: px, y: py });
+    } else {
+      setHover(null);
+    }
+  };
+
+  // Build tooltip content for hovered point
+  const tooltipContent = useMemo(() => {
+    if (!hover || !history || hover.idx < 1) return null;
+    const cur = history[hover.idx];
+    const prv = history[hover.idx - 1];
+    if (!cur?.dimensions || !prv?.dimensions) return null;
+
+    const diffs = DIM_KEYS.map(key => {
+      const curVal = cur.dimensions[key]?.score ?? (typeof cur.dimensions[key] === 'number' ? cur.dimensions[key] : null);
+      const prvVal = prv.dimensions[key]?.score ?? (typeof prv.dimensions[key] === 'number' ? prv.dimensions[key] : null);
+      if (curVal == null || prvVal == null) return null;
+      const delta = curVal - prvVal;
+      if (delta === 0) return null;
+      return { key, delta };
+    }).filter(Boolean);
+
+    diffs.sort((a, b) => b.delta - a.delta); // improvements first, then regressions
+
+    const overall = (cur.overallScore - prv.overallScore).toFixed(1);
+    return { diffs, overall, commitRef: cur.commitRef, date: cur.date };
+  }, [hover, history]);
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHover(null)}
+    >
+      <canvas ref={canvasRef} style={{ maxWidth: '100%', cursor: hover ? 'pointer' : 'default' }} />
+      {hover && tooltipContent && (
+        <div style={{
+          position: 'absolute',
+          left: hover.x,
+          top: hover.y - 8,
+          transform: 'translate(-50%, -100%)',
+          zIndex: 1000,
+          minWidth: 160,
+          padding: '6px 0',
+          background: 'var(--dm-text)', color: 'var(--dm-bg)',
+          borderRadius: 'var(--dm-radius-sm)',
+          fontSize: 11, lineHeight: 1,
+          boxShadow: 'var(--dm-shadow-lg)',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ padding: '0 8px 5px', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+            <span style={{ opacity: 0.6 }}>{tooltipContent.commitRef}</span>
+            <span style={{ fontWeight: 600, color: +tooltipContent.overall > 0 ? '#6fcf97' : +tooltipContent.overall < 0 ? '#eb5757' : 'inherit' }}>
+              {+tooltipContent.overall > 0 ? '+' : ''}{tooltipContent.overall}
+            </span>
+          </div>
+          {tooltipContent.diffs.length > 0 ? tooltipContent.diffs.map(({ key, delta }) => (
+            <div key={key} style={{
+              display: 'flex', justifyContent: 'space-between',
+              padding: '2px 8px', gap: 10,
+            }}>
+              <span>{DIM_SHORT[key]}</span>
+              <span style={{
+                fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+                color: delta > 0 ? '#6fcf97' : '#eb5757',
+              }}>
+                {delta > 0 ? '+' : ''}{delta}
+              </span>
+            </div>
+          )) : (
+            <div style={{ padding: '2px 8px', opacity: 0.5 }}>No changes</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Sparkline ──
@@ -415,7 +527,36 @@ function HealthcheckButton({ projectPath }) {
   const [launched, setLaunched] = useState(false);
 
   const handleRun = () => {
-    launchClaude(projectPath, '/autofix', 'Healthcheck');
+    launchClaude(projectPath, '/codehealth scan', 'Healthcheck');
+    setLaunched(true);
+    setTimeout(() => setLaunched(false), 5000);
+  };
+
+  if (!projectPath) return null;
+
+  return (
+    <button
+      onClick={handleRun}
+      style={{
+        background: launched ? 'var(--dm-success-light)' : 'transparent',
+        color: launched ? 'var(--dm-success)' : 'var(--dm-accent)',
+        border: launched ? 'none' : '1.5px solid var(--dm-accent)',
+        borderRadius: 'var(--dm-radius-sm)',
+        padding: '6px 14px', fontSize: 12, fontWeight: 600,
+        cursor: 'pointer', fontFamily: 'inherit',
+        transition: 'all 0.2s',
+      }}
+    >
+      {launched ? '✓ Scanning...' : 'Healthcheck'}
+    </button>
+  );
+}
+
+function AutofixButton({ projectPath }) {
+  const [launched, setLaunched] = useState(false);
+
+  const handleRun = () => {
+    launchClaude(projectPath, '/autofix', 'Autofix');
     setLaunched(true);
     setTimeout(() => setLaunched(false), 5000);
   };
@@ -434,7 +575,7 @@ function HealthcheckButton({ projectPath }) {
         transition: 'all 0.2s',
       }}
     >
-      {launched ? '✓ Running...' : 'Healthcheck'}
+      {launched ? '✓ Fixing...' : 'Autofix'}
     </button>
   );
 }
@@ -454,7 +595,10 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
         <div style={{ color: 'var(--dm-text-muted)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
           No quality data yet.
         </div>
-        <HealthcheckButton projectPath={projectPath} />
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+          <HealthcheckButton projectPath={projectPath} />
+          <AutofixButton projectPath={projectPath} />
+        </div>
       </div>
     );
   }
@@ -494,8 +638,9 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
             {latest.date}
           </div>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           <HealthcheckButton projectPath={projectPath} />
+          <AutofixButton projectPath={projectPath} />
         </div>
       </div>
 
@@ -557,7 +702,15 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '7px 4px', width: 24 }}><TrendArrow trend={trend} /></td>
+                <td style={{ padding: '7px 4px', width: 24 }}>
+                  {prevVal != null && d.score !== prevVal ? (
+                    <Tooltip text={`${prevVal} → ${d.score} (${d.score - prevVal > 0 ? '+' : ''}${d.score - prevVal})`} style={{ borderBottom: 'none' }}>
+                      <TrendArrow trend={trend} />
+                    </Tooltip>
+                  ) : (
+                    <TrendArrow trend={trend} />
+                  )}
+                </td>
                 <td style={{ padding: '7px 8px' }}>
                   <span style={{
                     fontSize: 9, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600,
