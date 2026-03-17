@@ -11,6 +11,8 @@ import { TaskDetail } from './components/TaskDetail.jsx';
 import { CommandQueue } from './components/CommandQueue.jsx';
 import { ActivityFeed } from './components/ActivityFeed.jsx';
 import { UndoToast } from './components/UndoToast.jsx';
+import { QualityPanel } from './components/QualityPanel.jsx';
+import { useQuality } from './hooks/useQuality.js';
 
 export function App() {
   const project = useProject();
@@ -23,6 +25,12 @@ export function App() {
 
   // Selection state (local only)
   const [selectedTask, setSelectedTask] = useState(null);
+
+  // Product panel tab: 'board' or 'quality'
+  const [productTab, setProductTab] = useState('board');
+
+  // Quality data (reads .devmanager/quality/)
+  const quality = useQuality(dirHandle);
 
   // Project path for protocol launcher (per project, stored in localStorage)
   const [projectPath, setProjectPathState] = useState('');
@@ -114,73 +122,112 @@ export function App() {
 
       <div className="dm-container">
 
-        {/* Top row: Tasks + Detail */}
-        <div className="dm-grid-top">
-          <div style={{
-            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-            boxShadow: 'var(--dm-shadow-sm)',
-          }}>
-            <SectionHeader title="Product" />
-            <div style={{ padding: '16px' }}>
-              <TaskBoard
-                tasks={tasks}
-                selectedTask={selectedTask}
-                onSelectTask={handleSelectTask}
-                onAddTask={taskActions.handleAddTask}
-                onQueueAll={queueActions.handleQueueAll}
-                onArrange={queueActions.handleArrange}
-                onPauseTask={pauseTask}
-                onCancelTask={cancelTask}
-                onRenameGroup={taskActions.handleRenameGroup}
-                epics={epics}
-                onUpdateEpics={taskActions.handleUpdateEpics}
-                queue={queue}
-              />
+        {/* Tab bar */}
+        <div style={{
+          background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+          boxShadow: 'var(--dm-shadow-sm)', marginBottom: productTab === 'quality' ? 0 : undefined,
+        }}>
+          <SectionHeader title="" extra={
+            <div style={{ display: 'flex', gap: 0, width: '100%' }}>
+              {['board', 'quality'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => { setProductTab(tab); if (tab === 'quality') setSelectedTask(null); }}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '0 12px',
+                    fontWeight: 600, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em',
+                    color: productTab === tab ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
+                    borderBottom: productTab === tab ? '2px solid var(--dm-accent)' : '2px solid transparent',
+                    marginBottom: -1,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {tab === 'board' ? 'Board' : 'Quality'}
+                </button>
+              ))}
             </div>
-          </div>
+          } />
 
-          {selectedTask && (
-            <div className={'dm-detail-backdrop' + (selectedTask ? ' open' : '')} onClick={() => setSelectedTask(null)} />
+          {/* Quality: full-width, single panel */}
+          {productTab === 'quality' && (
+            <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
+              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} />
+            </div>
           )}
-          <div className={'dm-detail-panel' + (selectedTask ? ' open' : '')} style={{
-            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-            boxShadow: 'var(--dm-shadow-sm)',
-          }}>
-            <SectionHeader title="Detail" />
-            <TaskDetail
-              task={selectedTaskData}
-              tasks={tasks}
-              epics={epics}
-              onQueue={queueActions.handleQueue}
-              onUpdateTask={taskActions.handleUpdateTask}
-              onDeleteTask={handleDeleteTask}
-              notes={taskNotes[selectedTask] || ''}
-              onUpdateNotes={taskActions.handleUpdateNotes}
-              dirHandle={dirHandle}
-              onAddAttachment={taskActions.handleAddAttachment}
-              onDeleteAttachment={taskActions.handleDeleteAttachment}
-            />
-          </div>
         </div>
 
-        {/* Bottom row: Queue + Activity */}
-        <div className="dm-grid-bottom">
-          <div style={{
-            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-            boxShadow: 'var(--dm-shadow-sm)',
-          }}>
-            <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-            <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} launchedId={queueActions.launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
-          </div>
+        {/* Board mode: original 2×2 grid */}
+        {productTab === 'board' && (
+          <>
+            {/* Top row: Tasks + Detail */}
+            <div className="dm-grid-top">
+              <div style={{
+                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+                boxShadow: 'var(--dm-shadow-sm)',
+              }}>
+                <div style={{ padding: '16px' }}>
+                  <TaskBoard
+                    tasks={tasks}
+                    selectedTask={selectedTask}
+                    onSelectTask={handleSelectTask}
+                    onAddTask={taskActions.handleAddTask}
+                    onQueueAll={queueActions.handleQueueAll}
+                    onArrange={queueActions.handleArrange}
+                    onPauseTask={pauseTask}
+                    onCancelTask={cancelTask}
+                    onRenameGroup={taskActions.handleRenameGroup}
+                    epics={epics}
+                    onUpdateEpics={taskActions.handleUpdateEpics}
+                    queue={queue}
+                  />
+                </div>
+              </div>
 
-          <div style={{
-            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-            boxShadow: 'var(--dm-shadow-sm)',
-          }}>
-            <SectionHeader title="Activity" />
-            <ActivityFeed activity={activity} onRemove={handleRemoveActivity} />
-          </div>
-        </div>
+              {selectedTask && (
+                <div className={'dm-detail-backdrop' + (selectedTask ? ' open' : '')} onClick={() => setSelectedTask(null)} />
+              )}
+              <div className={'dm-detail-panel' + (selectedTask ? ' open' : '')} style={{
+                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+                boxShadow: 'var(--dm-shadow-sm)',
+              }}>
+                <SectionHeader title="Detail" />
+                <TaskDetail
+                  task={selectedTaskData}
+                  tasks={tasks}
+                  epics={epics}
+                  onQueue={queueActions.handleQueue}
+                  onUpdateTask={taskActions.handleUpdateTask}
+                  onDeleteTask={handleDeleteTask}
+                  notes={taskNotes[selectedTask] || ''}
+                  onUpdateNotes={taskActions.handleUpdateNotes}
+                  dirHandle={dirHandle}
+                  onAddAttachment={taskActions.handleAddAttachment}
+                  onDeleteAttachment={taskActions.handleDeleteAttachment}
+                />
+              </div>
+            </div>
+
+            {/* Bottom row: Queue + Activity */}
+            <div className="dm-grid-bottom">
+              <div style={{
+                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+                boxShadow: 'var(--dm-shadow-sm)',
+              }}>
+                <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
+                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} launchedId={queueActions.launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+              </div>
+
+              <div style={{
+                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+                boxShadow: 'var(--dm-shadow-sm)',
+              }}>
+                <SectionHeader title="Activity" />
+                <ActivityFeed activity={activity} onRemove={handleRemoveActivity} />
+              </div>
+            </div>
+          </>
+        )}
       </div>
       <UndoToast entry={undoEntry} onUndo={handleUndo} onDismiss={() => { clearTimeout(undoTimer.current); setUndoEntry(null); }} />
     </div>
