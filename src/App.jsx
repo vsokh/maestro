@@ -152,7 +152,7 @@ export function App() {
           {/* Quality: full-width, single panel */}
           {productTab === 'quality' && (
             <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
-              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} />
+              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} projectPath={projectPath} />
             </div>
           )}
         </div>

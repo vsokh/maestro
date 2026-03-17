@@ -403,8 +403,64 @@ function Pill({ ok, warn, children }) {
   );
 }
 
+// ── Launch helpers ──
+function launchClaude(projectPath, command, title) {
+  if (!projectPath) return;
+  const path = projectPath.replace(/\\/g, '/');
+  const url = 'claudecode:' + path + '?' + command + '?' + title;
+  window.open(url, '_blank');
+}
+
+function HealthcheckButton({ projectPath, hasFindings }) {
+  const [launched, setLaunched] = useState(false);
+
+  const handleScan = () => {
+    launchClaude(projectPath, '/codehealth scan', 'Healthcheck');
+    setLaunched(true);
+    setTimeout(() => setLaunched(false), 3000);
+  };
+
+  const handleFix = () => {
+    launchClaude(projectPath, '/pipeline fix', 'Fix quality');
+  };
+
+  if (!projectPath) return null;
+
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      <button
+        onClick={handleScan}
+        style={{
+          background: launched ? 'var(--dm-success-light)' : 'var(--dm-accent)',
+          color: launched ? 'var(--dm-success)' : '#fff',
+          border: 'none', borderRadius: 'var(--dm-radius-sm)',
+          padding: '6px 14px', fontSize: 12, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit',
+          transition: 'all 0.2s',
+        }}
+      >
+        {launched ? '✓ Launched' : '⟳ Scan'}
+      </button>
+      {hasFindings && (
+        <button
+          onClick={handleFix}
+          style={{
+            background: 'var(--dm-amber-bg)',
+            color: 'var(--dm-amber)',
+            border: 'none', borderRadius: 'var(--dm-radius-sm)',
+            padding: '6px 14px', fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Fix issues
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Main Panel ──
-export function QualityPanel({ latest, history, loading }) {
+export function QualityPanel({ latest, history, loading, projectPath }) {
   const prev = useMemo(() => history.length > 1 ? history[history.length - 2] : null, [history]);
 
   if (loading) {
@@ -415,10 +471,10 @@ export function QualityPanel({ latest, history, loading }) {
     return (
       <div style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>&#9776;</div>
-        <div style={{ color: 'var(--dm-text-muted)', fontSize: 13, lineHeight: 1.6 }}>
-          No quality data yet.<br />
-          Run <code style={{ background: 'var(--dm-accent-bg-subtle)', padding: '2px 6px', borderRadius: 4 }}>/quality-assessor</code> in Claude Code to generate the first report.
+        <div style={{ color: 'var(--dm-text-muted)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+          No quality data yet.
         </div>
+        <HealthcheckButton projectPath={projectPath} hasFindings={false} />
       </div>
     );
   }
@@ -457,6 +513,9 @@ export function QualityPanel({ latest, history, loading }) {
             {' \u00b7 '}
             {latest.date}
           </div>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <HealthcheckButton projectPath={projectPath} hasFindings={latest.topFindings?.length > 0} />
         </div>
       </div>
 
