@@ -114,7 +114,7 @@ function TrendArrow({ trend }) {
 }
 
 // ── Radar Chart ──
-function RadarChart({ latest, prev, width = 320, height = 320 }) {
+function RadarChart({ latest, prev, width = 380, height = 380 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -129,7 +129,7 @@ function RadarChart({ latest, prev, width = 320, height = 320 }) {
     canvas.style.height = height + 'px';
 
     const cx = width / 2, cy = height / 2;
-    const R = Math.min(cx, cy) - 48;
+    const R = Math.min(cx, cy) - 56;
     const n = DIM_KEYS.length;
     const step = (2 * Math.PI) / n;
     const start = -Math.PI / 2;
@@ -173,7 +173,7 @@ function RadarChart({ latest, prev, width = 320, height = 320 }) {
       ctx.lineWidth = 0.4;
       ctx.stroke();
 
-      const lr = R + 30;
+      const lr = R + 38;
       const lx = cx + lr * Math.cos(a), ly = cy + lr * Math.sin(a);
       const cosA = Math.cos(a);
       ctx.fillStyle = textColor;
@@ -475,7 +475,7 @@ export function QualityPanel({ latest, history, loading }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
           <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--dm-text-muted)', marginBottom: 8 }}>Radar</div>
-          <RadarChart latest={latest} prev={prev} width={280} height={280} />
+          <RadarChart latest={latest} prev={prev} width={360} height={340} />
         </div>
         <div style={{
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)', padding: 12,
