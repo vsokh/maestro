@@ -114,11 +114,18 @@ export function App() {
     clearTimeout(glowTimer.current);
     setGlowTaskId(taskId);
     glowTimer.current = setTimeout(() => setGlowTaskId(null), 1500);
-    // Scroll the card into view after React renders the selection
-    setTimeout(() => {
+    // Retry scroll until the card is rendered (collapsed sections may need an extra render cycle)
+    let attempts = 0;
+    const tryScroll = () => {
       const el = document.querySelector(`[data-task-id="${taskId}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (attempts < 5) {
+        attempts++;
+        setTimeout(tryScroll, 80);
+      }
+    };
+    setTimeout(tryScroll, 50);
   };
 
   const setProjectPath = (path) => {
@@ -190,6 +197,7 @@ export function App() {
                     onSelectTask={handleSelectTask}
                     onAddTask={taskActions.handleAddTask}
                     onQueueAll={queueActions.handleQueueAll}
+                    onQueueGroup={queueActions.handleQueueGroup}
                     onArrange={queueActions.handleArrange}
                     onPauseTask={pauseTask}
                     onCancelTask={cancelTask}

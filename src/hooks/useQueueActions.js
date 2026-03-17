@@ -96,6 +96,19 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     updateData({ queue: newQueue, activity: newActivity });
   };
 
+  const handleQueueGroup = (groupName) => {
+    const pending = tasks.filter(t => t.group === groupName && (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id));
+    if (pending.length === 0) return;
+    const unsorted = [...queue, ...pending.map(t => ({
+      task: t.id,
+      taskName: t.name,
+      notes: taskNotes[t.id] || '',
+    }))];
+    const newQueue = sortByDependencies(unsorted, tasks);
+    const newActivity = addActivity(pending.length + ' ' + groupName + ' tasks queued');
+    updateData({ queue: newQueue, activity: newActivity });
+  };
+
   const handleRemoveFromQueue = (key) => {
     const newQueue = queue.filter(q => q.task !== key);
     updateData({ queue: newQueue });
@@ -179,6 +192,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     launchedId,
     handleQueue,
     handleQueueAll,
+    handleQueueGroup,
     handleRemoveFromQueue,
     handleClearQueue,
     handleLaunchTask,

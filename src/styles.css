@@ -31,6 +31,7 @@ input, textarea { color: var(--dm-text); }
 .badge-accent { background: var(--dm-accent-light); color: var(--dm-accent); }
 .badge-in-progress { background: var(--dm-accent-light); color: var(--dm-accent); }
 .badge-paused { background: var(--dm-paused-light); color: var(--dm-paused); }
+.badge-backlog { background: var(--dm-border); color: var(--dm-text-light); }
 .badge-amber { background: var(--dm-amber-light); color: var(--dm-amber); }
 
 /* In-progress task card pulse */

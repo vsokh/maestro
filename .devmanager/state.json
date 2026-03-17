@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-03-14T21:24:53.516Z",
+  "savedAt": "2026-03-14T22:36:00.434Z",
   "project": "dev-manager",
   "tasks": [
     {
@@ -11,7 +11,8 @@
         "senior-frontend"
       ],
       "status": "done",
-      "completedAt": "2026-03-14"
+      "completedAt": "2026-03-14",
+      "group": "Infrastructure"
     },
     {
       "id": 2,
@@ -24,7 +25,8 @@
       "status": "done",
       "dependsOn": [],
       "startedAt": "2026-03-14T20:52:18.183Z",
-      "completedAt": "2026-03-14"
+      "completedAt": "2026-03-14",
+      "group": "Task Board"
     },
     {
       "id": 3,
@@ -37,18 +39,8 @@
       "status": "done",
       "dependsOn": [],
       "startedAt": "2026-03-14T20:52:30.916Z",
-      "completedAt": "2026-03-14"
-    },
-    {
-      "id": 4,
-      "name": "Spec editor in UI",
-      "fullName": "Markdown spec editor in the task detail panel",
-      "description": "The orchestrator reads specs from .devmanager/specs/, but the manager has no way to write them from the UI. Add a markdown editor in the detail panel so the manager can write detailed specs for complex tasks.",
-      "skills": [
-        "senior-frontend"
-      ],
-      "status": "pending",
-      "dependsOn": []
+      "completedAt": "2026-03-14",
+      "group": "Task Board"
     },
     {
       "id": 5,
@@ -58,11 +50,12 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "paused",
+      "status": "done",
       "dependsOn": [],
       "startedAt": "2026-03-14T21:23:10.048Z",
       "completedAt": "2026-03-14",
-      "blockedReason": ""
+      "blockedReason": "",
+      "group": "Task Board"
     },
     {
       "id": 6,
@@ -76,7 +69,8 @@
       "dependsOn": [],
       "startedAt": "2026-03-14T21:22:17.947Z",
       "completedAt": "2026-03-14",
-      "blockedReason": ""
+      "blockedReason": "",
+      "group": "Task Board"
     },
     {
       "id": 7,
@@ -86,21 +80,23 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "in-progress",
+      "status": "done",
       "dependsOn": [],
+      "startedAt": "2026-03-14T20:52:10.955Z",
+      "completedAt": "2026-03-14",
+      "commitRef": "86c4a6e",
+      "group": "Task Board",
       "progress": "Reviewing results...",
-      "startedAt": "2026-03-14T20:52:10.955Z"
-    },
-    {
-      "id": 8,
-      "name": "Activity feed filtering",
-      "fullName": "Filter activity feed by task or event type",
-      "description": "Activity feed shows last 15 entries with no filtering. Add a filter dropdown to filter by task name or event type (added, completed, queued, etc.).",
-      "skills": [
-        "senior-frontend"
-      ],
-      "status": "pending",
-      "dependsOn": []
+      "history": [
+        {
+          "status": "done",
+          "at": "2026-03-14T22:31:39.513Z"
+        },
+        {
+          "status": "done",
+          "at": "2026-03-14T22:32:42.361Z"
+        }
+      ]
     },
     {
       "id": 9,
@@ -110,10 +106,23 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "in-progress",
+      "status": "done",
       "dependsOn": [],
+      "startedAt": "2026-03-14T20:52:10.955Z",
+      "completedAt": "2026-03-14",
+      "commitRef": "ad1ac73",
+      "group": "Infrastructure",
       "progress": "Reviewing results...",
-      "startedAt": "2026-03-14T20:52:10.955Z"
+      "history": [
+        {
+          "status": "done",
+          "at": "2026-03-14T22:30:35.816Z"
+        },
+        {
+          "status": "done",
+          "at": "2026-03-14T22:36:00.434Z"
+        }
+      ]
     },
     {
       "id": 11,
@@ -128,7 +137,118 @@
         3
       ],
       "startedAt": "2026-03-14T20:54:20.395Z",
-      "completedAt": "2026-03-14"
+      "completedAt": "2026-03-14",
+      "group": "Infrastructure"
+    },
+    {
+      "id": 14,
+      "name": "Extract shared constants",
+      "fullName": "Extract shared constants: statuses, colors, hashString",
+      "description": "Create src/constants/statuses.js, src/constants/colors.js (EPIC_PALETTE, status colors), src/utils/hash.js (hashString). Remove duplicates from TaskBoard, CommandQueue, TaskDetail.",
+      "status": "done",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "completedAt": "2026-03-15",
+      "commitRef": "4cee508"
+    },
+    {
+      "id": 15,
+      "name": "CSS token system",
+      "fullName": "CSS token system: variables.css with design tokens",
+      "description": "Expand styles.css into variables.css. Extract all hardcoded hex (#9b8bb4, #6a8dbe, rgba...) into CSS variables. --dm-accent, --dm-amber, --dm-purple, --dm-success, etc. Replace inline color refs.",
+      "status": "done",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "completedAt": "2026-03-15",
+      "commitRef": "a780fa4"
+    },
+    {
+      "id": 16,
+      "name": "Extract App.jsx handlers",
+      "fullName": "Extract App.jsx handlers into useTaskActions + useQueueActions hooks",
+      "description": "Create src/hooks/useTaskActions.js (add/update/delete/rename) and src/hooks/useQueueActions.js (queue/launch/clear). App.jsx from ~422 to ~200 lines.",
+      "status": "done",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "completedAt": "2026-03-15",
+      "commitRef": "53fb02c",
+      "supervision": true
+    },
+    {
+      "id": 17,
+      "name": "Split TaskDetail",
+      "fullName": "Split TaskDetail into Timeline, Attachments, Dependencies, EpicField",
+      "description": "Extract src/components/detail/Timeline.jsx, Attachments.jsx, Dependencies.jsx, EpicField.jsx. TaskDetail from 608 to ~250 lines.",
+      "status": "pending",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "dependsOn": [
+        16
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Split TaskBoard",
+      "fullName": "Split TaskBoard into TaskCard, EpicGroup, DoneSection, StatusFilter",
+      "description": "Extract src/components/board/TaskCard.jsx, EpicGroup.jsx, DoneSection.jsx, StatusFilter.jsx. TaskBoard from 505 to ~200 lines.",
+      "status": "pending",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "dependsOn": [
+        16
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Split CommandQueue",
+      "fullName": "Split CommandQueue into QueueItem, PhaseView subcomponents",
+      "description": "Extract src/components/queue/QueueItem.jsx, PhaseView.jsx. CommandQueue from 413 to ~200 lines.",
+      "status": "pending",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "dependsOn": [
+        16
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Add TypeScript",
+      "fullName": "Add TypeScript: types, tsconfig, rename all files",
+      "description": "Create src/types/index.ts (Task, QueueItem, Epic, Activity, ProgressEntry, StateData). Add tsconfig.json strict. Rename .jsx/.js to .tsx/.ts. Type all props and returns.",
+      "status": "pending",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "dependsOn": [
+        17,
+        18,
+        19
+      ],
+      "supervision": true
+    },
+    {
+      "id": 21,
+      "name": "Inline styles to CSS",
+      "fullName": "Migrate inline styles to CSS classes in components.css",
+      "description": "Move repeated visual styles to .task-card, .queue-item, .badge-*, .epic-label, .timeline-dot classes. Keep layout inline, move colors/fonts/shadows to CSS. No hardcoded colors in JSX.",
+      "status": "pending",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "dependsOn": [
+        14,
+        15
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Error boundary + loading",
+      "fullName": "Add error boundary, loading skeleton, graceful state.json handling",
+      "description": "Error boundary wrapper. Loading skeleton for project connect. Handle corrupted/missing state.json gracefully.",
+      "status": "pending",
+      "group": "Refactoring",
+      "createdAt": "2026-03-14T21:57:36.032Z",
+      "dependsOn": [
+        20
+      ]
     }
   ],
   "features": [],
@@ -136,104 +256,66 @@
   "taskNotes": {},
   "activity": [
     {
-      "id": "act_1773523493516",
-      "time": 1773523493516,
-      "label": "Task timeline and history marked paused"
+      "id": "act_1773527760434",
+      "time": 1773527760434,
+      "label": "State backup and undo marked done"
     },
     {
-      "id": "act_1773523398204",
-      "time": 1773523398204,
-      "label": "Task timeline and history marked pending"
+      "id": "act_1773527562361",
+      "time": 1773527562361,
+      "label": "Feature-task linking marked done"
     },
     {
-      "id": "act_1773523395942",
-      "time": 1773523395942,
-      "label": "Task timeline and history marked blocked"
+      "id": "act_1773527499513",
+      "time": 1773527499513,
+      "label": "Feature-task linking marked done"
     },
     {
-      "id": "act_1773523394423",
-      "time": 1773523394423,
-      "label": "Task timeline and history marked done"
+      "id": "act_1773527435817",
+      "time": 1773527435817,
+      "label": "State backup and undo marked done"
     },
     {
-      "id": "act_1773523392224",
-      "time": 1773523392224,
-      "label": "Task timeline and history marked paused"
+      "id": "act_1773527347910_16",
+      "time": 1773527347910,
+      "label": "Extract App.jsx handlers completed",
+      "commitRef": "53fb02c"
     },
     {
-      "id": "act_1773523390048",
-      "time": 1773523390048,
-      "label": "Task timeline and history marked in-progress"
+      "id": "act_1773527347907_15",
+      "time": 1773527347907,
+      "label": "CSS token system completed",
+      "commitRef": "a780fa4"
     },
     {
-      "id": "act_1773523360571",
-      "time": 1773523360571,
-      "label": "Blocked reason field marked done"
+      "id": "act_1773527347905_14",
+      "time": 1773527347905,
+      "label": "Extract shared constants completed",
+      "commitRef": "4cee508"
     },
     {
-      "id": "act_1773523360008",
-      "time": 1773523360008,
-      "label": "Blocked reason field marked paused"
+      "id": "act_1773526200000",
+      "time": 1773526200000,
+      "label": "State restored from backup"
     },
     {
-      "id": "act_1773523359355",
-      "time": 1773523359355,
-      "label": "Blocked reason field marked in-progress"
+      "id": "act_1773525456032",
+      "time": 1773525456032,
+      "label": "9 refactoring tasks added"
+    }
+  ],
+  "epics": [
+    {
+      "name": "Refactoring",
+      "color": 5
     },
     {
-      "id": "act_1773523358713",
-      "time": 1773523358713,
-      "label": "Blocked reason field marked pending"
+      "name": "Infrastructure",
+      "color": 6
     },
     {
-      "id": "act_1773523355098",
-      "time": 1773523355098,
-      "label": "Blocked reason field marked blocked"
-    },
-    {
-      "id": "act_1773523351742",
-      "time": 1773523351742,
-      "label": "Blocked reason field marked done"
-    },
-    {
-      "id": "act_1773523351129",
-      "time": 1773523351129,
-      "label": "Blocked reason field marked paused"
-    },
-    {
-      "id": "act_1773523350469",
-      "time": 1773523350469,
-      "label": "Blocked reason field marked in-progress"
-    },
-    {
-      "id": "act_1773523349878",
-      "time": 1773523349878,
-      "label": "Blocked reason field marked pending"
-    },
-    {
-      "id": "act_1773523349800",
-      "time": 1773523349800,
-      "label": "Blocked reason field updated"
-    },
-    {
-      "id": "act_1773523343566",
-      "time": 1773523343566,
-      "label": "Blocked reason field updated"
-    },
-    {
-      "id": "act_1773523340416",
-      "time": 1773523340416,
-      "label": "Blocked reason field marked blocked"
-    },
-    {
-      "id": "act_1773523339158",
-      "time": 1773523339158,
-      "label": "Blocked reason field marked done"
-    },
-    {
-      "id": "act_1773523338497",
-      "time": 1773523338497,
-      "label": "Blocked reason field marked paused"
+      "name": "Task Board",
+      "color": 7
     }
   ]
 }

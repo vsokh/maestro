@@ -1,16 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CardForm } from './CardForm.jsx';
 import { EPIC_PALETTE, PAUSED_COLOR } from '../constants/colors.js';
 import { hashString } from '../utils/hash.js';
 import { STATUS } from '../constants/statuses.js';
 
-export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }) {
+export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }) {
   const [editingGroup, setEditingGroup] = useState(null);
   const [editGroupName, setEditGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchFocused, setSearchFocused] = useState(false);
-  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== STATUS.DONE), [tasks]);
+  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== STATUS.DONE && t.status !== STATUS.BACKLOG), [tasks]);
+  const backlogTasks = useMemo(() => tasks.filter(t => t.status === STATUS.BACKLOG), [tasks]);
   const doneTasks = useMemo(() => tasks.filter(t => t.status === STATUS.DONE), [tasks]);
   const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
   // Derive colors from epics registry (stable), fallback to hash for unregistered
@@ -73,8 +74,27 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     }
     return grouped;
   }, [doneTasks]);
+  const backlogGroups = useMemo(() => {
+    const grouped = new Map();
+    for (const t of backlogTasks) {
+      const g = t.group || 'Other';
+      if (!grouped.has(g)) grouped.set(g, []);
+      grouped.get(g).push(t);
+    }
+    return grouped;
+  }, [backlogTasks]);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [showBacklog, setShowBacklog] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+
+  // Auto-expand Done/Backlog when a task in that section is selected (e.g. from Activity feed)
+  useEffect(() => {
+    if (!selectedTask) return;
+    const task = tasks.find(t => t.id === selectedTask);
+    if (!task) return;
+    if (task.status === STATUS.DONE && !showCompleted) setShowCompleted(true);
+    if (task.status === STATUS.BACKLOG && !showBacklog) setShowBacklog(true);
+  }, [selectedTask]);
 
   const isWaiting = (task) => {
     const p = (task.progress || '').toLowerCase();
@@ -118,6 +138,14 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
       return {
         ...base,
         border: isSelected ? '2px solid var(--dm-text-light)' : '1px solid var(--dm-border)',
+        boxShadow: isSelected ? '0 2px 8px var(--dm-dark-shadow)' : 'var(--dm-shadow-sm)',
+        opacity: 0.6,
+      };
+    }
+    if (task.status === STATUS.BACKLOG) {
+      return {
+        ...base,
+        border: isSelected ? '2px solid var(--dm-text-light)' : '1px dashed var(--dm-border)',
         boxShadow: isSelected ? '0 2px 8px var(--dm-dark-shadow)' : 'var(--dm-shadow-sm)',
         opacity: 0.6,
       };
@@ -318,27 +346,47 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   }}
                 />
               ) : (
-                <div
-                  onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
-                  title="Click to rename epic"
-                  style={{
-                    fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',
-                    marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em',
-                    cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
-                    background: (epicColors[groupName] || {}).bg || 'transparent',
-                    display: 'inline-block',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.opacity = '0.7'}
-                  onMouseOut={e => e.currentTarget.style.opacity = '1'}
-                >
-                  {groupName}
-                  {(() => {
-                    const total = tasks.filter(t => t.group === groupName).length;
-                    const done = tasks.filter(t => t.group === groupName && t.status === STATUS.DONE).length;
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <div
+                    onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
+                    title="Click to rename epic"
+                    style={{
+                      fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',
+                      textTransform: 'uppercase', letterSpacing: '0.04em',
+                      cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
+                      background: (epicColors[groupName] || {}).bg || 'transparent',
+                      display: 'inline-block',
+                    }}
+                    onMouseOver={e => e.currentTarget.style.opacity = '0.7'}
+                    onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                  >
+                    {groupName}
+                    {(() => {
+                      const total = tasks.filter(t => t.group === groupName).length;
+                      const done = tasks.filter(t => t.group === groupName && t.status === STATUS.DONE).length;
+                      return (
+                        <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--dm-text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
+                          {done}/{total}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  {onQueueGroup && (() => {
+                    const unqueued = groupTasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !(queue || []).some(q => q.task === t.id));
+                    if (unqueued.length === 0) return null;
                     return (
-                      <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--dm-text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
-                        {done}/{total}
-                      </span>
+                      <button
+                        onClick={() => onQueueGroup(groupName)}
+                        title={'Queue ' + unqueued.length + ' task(s) from ' + groupName}
+                        style={{
+                          fontSize: '9px', fontWeight: 600, padding: '1px 8px', borderRadius: '10px',
+                          cursor: 'pointer', fontFamily: 'var(--dm-font)',
+                          border: '1px solid var(--dm-accent)', background: 'none', color: 'var(--dm-accent)',
+                          transition: 'all 0.15s', textTransform: 'none', letterSpacing: 'normal',
+                        }}
+                        onMouseOver={e => { e.target.style.background = 'var(--dm-accent)'; e.target.style.color = 'white'; }}
+                        onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-accent)'; }}
+                      >Queue {unqueued.length}</button>
                     );
                   })()}
                 </div>
@@ -430,6 +478,45 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         ) : null}
       </div>
 
+      {backlogTasks.length > 0 ? (
+        <div>
+          <div
+            onClick={() => setShowBacklog(p => !p)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+              padding: '8px 0', userSelect: 'none',
+            }}
+          >
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Backlog
+            </span>
+            <span style={{
+              fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-light)',
+            }}>{backlogTasks.length}</span>
+            <span style={{ fontSize: '11px', color: 'var(--dm-text-light)', transform: showBacklog ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>&#9660;</span>
+          </div>
+          {showBacklog ? (
+            <div style={{ paddingTop: '4px' }}>
+              {[...backlogGroups.entries()].map(([groupName, groupTasks]) => (
+                <div key={groupName} style={{ marginBottom: '8px' }}>
+                  <div style={{
+                    fontSize: '10px', fontWeight: 600, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em',
+                    color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)', opacity: 0.6,
+                    display: 'inline-block', padding: '1px 5px', borderRadius: '3px',
+                    background: (epicColors[groupName] || {}).bg || 'transparent',
+                  }}>
+                    {groupName}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {groupTasks.map(renderTaskCard)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {doneTasks.length > 0 ? (
         <div>
           <div
@@ -461,11 +548,13 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
-                      <div key={t.id} onClick={() => onSelectTask(t.id)} style={{
+                      <div key={t.id} data-task-id={t.id} onClick={() => onSelectTask(t.id)} style={{
                         border: selectedTask === t.id ? '1px solid var(--dm-text-light)' : '1px solid var(--dm-border)',
                         borderRadius: 'var(--dm-radius-sm)', padding: '5px 10px',
                         cursor: 'pointer', transition: 'all 0.15s', opacity: 0.75,
-                      }}>
+                      }}
+                      className={glowTaskId === t.id ? 'task-card-glow' : undefined}
+                      >
                         <span style={{ fontWeight: 400, fontSize: '11px', color: 'var(--dm-text-light)' }}>{t.name}</span>
                         {t.commitRef ? (
                           <span style={{

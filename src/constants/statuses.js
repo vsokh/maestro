@@ -5,4 +5,5 @@ export const STATUS = {
   DONE: 'done',
   BLOCKED: 'blocked',
   CREATED: 'created',
+  BACKLOG: 'backlog',
 };

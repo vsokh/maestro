@@ -152,13 +152,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     </div>
   );
 
-  const statusOptions = [STATUS.PENDING, STATUS.IN_PROGRESS, STATUS.PAUSED, STATUS.DONE, STATUS.BLOCKED];
+  const statusOptions = [STATUS.PENDING, STATUS.IN_PROGRESS, STATUS.PAUSED, STATUS.DONE, STATUS.BLOCKED, STATUS.BACKLOG];
   const currentIdx = statusOptions.indexOf(task.status);
 
   const badgeClass = task.status === STATUS.DONE ? 'badge-done'
     : task.status === STATUS.BLOCKED ? 'badge-blocked'
     : task.status === STATUS.IN_PROGRESS ? 'badge-in-progress'
     : task.status === STATUS.PAUSED ? 'badge-paused'
+    : task.status === STATUS.BACKLOG ? 'badge-backlog'
     : 'badge-pending';
 
   const attachments = task.attachments || [];
@@ -206,6 +207,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
               [STATUS.PAUSED]: PAUSED_COLOR,
               [STATUS.DONE]: 'var(--dm-success)',
               [STATUS.BLOCKED]: 'var(--dm-danger)',
+              [STATUS.BACKLOG]: 'var(--dm-text-light)',
             };
             return <option key={s} value={s} style={{ background: 'var(--dm-surface)', color: colors[s] || 'var(--dm-text)' }}>{s}</option>;
           })}
@@ -304,6 +306,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           [STATUS.PAUSED]: PAUSED_COLOR,
           [STATUS.BLOCKED]: 'var(--dm-danger)',
           [STATUS.DONE]: 'var(--dm-success)',
+          [STATUS.BACKLOG]: 'var(--dm-text-light)',
         };
         const label = {
           [STATUS.CREATED]: 'Created',
@@ -312,6 +315,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           [STATUS.PAUSED]: 'Paused',
           [STATUS.BLOCKED]: 'Blocked',
           [STATUS.DONE]: 'Completed',
+          [STATUS.BACKLOG]: 'Backlog',
         };
 
         return (
@@ -543,25 +547,10 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         );
       })()}
 
-      {(task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && task.manual ? (
+      {task.status === STATUS.BACKLOG ? (
         <button
-          onClick={() => onUpdateTask(task.id, { status: STATUS.DONE })}
-          style={{
-            width: '100%', padding: '8px 16px',
-            background: 'var(--dm-success)', color: 'white',
-            border: 'none', borderRadius: 'var(--dm-radius-sm)',
-            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--dm-font)',
-            cursor: 'pointer', transition: 'opacity 0.2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          }}
-          onMouseOver={e => e.target.style.opacity = '0.85'}
-          onMouseOut={e => e.target.style.opacity = '1'}
-        >
-          Mark done &#10003;
-        </button>
-      ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && !task.manual ? (
-        <button
-          onClick={() => onQueue(task)}
+          onClick={() => onUpdateTask(task.id, { status: STATUS.PENDING })}
+          title="Move from backlog to active tasks — it will appear in Up Next and can be queued"
           style={{
             width: '100%', padding: '8px 16px',
             background: 'var(--dm-accent)', color: 'white',
@@ -573,8 +562,70 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onMouseOver={e => e.target.style.opacity = '0.85'}
           onMouseOut={e => e.target.style.opacity = '1'}
         >
-          Queue &#9654;
+          Activate &#8594;
         </button>
+      ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && task.manual ? (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => onUpdateTask(task.id, { status: STATUS.DONE })}
+            style={{
+              flex: 1, padding: '8px 16px',
+              background: 'var(--dm-success)', color: 'white',
+              border: 'none', borderRadius: 'var(--dm-radius-sm)',
+              fontSize: '13px', fontWeight: 600, fontFamily: 'var(--dm-font)',
+              cursor: 'pointer', transition: 'opacity 0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            }}
+            onMouseOver={e => e.target.style.opacity = '0.85'}
+            onMouseOut={e => e.target.style.opacity = '1'}
+          >
+            Mark done &#10003;
+          </button>
+          <button
+            onClick={() => onUpdateTask(task.id, { status: STATUS.BACKLOG })}
+            title="Move to backlog"
+            style={{
+              padding: '8px 12px',
+              background: 'none', color: 'var(--dm-text-light)',
+              border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)',
+              fontSize: '12px', fontFamily: 'var(--dm-font)',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseOver={e => { e.target.style.borderColor = 'var(--dm-text-light)'; }}
+            onMouseOut={e => { e.target.style.borderColor = 'var(--dm-border)'; }}
+          >Backlog</button>
+        </div>
+      ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && !task.manual ? (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => onQueue(task)}
+            style={{
+              flex: 1, padding: '8px 16px',
+              background: 'var(--dm-accent)', color: 'white',
+              border: 'none', borderRadius: 'var(--dm-radius-sm)',
+              fontSize: '13px', fontWeight: 600, fontFamily: 'var(--dm-font)',
+              cursor: 'pointer', transition: 'opacity 0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            }}
+            onMouseOver={e => e.target.style.opacity = '0.85'}
+            onMouseOut={e => e.target.style.opacity = '1'}
+          >
+            Queue &#9654;
+          </button>
+          <button
+            onClick={() => onUpdateTask(task.id, { status: STATUS.BACKLOG })}
+            title="Move to backlog"
+            style={{
+              padding: '8px 12px',
+              background: 'none', color: 'var(--dm-text-light)',
+              border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)',
+              fontSize: '12px', fontFamily: 'var(--dm-font)',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseOver={e => { e.target.style.borderColor = 'var(--dm-text-light)'; }}
+            onMouseOut={e => { e.target.style.borderColor = 'var(--dm-border)'; }}
+          >Backlog</button>
+        </div>
       ) : null}
 
       <button
