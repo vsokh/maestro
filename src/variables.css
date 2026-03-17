@@ -7,6 +7,7 @@
   --dm-text: #3d3a37;
   --dm-text-muted: #635e5a;
   --dm-text-light: #8a857f;
+  --dm-text-on-accent: #ffffff;
   --dm-border: #e0dbd5;
 
   /* Accent */
@@ -97,6 +98,7 @@
   --dm-text: #e0dbd5;
   --dm-text-muted: #a09a94;
   --dm-text-light: #6e6862;
+  --dm-text-on-accent: #ffffff;
   --dm-border: #3a3634;
 
   /* Accent */

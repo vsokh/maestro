@@ -568,7 +568,7 @@ function AutofixButton({ projectPath }) {
       onClick={handleRun}
       style={{
         background: launched ? 'var(--dm-success-light)' : 'var(--dm-accent)',
-        color: launched ? 'var(--dm-success)' : '#fff',
+        color: launched ? 'var(--dm-success)' : 'var(--dm-text-on-accent)',
         border: 'none', borderRadius: 'var(--dm-radius-sm)',
         padding: '6px 14px', fontSize: 12, fontWeight: 600,
         cursor: 'pointer', fontFamily: 'inherit',
