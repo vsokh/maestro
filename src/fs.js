@@ -61,7 +61,7 @@ export async function verifyHandle(handle) {
   try {
     const perm = await handle.queryPermission({ mode: 'readwrite' });
     return perm === 'granted';
-  } catch { return false; }
+  } catch (err) { console.error('verifyHandle failed:', err); return false; }
 }
 
 export async function requestAccess(handle) {
@@ -69,7 +69,7 @@ export async function requestAccess(handle) {
   try {
     const perm = await handle.requestPermission({ mode: 'readwrite' });
     return perm === 'granted';
-  } catch { return false; }
+  } catch (err) { console.error('requestAccess failed:', err); return false; }
 }
 
 export async function ensureDevManagerDir(projectHandle) {
@@ -98,7 +98,7 @@ async function deploySkill(projectHandle, skillName, filename, template) {
       const hashFile = await dir.getFileHandle('.hash');
       const file = await hashFile.getFile();
       if ((await file.text()).trim() === hash) return false;
-    } catch {} // no hash file yet — deploy needed
+    } catch { /* expected: no hash file yet */ }
 
     // Write skill file
     const fileHandle = await dir.getFileHandle(filename, { create: true });
@@ -113,7 +113,7 @@ async function deploySkill(projectHandle, skillName, filename, template) {
     await hw.close();
 
     return true;
-  } catch { return false; }
+  } catch (err) { console.error('deploySkill failed:', err); return false; }
 }
 
 export async function ensureOrchestratorSkill(projectHandle) {
@@ -142,7 +142,7 @@ export async function writeState(projectHandle, data) {
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
     return true;
-  } catch { return false; }
+  } catch (err) { console.error('writeState failed:', err); return false; }
 }
 
 export async function readState(projectHandle) {
@@ -155,7 +155,8 @@ export async function readState(projectHandle) {
     const data = validateState(parsed);
     if (!data) return null;
     return { data, lastModified: file.lastModified };
-  } catch {
+  } catch (err) {
+    console.error('readState failed:', err);
     return null;
   }
 }
@@ -179,7 +180,7 @@ export async function deleteAttachment(projectHandle, taskId, filename) {
     const attachDir = await dmDir.getDirectoryHandle('attachments');
     const taskDir = await attachDir.getDirectoryHandle(String(taskId));
     await taskDir.removeEntry(filename);
-  } catch {}
+  } catch (err) { console.error('deleteAttachment failed:', err); }
 }
 
 // Read an attachment as object URL (for displaying)
@@ -191,7 +192,7 @@ export async function readAttachmentUrl(projectHandle, taskId, filename) {
     const fileHandle = await taskDir.getFileHandle(filename);
     const file = await fileHandle.getFile();
     return URL.createObjectURL(file);
-  } catch { return null; }
+  } catch (err) { console.error('readAttachmentUrl failed:', err); return null; }
 }
 
 // Read all progress files from .devmanager/progress/
@@ -217,11 +218,12 @@ export async function readProgressFiles(projectHandle) {
             // Named progress files like 'arrange.json'
             entries[key] = JSON.parse(text);
           }
-        } catch {}
+        } catch (err) { console.error('Failed to parse progress file:', name, err); }
       }
     }
     return entries;
-  } catch {
+  } catch (err) {
+    console.error('readProgressFiles failed:', err);
     return {};
   }
 }
@@ -232,7 +234,7 @@ export async function deleteProgressFile(projectHandle, taskId) {
     const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
     const progDir = await dmDir.getDirectoryHandle('progress');
     await progDir.removeEntry(taskId + '.json');
-  } catch {}
+  } catch (err) { console.error('deleteProgressFile failed:', err); }
 }
 
 export function createDefaultState(projectName) {
@@ -265,7 +267,7 @@ export async function snapshotState(projectHandle) {
     // Auto-prune: keep only last 10 backups
     await pruneBackups(projectHandle, 10);
     return filename;
-  } catch { return null; }
+  } catch (err) { console.error('snapshotState failed:', err); return null; }
 }
 
 // List backup files (newest first)
@@ -281,7 +283,7 @@ export async function listBackups(projectHandle) {
       }
     }
     return files.sort((a, b) => b.lastModified - a.lastModified);
-  } catch { return []; }
+  } catch (err) { console.error('listBackups failed:', err); return []; }
 }
 
 // Delete oldest backups beyond the keep limit
@@ -294,5 +296,5 @@ export async function pruneBackups(projectHandle, keep = 10) {
     for (const file of files.slice(keep)) {
       await backupDir.removeEntry(file.name);
     }
-  } catch {}
+  } catch (err) { console.error('pruneBackups failed:', err); }
 }

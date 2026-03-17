@@ -11,6 +11,7 @@ import { TaskDetail } from './components/TaskDetail.jsx';
 import { CommandQueue } from './components/CommandQueue.jsx';
 import { ActivityFeed } from './components/ActivityFeed.jsx';
 import { UndoToast } from './components/UndoToast.jsx';
+import { ErrorToast } from './components/ErrorToast.jsx';
 import { QualityPanel } from './components/QualityPanel.jsx';
 import { useQuality } from './hooks/useQuality.js';
 
@@ -43,6 +44,15 @@ export function App() {
   const [undoEntry, setUndoEntry] = useState(null);
   const undoTimer = useRef(null);
 
+  // Error toast state
+  const [errorMessage, setErrorMessage] = useState(null);
+  const errorTimer = useRef(null);
+  const showError = useCallback((msg) => {
+    setErrorMessage(msg);
+    clearTimeout(errorTimer.current);
+    errorTimer.current = setTimeout(() => setErrorMessage(null), 5000);
+  }, []);
+
   const snapshotBeforeAction = useCallback((label) => {
     if (dirHandle && data) {
       snapshotState(dirHandle); // fire-and-forget backup to disk
@@ -60,8 +70,8 @@ export function App() {
   }, [undoEntry, save]);
 
   // --- Extracted hooks (must be called before any early returns) ---
-  const taskActions = useTaskActions({ data, save, dirHandle, snapshotBeforeAction });
-  const queueActions = useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction });
+  const taskActions = useTaskActions({ data, save, dirHandle, snapshotBeforeAction, onError: showError });
+  const queueActions = useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction, onError: showError });
 
   // Re-read project path when projectName changes (after connection)
   useEffect(() => {
@@ -69,7 +79,7 @@ export function App() {
     try {
       const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
       setProjectPathState(paths[projectName] || '');
-    } catch {}
+    } catch (err) { console.error('Failed to read dm_project_paths from localStorage:', err); }
   }, [projectName]);
 
   // If not connected, show picker
@@ -134,7 +144,7 @@ export function App() {
       const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
       paths[projectName] = path;
       localStorage.setItem('dm_project_paths', JSON.stringify(paths));
-    } catch {}
+    } catch (err) { console.error('Failed to save dm_project_paths to localStorage:', err); }
   };
 
   // Selected task data
@@ -256,6 +266,7 @@ export function App() {
         )}
       </div>
       <UndoToast entry={undoEntry} onUndo={handleUndo} onDismiss={() => { clearTimeout(undoTimer.current); setUndoEntry(null); }} />
+      <ErrorToast message={errorMessage} onDismiss={() => { clearTimeout(errorTimer.current); setErrorMessage(null); }} />
     </div>
   );
 }

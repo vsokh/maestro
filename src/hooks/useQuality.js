@@ -23,7 +23,7 @@ export function useQuality(dirHandle) {
         const latestText = await latestFile.text();
         const parsed = JSON.parse(latestText);
         setLatest(validateQualityReport(parsed));
-      } catch { setLatest(null); }
+      } catch (err) { console.error('Failed to read quality latest.json:', err); setLatest(null); }
 
       // Read history.json
       try {
@@ -32,9 +32,10 @@ export function useQuality(dirHandle) {
         const histText = await histFile.text();
         const parsed = JSON.parse(histText);
         setHistory(validateQualityHistory(parsed));
-      } catch { setHistory([]); }
+      } catch (err) { console.error('Failed to read quality history.json:', err); setHistory([]); }
 
-    } catch {
+    } catch (err) {
+      console.error('Failed to read quality directory:', err);
       // quality/ directory doesn't exist yet
       setLatest(null);
       setHistory([]);

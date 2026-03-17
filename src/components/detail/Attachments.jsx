@@ -33,14 +33,14 @@ export function useAttachments(task, dirHandle, onAddAttachment) {
     return () => {
       cancelled = true;
       // Revoke old URLs to prevent memory leaks
-      Object.values(urls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
+      Object.values(urls).forEach(u => { try { URL.revokeObjectURL(u); } catch (err) { console.warn('revokeObjectURL failed:', err); } });
     };
   }, [task?.id, task?.attachments, dirHandle]);
 
   // Clean up thumb URLs on unmount
   useEffect(() => {
     return () => {
-      Object.values(thumbUrls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
+      Object.values(thumbUrls).forEach(u => { try { URL.revokeObjectURL(u); } catch (err) { console.warn('revokeObjectURL failed:', err); } });
     };
   }, []);
 

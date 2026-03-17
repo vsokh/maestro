@@ -54,7 +54,7 @@ function launchProtocol(url) {
   document.body.removeChild(a);
 }
 
-export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction }) {
+export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction, onError }) {
   const [launchedId, setLaunchedId] = useState(null);
 
   const tasks = data?.tasks || [];
@@ -172,6 +172,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
       await writable.close();
     } catch (err) {
       console.error('Failed to write launch scripts:', err);
+      if (onError) onError('Failed to write launch scripts');
       return;
     }
 

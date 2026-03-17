@@ -1,7 +1,7 @@
 import { saveAttachment, deleteAttachment } from '../fs.js';
 import { STATUS } from '../constants/statuses.js';
 
-export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) {
+export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, onError }) {
   const tasks = data?.tasks || [];
   const epics = data?.epics || [];
   const queue = data?.queue || [];
@@ -81,6 +81,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
       handleUpdateTask(taskId, { attachments });
     } catch (err) {
       console.error('Failed to save attachment:', err);
+      if (onError) onError('Failed to save screenshot');
     }
   };
 
@@ -95,6 +96,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
       handleUpdateTask(taskId, { attachments });
     } catch (err) {
       console.error('Failed to delete attachment:', err);
+      if (onError) onError('Failed to delete screenshot');
     }
   };
 

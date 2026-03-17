@@ -23,7 +23,7 @@ export function useProject() {
   const [projectName, setProjectName] = useState('');
   const [data, setData] = useState(null);
   const [lastProjectName, setLastProjectName] = useState(() => {
-    try { return localStorage.getItem('dm_last_project') || ''; } catch { return ''; }
+    try { return localStorage.getItem('dm_last_project') || ''; } catch (err) { console.error('Failed to read dm_last_project from localStorage:', err); return ''; }
   });
 
   const saveTimer = useRef(null);
@@ -50,7 +50,7 @@ export function useProject() {
     const name = handle.name;
     setProjectName(name);
     setLastProjectName(name);
-    try { localStorage.setItem('dm_last_project', name); } catch {}
+    try { localStorage.setItem('dm_last_project', name); } catch (err) { console.error('Failed to write dm_last_project to localStorage:', err); }
 
     // Try reading existing state
     const existing = await readState(handle);
@@ -70,7 +70,7 @@ export function useProject() {
     setProjectName(resolvedName);
 
     // Remember this tab's project so refresh reconnects to the right one
-    try { sessionStorage.setItem('dm_tab_project', resolvedName); } catch {}
+    try { sessionStorage.setItem('dm_tab_project', resolvedName); } catch (err) { console.error('Failed to write dm_tab_project to sessionStorage:', err); }
 
     // Ensure skills exist in the project
     await ensureOrchestratorSkill(handle);
@@ -231,7 +231,7 @@ export function useProject() {
               const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
               if (notesDir) await notesDir.removeEntry(id + '.md').catch(() => {});
               await dmDir.removeEntry('launch-' + id + '.cmd').catch(() => {});
-            } catch {}
+            } catch (err) { console.error('Failed to clean up after task completion:', err); }
             needsWrite = true;
           } else {
             // In-progress: overlay in memory only (transient)
@@ -264,6 +264,9 @@ export function useProject() {
         if (stateData.project) setProjectName(stateData.project);
         setStatus('synced');
         setTimeout(() => setStatus('connected'), 2000);
+      } else {
+        // Recover from transient write errors: a successful read means the connection is fine
+        setStatus(prev => prev === 'error' ? 'connected' : prev);
       }
 
       // Redeploy skills if template hash changed (e.g. after HMR or page reload)
