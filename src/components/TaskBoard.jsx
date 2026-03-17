@@ -241,8 +241,14 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             </div>
   );
 
+  const handleBoardClick = (e) => {
+    // Deselect when clicking empty space — ignore if click was inside a card, button, or input
+    if (e.target.closest('[data-task-id], button, input, select, textarea, a')) return;
+    onSelectTask(null);
+  };
+
   return (
-    <div>
+    <div onClick={handleBoardClick}>
       <div style={{ marginBottom: '16px' }}>
         {epicStats.length > 0 ? (
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
