@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { validateQualityReport, validateQualityHistory } from '../validate.js';
 
 /**
  * Reads quality audit data from .devmanager/quality/ directory.
@@ -20,7 +21,8 @@ export function useQuality(dirHandle) {
         const latestHandle = await qualDir.getFileHandle('latest.json');
         const latestFile = await latestHandle.getFile();
         const latestText = await latestFile.text();
-        setLatest(JSON.parse(latestText));
+        const parsed = JSON.parse(latestText);
+        setLatest(validateQualityReport(parsed));
       } catch { setLatest(null); }
 
       // Read history.json
@@ -28,7 +30,8 @@ export function useQuality(dirHandle) {
         const histHandle = await qualDir.getFileHandle('history.json');
         const histFile = await histHandle.getFile();
         const histText = await histFile.text();
-        setHistory(JSON.parse(histText));
+        const parsed = JSON.parse(histText);
+        setHistory(validateQualityHistory(parsed));
       } catch { setHistory([]); }
 
     } catch {

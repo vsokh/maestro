@@ -1,6 +1,7 @@
 import { ORCHESTRATOR_SKILL_TEMPLATE } from './orchestrator.js';
 import { CODEHEALTH_SKILL_TEMPLATE } from './codehealth.js';
 import { AUTOFIX_SKILL_TEMPLATE } from './autofix.js';
+import { validateState, validateProgress } from './validate.js';
 
 const FS_DB_NAME = 'devmanager_fs';
 const FS_STORE = 'handles';
@@ -150,7 +151,10 @@ export async function readState(projectHandle) {
     const fileHandle = await dir.getFileHandle(STATE_FILENAME);
     const file = await fileHandle.getFile();
     const text = await file.text();
-    return { data: JSON.parse(text), lastModified: file.lastModified };
+    const parsed = JSON.parse(text);
+    const data = validateState(parsed);
+    if (!data) return null;
+    return { data, lastModified: file.lastModified };
   } catch {
     return null;
   }
@@ -201,9 +205,17 @@ export async function readProgressFiles(projectHandle) {
         try {
           const file = await handle.getFile();
           const text = await file.text();
-          const taskId = parseInt(name.replace('.json', ''), 10);
+          const key = name.replace('.json', '');
+          const taskId = parseInt(key, 10);
           if (!isNaN(taskId)) {
-            entries[taskId] = JSON.parse(text);
+            const parsed = JSON.parse(text);
+            const validated = validateProgress(parsed);
+            if (validated) {
+              entries[taskId] = validated;
+            }
+          } else {
+            // Named progress files like 'arrange.json'
+            entries[key] = JSON.parse(text);
           }
         } catch {}
       }
