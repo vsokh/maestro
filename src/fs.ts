@@ -222,12 +222,12 @@ export async function readProgressFiles(projectHandle: FileSystemDirectoryHandle
   }
 }
 
-export async function deleteProgressFile(projectHandle: FileSystemDirectoryHandle, taskId: string | number): Promise<void> {
+export async function deleteProgressFile(projectHandle: FileSystemDirectoryHandle, taskId: string | number, onError?: (msg: string) => void): Promise<void> {
   try {
     const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
     const progDir = await dmDir.getDirectoryHandle('progress');
     await progDir.removeEntry(taskId + '.json');
-  } catch (err) { console.error('deleteProgressFile failed:', err); }
+  } catch (err) { console.error('deleteProgressFile failed:', err); onError?.('Failed to delete progress file'); }
 }
 
 export function createDefaultState(projectName: string): StateData {

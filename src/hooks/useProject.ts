@@ -184,9 +184,9 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     try {
       const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
       await connectWithHandle(handle);
-    } catch (e: any) {
-      if (e.name !== 'AbortError') setStatus('error');
-      else setStatus('disconnected');
+    } catch (e: unknown) {
+      if (e instanceof DOMException && e.name === 'AbortError') setStatus('disconnected');
+      else setStatus('error');
     }
   }, [connectWithHandle]);
 
@@ -252,10 +252,10 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
 
       // Clean up progress files for completed tasks and arrange
       if (mergeResult.arrangeCompleted) {
-        await deleteProgressFile(dirHandle, 'arrange');
+        await deleteProgressFile(dirHandle, 'arrange', onError);
       }
       for (const id of mergeResult.completedTaskIds) {
-        await deleteProgressFile(dirHandle, id);
+        await deleteProgressFile(dirHandle, id, onError);
         try {
           const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
           const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
@@ -290,7 +290,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     const progressEntries = await readProgressFiles(dirHandle, onError);
     const prog = progressEntries[taskId];
 
-    await deleteProgressFile(dirHandle, taskId);
+    await deleteProgressFile(dirHandle, taskId, onError);
 
     setData(prev => {
       if (!prev) return prev;
@@ -314,7 +314,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
 
   const cancelTask = useCallback(async (taskId: number) => {
     if (!dirHandle) return;
-    await deleteProgressFile(dirHandle, taskId);
+    await deleteProgressFile(dirHandle, taskId, onError);
     setData(prev => {
       if (!prev) return prev;
       const tasks = (prev.tasks || []).map(t =>
