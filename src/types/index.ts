@@ -21,6 +21,7 @@ export interface Task {
   skills?: string[];
   manual?: boolean;
   supervision?: boolean;
+  autoApprove?: boolean;
   progress?: string;
   blockedReason?: string;
   lastProgress?: string;

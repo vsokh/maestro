@@ -178,6 +178,21 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         ) : null}
       </div>
 
+      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.autoApprove ? 'var(--dm-success)' : 'var(--dm-text-light)' }}>
+          <input
+            type="checkbox"
+            checked={!!task.autoApprove}
+            onChange={e => onUpdateTask(task.id, { autoApprove: e.target.checked || undefined })}
+            style={{ accentColor: 'var(--dm-success)', cursor: 'pointer' }}
+          />
+          <span style={{ fontWeight: 600 }}>Auto-approve</span>
+        </label>
+        {task.autoApprove ? (
+          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>Skip plan — go straight to implementation</span>
+        ) : null}
+      </div>
+
       <div style={{ marginBottom: '16px' }}>
         <div className="label" style={{ marginBottom: '6px' }}>
           {task.manual ? 'Steps / Notes' : 'Notes for Claude'}

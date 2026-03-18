@@ -52,7 +52,7 @@ Check:
 | Notes | Branch | Action |
 |-------|--------|--------|
 | yes | yes | **Resume with code.** Worktree should exist (if not: \`git worktree add .devmanager/worktrees/task-{taskId} task-{taskId}-{slug}\`). Read notes, skip to step 5. |
-| yes | no | **Resume exploration.** Read notes, present plan for approval, skip to step 4. |
+| yes | no | **Resume exploration.** Read notes. If \`autoApprove\`: skip to step 4. Otherwise: present plan for approval, skip to step 4. |
 | no | no | **Fresh task.** Continue to step 3. |
 
 ### 3. Explore + plan (fresh tasks only)
@@ -83,7 +83,9 @@ Decide: what changes, approach, risks. (Keep technical details in notes file —
 
 This file lives on master — survives session interruptions at any phase.
 
-Present the plan to the user. **STOP. Wait for approval.** Do NOT launch sub-agents until they say go.
+**If the task has \`autoApprove: true\`:** Skip presenting the plan — proceed directly to step 4 (create worktree) and step 5 (delegate). Still save the notes file.
+
+**Otherwise:** Present the plan to the user. **STOP. Wait for approval.** Do NOT launch sub-agents until they say go.
 
 ### 4. Create worktree + branch (after approval only)
 
@@ -207,7 +209,7 @@ The user wears a **manager hat**. Talk to them in product terms:
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
 2. **Delegate, don't implement.** Sub-agents write code. You plan, review, and coordinate.
 3. **NEVER write to state.json** (except arrange: \`dependsOn\`/\`group\` only). No activity entries, no new tasks, no status changes. All communication is through progress files.
-4. **Wait for approval** before delegating. Present plan, then STOP.
+4. **Wait for approval** before delegating — unless the task has \`autoApprove: true\`, in which case skip straight to implementation.
 5. **Worktree per task.** Use \`git worktree add\` — never \`git checkout\`. Main repo stays on master. Sub-agents work in \`.devmanager/worktrees/task-{id}/\`.
 6. **Stay in scope.** Only do what the task asks. Don't create new tasks or rearrange things. If you discover something, tell the user.
 `;
