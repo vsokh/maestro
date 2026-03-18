@@ -30,6 +30,7 @@ export function Header({ projectName, status, onDisconnect }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           onClick={onDisconnect}
+          aria-label="Disconnect project"
           title="Switch project"
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
@@ -54,6 +55,7 @@ export function Header({ projectName, status, onDisconnect }) {
         ) : null}
         <button
           onClick={toggleTheme}
+          aria-label="Toggle theme"
           title={dark ? 'Light mode' : 'Dark mode'}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',

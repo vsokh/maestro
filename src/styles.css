@@ -116,6 +116,17 @@ input, textarea { color: var(--dm-text); }
 }
 
 /* Responsive: narrow screens */
+/* Keyboard focus indicators */
+:focus-visible {
+  outline: 2px solid var(--dm-accent);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
 @media (max-width: 900px) {
   .dm-container {
     padding: 16px;

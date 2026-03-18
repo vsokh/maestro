@@ -2,6 +2,10 @@ import React from 'react';
 import { PAUSED_COLOR } from '../../constants/colors.js';
 import { STATUS } from '../../constants/statuses.js';
 
+const handleKeyActivate = (handler) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+};
+
 const isWaiting = (task) => {
   const p = (task.progress || '').toLowerCase();
   return /waiting|approval|planning/.test(p);
@@ -69,7 +73,10 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
     <div
       key={task.id}
       data-task-id={task.id}
+      role="button"
+      tabIndex={0}
       onClick={() => onSelectTask(task.id)}
+      onKeyDown={handleKeyActivate(() => onSelectTask(task.id))}
       className={(task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : '') + (glowTaskId === task.id ? ' task-card-glow' : '') || undefined}
       style={getCardStyle(task, selectedTask)}
       onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--dm-shadow-md)'}
@@ -102,6 +109,7 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); onPauseTask(task.id); }}
+            aria-label="Pause task"
             title="Pause — save progress, resume later"
             style={{
               padding: '1px 6px', background: 'none', border: '1px solid var(--dm-border)',
@@ -114,6 +122,7 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
           >&#9646;&#9646;</button>
           <button
             onClick={(e) => { e.stopPropagation(); onCancelTask(task.id); }}
+            aria-label="Cancel task"
             title="Cancel — discard progress, reset to pending"
             style={{
               padding: '1px 6px', background: 'none', border: '1px solid var(--dm-border)',

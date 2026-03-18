@@ -7,6 +7,10 @@ import { StatusFilter } from './board/StatusFilter.jsx';
 import { EpicGroup } from './board/EpicGroup.jsx';
 import { DoneSection } from './board/DoneSection.jsx';
 
+const handleKeyActivate = (handler) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+};
+
 export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }) {
   const [editingGroup, setEditingGroup] = useState(null);
   const [editGroupName, setEditGroupName] = useState('');
@@ -197,7 +201,10 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         ) : null}
         {!showNewForm ? (
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setShowNewForm(true)}
+            onKeyDown={handleKeyActivate(() => setShowNewForm(true))}
             style={{
               border: '2px dashed var(--dm-border)',
               borderRadius: 'var(--dm-radius-sm)', padding: '12px 16px',

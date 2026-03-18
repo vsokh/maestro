@@ -4,6 +4,10 @@ function isCompleted(label) {
   return /completed|done/i.test(label);
 }
 
+const handleKeyActivate = (handler) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+};
+
 export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
   const taskIds = useMemo(() => new Set((tasks || []).map(t => t.id)), [tasks]);
   const entries = useMemo(() => {
@@ -46,12 +50,15 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
         <div
           key={e.key}
           className={'activity-row' + (e.clickableTaskId != null ? ' activity-clickable' : '')}
+          role={e.clickableTaskId != null ? 'button' : undefined}
+          tabIndex={e.clickableTaskId != null ? 0 : undefined}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '5px 14px',
             opacity: e.isToday ? 1 : 0.6,
           }}
           onClick={e.clickableTaskId != null ? () => onNavigateToTask(e.clickableTaskId) : undefined}
+          onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => onNavigateToTask(e.clickableTaskId)) : undefined}
         >
           {/* Colored dot */}
           <span style={{
@@ -84,6 +91,7 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
           {/* Remove */}
           <button
             onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
+            aria-label="Remove activity"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: 'var(--dm-text-light)', fontSize: '11px', padding: '0 2px',

@@ -71,6 +71,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         ) : (
           <button
             onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+            aria-label="Launch task"
             title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
             className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
             style={{
@@ -99,6 +100,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         {isActive && onPauseTask ? (
           <button
             onClick={() => onPauseTask(item.task)}
+            aria-label="Pause task"
             title="Pause — save progress, resume later"
             style={{
               padding: '2px 6px', background: 'none', border: 'none',
@@ -109,6 +111,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         ) : null}
         <button
           onClick={() => onRemove(key)}
+          aria-label="Remove from queue"
           title="Remove from queue"
           style={{
             padding: '2px 6px', background: 'none', border: 'none',
@@ -238,6 +241,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   ) : (
                     <button
                       onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+                      aria-label="Launch task"
                       title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
                       className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
                       style={{
@@ -266,6 +270,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   {isActive && onPauseTask ? (
                     <button
                       onClick={() => onPauseTask(item.task)}
+                      aria-label="Pause task"
                       title="Pause — save progress, resume later"
                       style={{
                         padding: '2px 6px', background: 'none', border: 'none',
@@ -276,6 +281,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   ) : null}
                   <button
                     onClick={() => onRemove(key)}
+                    aria-label="Remove from queue"
                     title="Remove from queue"
                     style={{
                       padding: '2px 6px', background: 'none', border: 'none',

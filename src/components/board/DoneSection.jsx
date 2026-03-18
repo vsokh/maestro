@@ -1,12 +1,19 @@
 import React from 'react';
 
+const handleKeyActivate = (handler) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+};
+
 export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups, showCompleted, setShowCompleted, showBacklog, setShowBacklog, epicColors, selectedTask, onSelectTask, glowTaskId }) {
   return (
     <>
       {backlogTasks.length > 0 ? (
         <div>
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setShowBacklog(p => !p)}
+            onKeyDown={handleKeyActivate(() => setShowBacklog(p => !p))}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
               padding: '8px 0', userSelect: 'none',
@@ -34,7 +41,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
-                      <div key={t.id} data-task-id={t.id} onClick={() => onSelectTask(t.id)} style={{
+                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))} style={{
                         border: selectedTask === t.id ? '1px solid var(--dm-text-light)' : '1px dashed var(--dm-border)',
                         borderRadius: 'var(--dm-radius-sm)', padding: '5px 10px',
                         cursor: 'pointer', transition: 'all 0.15s', opacity: 0.6,
@@ -55,7 +62,10 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
       {doneTasks.length > 0 ? (
         <div>
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setShowCompleted(p => !p)}
+            onKeyDown={handleKeyActivate(() => setShowCompleted(p => !p))}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
               padding: '8px 0', userSelect: 'none',
@@ -83,7 +93,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
-                      <div key={t.id} data-task-id={t.id} onClick={() => onSelectTask(t.id)} style={{
+                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))} style={{
                         border: selectedTask === t.id ? '1px solid var(--dm-text-light)' : '1px solid var(--dm-border)',
                         borderRadius: 'var(--dm-radius-sm)', padding: '5px 10px',
                         cursor: 'pointer', transition: 'all 0.15s', opacity: 0.75,

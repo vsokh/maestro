@@ -6,11 +6,16 @@ import { useAttachments, AttachmentsList } from './detail/Attachments.jsx';
 import { Dependencies } from './detail/Dependencies.jsx';
 import { EpicField } from './detail/EpicField.jsx';
 
+const handleKeyActivate = (handler) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+};
+
 export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
   const [localBlockedReason, setLocalBlockedReason] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, dirHandle, onAddAttachment);
 
@@ -18,6 +23,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     setLocalNote(notes || '');
     setLocalBlockedReason(task?.blockedReason || '');
     setEditing(false);
+    setConfirmDelete(false);
   }, [task?.id, notes]);
 
   if (!task) return (
@@ -136,7 +142,10 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         />
       ) : (
         <h3
+          role="button"
+          tabIndex={0}
           onClick={() => { setEditName(task.fullName || task.name); setEditing(true); }}
+          onKeyDown={handleKeyActivate(() => { setEditName(task.fullName || task.name); setEditing(true); })}
           style={{
             fontSize: '14px', fontWeight: 600, marginBottom: '16px', lineHeight: 1.4,
             cursor: 'pointer', padding: '4px 8px', borderRadius: '4px',
@@ -285,17 +294,26 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       ) : null}
 
       <button
-        onClick={() => { if (confirm('Delete "' + (task.fullName || task.name) + '"?')) onDeleteTask(task.id); }}
+        onClick={() => {
+          if (confirmDelete) { onDeleteTask(task.id); setConfirmDelete(false); }
+          else { setConfirmDelete(true); }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setConfirmDelete(false);
+        }}
+        onBlur={() => setConfirmDelete(false)}
         style={{
           width: '100%', padding: '6px 16px', marginTop: '8px',
-          background: 'none', color: 'var(--dm-text-light)',
-          border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)',
+          background: confirmDelete ? 'var(--dm-danger)' : 'none',
+          color: confirmDelete ? 'white' : 'var(--dm-text-light)',
+          border: confirmDelete ? '1px solid var(--dm-danger)' : '1px solid var(--dm-border)',
+          borderRadius: 'var(--dm-radius-sm)',
           fontSize: '12px', fontFamily: 'var(--dm-font)',
           cursor: 'pointer', transition: 'all 0.15s',
         }}
-        onMouseOver={e => { e.target.style.color = 'var(--dm-danger)'; e.target.style.borderColor = 'var(--dm-danger)'; }}
-        onMouseOut={e => { e.target.style.color = 'var(--dm-text-light)'; e.target.style.borderColor = 'var(--dm-border)'; }}
-      >Delete task</button>
+        onMouseOver={e => { if (!confirmDelete) { e.target.style.color = 'var(--dm-danger)'; e.target.style.borderColor = 'var(--dm-danger)'; } }}
+        onMouseOut={e => { if (!confirmDelete) { e.target.style.color = 'var(--dm-text-light)'; e.target.style.borderColor = 'var(--dm-border)'; } }}
+      >{confirmDelete ? 'Confirm delete?' : 'Delete task'}</button>
     </div>
   );
 }

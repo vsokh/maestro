@@ -2,6 +2,10 @@ import React from 'react';
 import { STATUS } from '../../constants/statuses.js';
 import { TaskCard } from './TaskCard.jsx';
 
+const handleKeyActivate = (handler) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+};
+
 export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, onRenameGroup, onQueueGroup, queue, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId }) {
   return (
     <div style={{ marginBottom: groupName ? '12px' : '0' }}>
@@ -27,7 +31,10 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <div
+              role="button"
+              tabIndex={0}
               onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
+              onKeyDown={handleKeyActivate(() => { setEditingGroup(groupName); setEditGroupName(groupName); })}
               title="Click to rename epic"
               style={{
                 fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',

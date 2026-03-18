@@ -163,6 +163,7 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }) {
               </div>
               <button
                 onClick={() => onDeleteAttachment(task.id, att.id)}
+                aria-label="Remove attachment"
                 className="attachment-delete-btn"
                 style={{
                   position: 'absolute', top: '4px', right: '4px',
