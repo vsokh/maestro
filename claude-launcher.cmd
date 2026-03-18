@@ -30,12 +30,10 @@ for /f "tokens=1,2,3 delims=?" %%a in ("!raw!") do (
 :: Convert forward slashes to backslashes in path
 set "dir=!dir:/=\!"
 
-:: URL-decode spaces
-set "dir=!dir:%%20= !"
-if defined cmd set "cmd=!cmd:%%20= !"
-if defined cmd set "cmd=!cmd:+= !"
-if defined title set "title=!title:%%20= !"
-if defined title set "title=!title:+= !"
+:: URL-decode all parameters (handles %20, %3F, %23, etc.)
+for /f "usebackq delims=" %%x in (`powershell -NoProfile -Command "[System.Uri]::UnescapeDataString('!dir!')"`) do set "dir=%%x"
+if defined cmd for /f "usebackq delims=" %%x in (`powershell -NoProfile -Command "[System.Uri]::UnescapeDataString('!cmd!')"`) do set "cmd=%%x"
+if defined title for /f "usebackq delims=" %%x in (`powershell -NoProfile -Command "[System.Uri]::UnescapeDataString('!title!')"`) do set "title=%%x"
 
 :: Defaults
 if not defined cmd set "cmd=/orchestrator next"

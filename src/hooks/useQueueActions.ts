@@ -100,7 +100,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
     const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
     const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
-    const url = 'claudecode:' + path + '?' + cmd + '?' + title;
+    const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent(cmd) + '?' + encodeURIComponent(title);
     launchProtocol(url);
     setLaunchedId(itemKey);
     setTimeout(() => setLaunchedId(null), 3000);
@@ -122,7 +122,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
       const dmDir = await ensureDevManagerDir(dirHandle);
 
       for (const item of items) {
-        const taskScript = `$Host.UI.RawUI.WindowTitle = '${escapePS(shortTitle(item.taskName))}'\r\nclaude --dangerously-skip-permissions '${item.cmd}'\r\n`;
+        const taskScript = `$Host.UI.RawUI.WindowTitle = '${escapePS(shortTitle(item.taskName))}'\r\nclaude --dangerously-skip-permissions '${escapePS(item.cmd)}'\r\n`;
         const fh = await dmDir.getFileHandle(`launch-${item.key}.ps1`, { create: true });
         const w = await fh.createWritable();
         await w.write(taskScript);
@@ -145,7 +145,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     }
 
     const path = projectPath.replace(/\\/g, '/');
-    launchProtocol('claudecode:' + path + '?__launch_file?Launch phase');
+    launchProtocol('claudecode:' + encodeURIComponent(path) + '?__launch_file?Launch%20phase');
 
     items.forEach(item => {
       setLaunchedId(item.key);
@@ -156,7 +156,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   const handleArrange = () => {
     if (!projectPath) return;
     const path = projectPath.replace(/\\/g, '/');
-    const url = 'claudecode:' + path + '?/orchestrator arrange?Arrange tasks';
+    const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent('/orchestrator arrange') + '?' + encodeURIComponent('Arrange tasks');
     launchProtocol(url);
   };
 
