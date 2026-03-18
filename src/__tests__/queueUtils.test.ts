@@ -30,44 +30,41 @@ describe('escapePS', () => {
     expect(escapePS("line1\r\nline2")).toBe("line1 line2");
   });
 
-  // Injection attack payloads — these document the CURRENT behavior of escapePS.
-  // escapePS only escapes single quotes and newlines. All other dangerous
-  // characters/operators pass through unescaped. Task 38 will address these gaps.
-  describe('injection payloads (current behavior)', () => {
-    it('backtick command execution passes through unescaped', () => {
-      // In PowerShell, backticks are the escape character and `whoami` would execute
+  describe('injection payloads (properly escaped)', () => {
+    it('backtick command execution is properly escaped', () => {
+      // In PowerShell, backticks are the escape character — they get doubled
       const input = '`whoami`';
-      expect(escapePS(input)).toBe('`whoami`');
+      expect(escapePS(input)).toBe('``whoami``');
     });
 
-    it('PowerShell variable expansion passes through unescaped', () => {
-      // $env:USERNAME would expand to the current user in PS
+    it('PowerShell variable expansion is properly escaped', () => {
+      // $env:USERNAME would expand to the current user in PS — $ gets backtick-prefixed
       const input = '$env:USERNAME';
-      expect(escapePS(input)).toBe('$env:USERNAME');
+      expect(escapePS(input)).toBe('`$env:USERNAME');
     });
 
-    it('subexpression operator passes through unescaped', () => {
-      // $(Get-Process) would execute Get-Process in PS
+    it('subexpression operator is properly escaped', () => {
+      // $(Get-Process) would execute Get-Process in PS — $, (, ) all escaped
       const input = '$(Get-Process)';
-      expect(escapePS(input)).toBe('$(Get-Process)');
+      expect(escapePS(input)).toBe('`$`(Get-Process`)');
     });
 
-    it('semicolon command chaining passes through unescaped', () => {
-      // ; would allow chaining a second command
+    it('semicolon command chaining is properly escaped', () => {
+      // ; would allow chaining a second command — gets backtick-prefixed
       const input = '; rm -rf /';
-      expect(escapePS(input)).toBe('; rm -rf /');
+      expect(escapePS(input)).toBe('`; rm -rf /');
     });
 
-    it('pipeline passes through unescaped', () => {
-      // | would pipe output to another command
+    it('pipeline is properly escaped', () => {
+      // | would pipe output to another command — gets backtick-prefixed
       const input = '| Out-File hack.txt';
-      expect(escapePS(input)).toBe('| Out-File hack.txt');
+      expect(escapePS(input)).toBe('`| Out-File hack.txt');
     });
 
-    it('call operator passes through unescaped', () => {
-      // & is the call operator in PS
+    it('call operator is properly escaped', () => {
+      // & is the call operator in PS — gets backtick-prefixed
       const input = '& calc.exe';
-      expect(escapePS(input)).toBe('& calc.exe');
+      expect(escapePS(input)).toBe('`& calc.exe');
     });
   });
 });
@@ -101,42 +98,39 @@ describe('escapeCmd', () => {
     expect(escapeCmd("line1\nline2")).toBe("line1 line2");
   });
 
-  // Injection attack payloads — these document the CURRENT behavior of escapeCmd.
-  // escapeCmd escapes double quotes, percent signs, and newlines. Other dangerous
-  // characters/operators pass through unescaped. Task 38 will address these gaps.
-  describe('injection payloads (current behavior)', () => {
-    it('ampersand command chaining passes through unescaped', () => {
-      // & chains commands in cmd.exe: foo & del *
+  describe('injection payloads (properly escaped)', () => {
+    it('ampersand command chaining is properly escaped', () => {
+      // & chains commands in cmd.exe — gets caret-prefixed
       const input = 'foo & del *';
-      expect(escapeCmd(input)).toBe('foo & del *');
+      expect(escapeCmd(input)).toBe('foo ^& del *');
     });
 
-    it('pipe redirection passes through unescaped', () => {
-      // | pipes output to another command
+    it('pipe redirection is properly escaped', () => {
+      // | pipes output to another command — gets caret-prefixed
       const input = 'foo | net user';
-      expect(escapeCmd(input)).toBe('foo | net user');
-    });
-
-    it('output redirect passes through unescaped', () => {
-      // > redirects output to a file
-      const input = 'foo > hack.txt';
-      expect(escapeCmd(input)).toBe('foo > hack.txt');
-    });
-
-    it('caret escape passes through unescaped', () => {
-      // ^ is the escape char in cmd; ^| would resolve to a literal pipe
-      const input = 'foo ^| net user';
       expect(escapeCmd(input)).toBe('foo ^| net user');
     });
 
-    it('percent variable is now escaped by escapeCmd', () => {
-      // %USERPROFILE% would expand to an env variable in cmd — escapeCmd now handles this
+    it('output redirect is properly escaped', () => {
+      // > redirects output to a file — gets caret-prefixed
+      const input = 'foo > hack.txt';
+      expect(escapeCmd(input)).toBe('foo ^> hack.txt');
+    });
+
+    it('caret escape character is properly escaped', () => {
+      // ^ is doubled first, then | is caret-prefixed: ^| → ^^| → ^^^|
+      const input = 'foo ^| net user';
+      expect(escapeCmd(input)).toBe('foo ^^^| net user');
+    });
+
+    it('percent variable is properly escaped', () => {
+      // %USERPROFILE% would expand to an env variable in cmd — % gets doubled
       const input = '%USERPROFILE%';
       expect(escapeCmd(input)).toBe('%%USERPROFILE%%');
     });
 
-    it('backtick in cmd context passes through unescaped', () => {
-      // backticks have no special meaning in cmd, but test for completeness
+    it('backtick in cmd context passes through unchanged', () => {
+      // backticks have no special meaning in cmd — no escaping needed
       const input = 'foo `bar';
       expect(escapeCmd(input)).toBe('foo `bar');
     });
