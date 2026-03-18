@@ -46,13 +46,11 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const epicColors = useMemo(() => {
     const map: Record<string, EpicColor> = {};
     const usedIndices = new Set();
-    // First pass: registered epics with stored color
     (epics || []).forEach(e => {
       const idx = (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length;
       usedIndices.add(idx);
       map[e.name] = EPIC_PALETTE[idx];
     });
-    // Second pass: unregistered groups get hash-based color (avoid collisions)
     allGroups.forEach(g => {
       if (!g || map[g]) return;
       let idx = hashString(g) % EPIC_PALETTE.length;
@@ -60,13 +58,26 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
       while (usedIndices.has(idx) && attempts < EPIC_PALETTE.length) { idx = (idx + 1) % EPIC_PALETTE.length; attempts++; }
       usedIndices.add(idx);
       map[g!] = EPIC_PALETTE[idx];
-      // Auto-register this epic
-      if (onUpdateEpics && epics) {
-        const newEpics = [...epics, { name: g!, color: idx }];
-        setTimeout(() => onUpdateEpics(newEpics), 0);
-      }
     });
     return map;
+  }, [allGroups, epics]);
+  // Auto-register unregistered groups as epics
+  useEffect(() => {
+    if (!onUpdateEpics || !epics) return;
+    const registeredNames = new Set(epics.map(e => e.name));
+    const usedIndices = new Set(epics.map(e => (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length));
+    const newEpics: Epic[] = [];
+    allGroups.forEach(g => {
+      if (!g || registeredNames.has(g)) return;
+      let idx = hashString(g) % EPIC_PALETTE.length;
+      let attempts = 0;
+      while (usedIndices.has(idx) && attempts < EPIC_PALETTE.length) { idx = (idx + 1) % EPIC_PALETTE.length; attempts++; }
+      usedIndices.add(idx);
+      newEpics.push({ name: g, color: idx });
+    });
+    if (newEpics.length > 0) {
+      onUpdateEpics([...epics, ...newEpics]);
+    }
   }, [allGroups, epics, onUpdateEpics]);
   // All epic names for autocomplete (from registry, which includes auto-registered ones)
   const epicNames = useMemo(() => (epics || []).map(e => e.name), [epics]);

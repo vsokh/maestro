@@ -18,6 +18,91 @@ import {
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error';
 
+export interface MergeResult {
+  data: StateData;
+  needsWrite: boolean;
+  hasChanges: boolean;
+  completedTaskIds: number[];
+  arrangeCompleted: boolean;
+}
+
+export function mergeProgressIntoState(
+  stateData: StateData,
+  progressEntries: Record<string | number, import('../types').ProgressEntry>,
+): MergeResult {
+  if (Object.keys(progressEntries).length === 0) {
+    return { data: stateData, needsWrite: false, hasChanges: false, completedTaskIds: [], arrangeCompleted: false };
+  }
+
+  const tasks: Task[] = [...(stateData.tasks || [])];
+  const activity: Activity[] = [...(stateData.activity || [])];
+  let queue = [...(stateData.queue || [])];
+  let needsWrite = false;
+  let hasChanges = false;
+  const completedTaskIds: number[] = [];
+  let arrangeCompleted = false;
+
+  for (const [taskId, prog] of Object.entries(progressEntries)) {
+    if (taskId === 'arrange' && prog.status === 'done') {
+      activity.unshift({
+        id: 'act_' + Date.now() + '_arrange',
+        time: Date.now(),
+        label: prog.label || 'Tasks arranged into dependency graph',
+      });
+      arrangeCompleted = true;
+      needsWrite = true;
+      hasChanges = true;
+      continue;
+    }
+
+    const id = Number(taskId);
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx === -1) continue;
+
+    if (prog.status === 'done') {
+      tasks[idx] = {
+        ...tasks[idx],
+        status: 'done',
+        completedAt: prog.completedAt || new Date().toISOString(),
+        commitRef: prog.commitRef || tasks[idx].commitRef || undefined,
+        branch: prog.branch || tasks[idx].branch || undefined,
+        progress: undefined,
+      };
+      queue = queue.filter(q => q.task !== id);
+      const actEntry: Activity = {
+        id: 'act_' + Date.now() + '_' + id,
+        time: Date.now(),
+        label: (tasks[idx].name || 'Task ' + id) + ' completed',
+        taskId: id,
+      };
+      if (prog.commitRef) actEntry.commitRef = prog.commitRef;
+      if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
+      activity.unshift(actEntry);
+      completedTaskIds.push(id);
+      needsWrite = true;
+    } else {
+      const enriched: Partial<Task> = {
+        status: prog.status || tasks[idx].status,
+        progress: prog.progress || tasks[idx].progress,
+      };
+      if (prog.status === 'in-progress' && !tasks[idx].startedAt) {
+        enriched.startedAt = new Date().toISOString();
+        needsWrite = true;
+      }
+      tasks[idx] = { ...tasks[idx], ...enriched } as Task;
+      hasChanges = true;
+    }
+  }
+
+  return {
+    data: { ...stateData, tasks, activity: activity.slice(0, 20), queue },
+    needsWrite,
+    hasChanges: hasChanges || needsWrite,
+    completedTaskIds,
+    arrangeCompleted,
+  };
+}
+
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
@@ -161,75 +246,25 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       }
 
       const progressEntries = await readProgressFiles(dirHandle, onError);
-      let needsWrite = false;
+      const mergeResult = mergeProgressIntoState(stateData, progressEntries);
+      stateData = mergeResult.data;
+      if (mergeResult.hasChanges) stateChanged = true;
 
-      if (Object.keys(progressEntries).length > 0) {
-        const tasks: Task[] = [...(stateData.tasks || [])];
-        const activity: Activity[] = [...(stateData.activity || [])];
-        let queue = [...(stateData.queue || [])];
-
-        for (const [taskId, prog] of Object.entries(progressEntries)) {
-          if (taskId === 'arrange' && prog.status === 'done') {
-            activity.unshift({
-              id: 'act_' + Date.now() + '_arrange',
-              time: Date.now(),
-              label: prog.label || 'Tasks arranged into dependency graph',
-            });
-            await deleteProgressFile(dirHandle, 'arrange');
-            needsWrite = true;
-            stateChanged = true;
-            continue;
-          }
-
-          const id = Number(taskId);
-          const idx = tasks.findIndex(t => t.id === id);
-          if (idx === -1) continue;
-
-          if (prog.status === 'done') {
-            tasks[idx] = {
-              ...tasks[idx],
-              status: 'done',
-              completedAt: prog.completedAt || new Date().toISOString(),
-              commitRef: prog.commitRef || tasks[idx].commitRef || undefined,
-              branch: prog.branch || tasks[idx].branch || undefined,
-              progress: undefined,
-            };
-            queue = queue.filter(q => q.task !== id);
-            const actEntry: Activity = {
-              id: 'act_' + Date.now() + '_' + id,
-              time: Date.now(),
-              label: (tasks[idx].name || 'Task ' + id) + ' completed',
-              taskId: id,
-            };
-            if (prog.commitRef) actEntry.commitRef = prog.commitRef;
-            if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
-            activity.unshift(actEntry);
-            await deleteProgressFile(dirHandle, id);
-            try {
-              const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
-              const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
-              if (notesDir) await notesDir.removeEntry(id + '.md').catch(e => console.warn('Failed to remove notes file for task ' + id + ':', e));
-              await dmDir.removeEntry('launch-' + id + '.cmd').catch(e => console.warn('Failed to remove launch file for task ' + id + ':', e));
-            } catch (err) { console.error('Failed to clean up after task completion:', err); }
-            needsWrite = true;
-          } else {
-            const enriched: Partial<Task> = {
-              status: prog.status || tasks[idx].status,
-              progress: prog.progress || tasks[idx].progress,
-            };
-            if (prog.status === 'in-progress' && !tasks[idx].startedAt) {
-              enriched.startedAt = new Date().toISOString();
-              needsWrite = true;
-            }
-            tasks[idx] = { ...tasks[idx], ...enriched } as Task;
-            stateChanged = true;
-          }
-        }
-
-        stateData = { ...stateData, tasks, activity: activity.slice(0, 20), queue };
+      // Clean up progress files for completed tasks and arrange
+      if (mergeResult.arrangeCompleted) {
+        await deleteProgressFile(dirHandle, 'arrange');
+      }
+      for (const id of mergeResult.completedTaskIds) {
+        await deleteProgressFile(dirHandle, id);
+        try {
+          const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
+          const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
+          if (notesDir) await notesDir.removeEntry(id + '.md').catch(e => console.warn('Failed to remove notes file for task ' + id + ':', e));
+          await dmDir.removeEntry('launch-' + id + '.cmd').catch(e => console.warn('Failed to remove launch file for task ' + id + ':', e));
+        } catch (err) { console.error('Failed to clean up after task completion:', err); }
       }
 
-      if (needsWrite) {
+      if (mergeResult.needsWrite) {
         stateData.savedAt = new Date().toISOString();
         const ok = await writeState(dirHandle, stateData);
         if (ok) lastWriteTime.current = Date.now();
