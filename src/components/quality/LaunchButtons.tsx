@@ -3,13 +3,7 @@ import {
   LAUNCH_HEALTHCHECK_CMD, LAUNCH_HEALTHCHECK, LAUNCH_HEALTHCHECK_ACTIVE,
   LAUNCH_AUTOFIX_CMD, LAUNCH_AUTOFIX, LAUNCH_AUTOFIX_ACTIVE,
 } from '../../constants/strings.ts';
-
-export function launchClaude(projectPath: string, command: string, title: string) {
-  if (!projectPath) return;
-  const path = projectPath.replace(/\\/g, '/');
-  const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent(command) + '?' + encodeURIComponent(title);
-  window.open(url, '_blank');
-}
+import { launchClaude } from '../../utils/launchClaude.ts';
 
 export function HealthcheckButton({ projectPath }: { projectPath: string }) {
   const [launched, setLaunched] = useState(false);

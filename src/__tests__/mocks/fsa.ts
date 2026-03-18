@@ -54,11 +54,10 @@ export class MockFileHandle {
 
   createWritable(): Promise<MockWritableFileStream> {
     const writable = new MockWritableFileStream();
-    const fileHandle = this;
     const originalClose = writable.close.bind(writable);
     writable.close = async () => {
       await originalClose();
-      fileHandle.updateContent(writable.getWrittenContent());
+      this.updateContent(writable.getWrittenContent());
     };
     this.lastWritable = writable;
     return Promise.resolve(writable);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface ErrorToastProps {
   message: string | null;
@@ -6,15 +6,7 @@ interface ErrorToastProps {
 }
 
 export function ErrorToast({ message, onDismiss }: ErrorToastProps) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (message) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-  }, [message]);
+  const visible = !!message;
 
   if (!message && !visible) return null;
 

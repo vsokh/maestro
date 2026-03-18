@@ -283,7 +283,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       await syncSkills(dirHandle);
     }, 3000);
     return () => { if (pollTimer.current) clearInterval(pollTimer.current); };
-  }, [connected, dirHandle]);
+  }, [connected, dirHandle, onError]);
 
   const pauseTask = useCallback(async (taskId: number) => {
     if (!dirHandle) return;

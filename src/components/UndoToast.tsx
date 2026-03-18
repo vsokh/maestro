@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { UNDO_BUTTON } from '../constants/strings.ts';
 
 import type { UndoEntry } from '../types';
@@ -10,15 +10,7 @@ interface UndoToastProps {
 }
 
 export function UndoToast({ entry, onUndo, onDismiss }: UndoToastProps) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (entry) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-  }, [entry]);
+  const visible = !!entry;
 
   if (!entry && !visible) return null;
 

@@ -127,13 +127,15 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const [showCompleted, setShowCompleted] = useState(false);
 
   // Auto-expand Done/Backlog when a task in that section is selected (e.g. from Activity feed)
-  useEffect(() => {
-    if (!selectedTask) return;
-    const task = tasks.find(t => t.id === selectedTask);
-    if (!task) return;
-    if (task.status === STATUS.DONE && !showCompleted) setShowCompleted(true);
-    if (task.status === STATUS.BACKLOG && !showBacklog) setShowBacklog(true);
-  }, [selectedTask]);
+  const [prevSelectedTask, setPrevSelectedTask] = useState<number | null>(null);
+  if (selectedTask !== prevSelectedTask) {
+    setPrevSelectedTask(selectedTask);
+    if (selectedTask) {
+      const selTask = tasks.find(t => t.id === selectedTask);
+      if (selTask?.status === STATUS.DONE && !showCompleted) setShowCompleted(true);
+      if (selTask?.status === STATUS.BACKLOG && !showBacklog) setShowBacklog(true);
+    }
+  }
 
   // Epic progress stats across ALL tasks (not just pending)
   const epicStats = useMemo(() => {

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { STATUS } from '../constants/statuses.ts';
 import { Timeline } from './detail/Timeline.tsx';
-import { useAttachments, AttachmentsList } from './detail/Attachments.tsx';
+import { useAttachments } from '../hooks/useAttachments.ts';
+import { AttachmentsList } from './detail/Attachments.tsx';
 import { Dependencies } from './detail/Dependencies.tsx';
 import { EpicField } from './detail/EpicField.tsx';
 import {
@@ -41,12 +42,15 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
   const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, dirHandle, onAddAttachment);
 
-  useEffect(() => {
+  const [prevResetKey, setPrevResetKey] = useState('');
+  const resetKey = `${task?.id}|${notes}|${task?.blockedReason || ''}`;
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
     setLocalNote(notes || '');
     setLocalBlockedReason(task?.blockedReason || '');
     setEditing(false);
     setConfirmDelete(false);
-  }, [task?.id, notes]);
+  }
 
   if (!task) return (
     <div style={{

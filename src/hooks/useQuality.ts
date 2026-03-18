@@ -10,9 +10,9 @@ export function useQuality(dirHandle: FileSystemDirectoryHandle | null) {
 
   const readQuality = useCallback(async () => {
     if (!dirHandle) return;
-    setError(false);
     try {
       const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
+      setError(false);
       const qualDir = await dmDir.getDirectoryHandle('quality');
 
       try {
@@ -41,13 +41,11 @@ export function useQuality(dirHandle: FileSystemDirectoryHandle | null) {
   }, [dirHandle]);
 
   useEffect(() => {
-    readQuality();
-  }, [readQuality]);
-
-  useEffect(() => {
     if (!dirHandle) return;
     const timer = setInterval(readQuality, 5000);
-    return () => clearInterval(timer);
+    // Schedule initial read asynchronously to avoid synchronous setState in effect
+    const initialTimer = setTimeout(readQuality, 0);
+    return () => { clearInterval(timer); clearTimeout(initialTimer); };
   }, [dirHandle, readQuality]);
 
   return { latest, history, loading, error, retry: readQuality };
