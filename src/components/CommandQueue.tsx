@@ -18,7 +18,7 @@ interface CommandQueueProps {
   onSetPath: (path: string) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll, onPauseTask, launchedId, projectPath, onSetPath }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, launchedId, projectPath, onSetPath }: CommandQueueProps) {
   const itemKey = (item: QueueItem) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');

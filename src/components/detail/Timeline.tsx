@@ -49,7 +49,7 @@ interface TimelineProps {
 
 export function Timeline({ task }: TimelineProps) {
   // Build history: from task.history array, or fallback to legacy timestamp fields
-  let history: HistoryEntry[] = task.history || [];
+  const history: HistoryEntry[] = task.history || [];
   if (history.length === 0) {
     if (task.createdAt) history.push({ status: STATUS.CREATED, at: task.createdAt });
     if (task.startedAt) history.push({ status: STATUS.IN_PROGRESS, at: task.startedAt });

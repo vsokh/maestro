@@ -6,7 +6,7 @@ import { STATUS } from '../constants/statuses.ts';
 import { StatusFilter } from './board/StatusFilter.tsx';
 import { EpicGroup } from './board/EpicGroup.tsx';
 import { DoneSection } from './board/DoneSection.tsx';
-import type { Task, QueueItem, Epic, EpicColor } from '../types';
+import type { Task, QueueItem, Epic } from '../types';
 
 const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }

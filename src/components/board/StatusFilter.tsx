@@ -12,7 +12,7 @@ interface StatusFilterProps {
   setSearchFocused: (focused: boolean) => void;
 }
 
-export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, searchText, setSearchText, searchFocused, setSearchFocused }: StatusFilterProps) {
+export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, searchText, setSearchText, searchFocused: _searchFocused, setSearchFocused }: StatusFilterProps) {
   const statusFilters = [
     { label: 'All', value: 'all' },
     { label: 'Pending', value: STATUS.PENDING },
