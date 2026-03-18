@@ -7,7 +7,69 @@ interface ProjectPickerProps {
   status: string;
 }
 
+function LoadingSkeleton() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Skeleton header */}
+      <div className="skeleton-header">
+        <div className="skeleton-bar" style={{ width: '140px', height: '16px' }} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="skeleton-bar skeleton-circle" style={{ width: '24px', height: '24px' }} />
+          <div className="skeleton-bar skeleton-circle" style={{ width: '24px', height: '24px' }} />
+        </div>
+      </div>
+
+      {/* Skeleton body */}
+      <div style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '24px 32px' }}>
+        {/* Tab bar skeleton */}
+        <div className="skeleton-panel" style={{ marginBottom: '16px', padding: '12px 16px' }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div className="skeleton-bar" style={{ width: '50px', height: '14px' }} />
+            <div className="skeleton-bar" style={{ width: '50px', height: '14px' }} />
+          </div>
+        </div>
+
+        {/* Top grid skeleton */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '16px', marginBottom: '16px' }}>
+          <div className="skeleton-panel" style={{ padding: '16px' }}>
+            <div className="skeleton-bar" style={{ width: '80px', height: '12px', marginBottom: '16px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="skeleton-card" />
+              <div className="skeleton-card" />
+              <div className="skeleton-card" />
+            </div>
+          </div>
+          <div className="skeleton-panel" style={{ padding: '16px' }}>
+            <div className="skeleton-bar" style={{ width: '50px', height: '12px', marginBottom: '16px' }} />
+            <div className="skeleton-bar" style={{ width: '100%', height: '12px', marginBottom: '8px' }} />
+            <div className="skeleton-bar" style={{ width: '80%', height: '12px', marginBottom: '8px' }} />
+            <div className="skeleton-bar" style={{ width: '60%', height: '12px' }} />
+          </div>
+        </div>
+
+        {/* Bottom grid skeleton */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="skeleton-panel" style={{ padding: '16px' }}>
+            <div className="skeleton-bar" style={{ width: '50px', height: '12px', marginBottom: '16px' }} />
+            <div className="skeleton-bar" style={{ width: '100%', height: '14px', marginBottom: '8px' }} />
+            <div className="skeleton-bar" style={{ width: '90%', height: '14px' }} />
+          </div>
+          <div className="skeleton-panel" style={{ padding: '16px' }}>
+            <div className="skeleton-bar" style={{ width: '60px', height: '12px', marginBottom: '16px' }} />
+            <div className="skeleton-bar" style={{ width: '85%', height: '12px', marginBottom: '8px' }} />
+            <div className="skeleton-bar" style={{ width: '70%', height: '12px' }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectPicker({ onConnect, onReconnect, lastProjectName, status }: ProjectPickerProps) {
+  if (status === 'connecting') {
+    return <LoadingSkeleton />;
+  }
+
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
