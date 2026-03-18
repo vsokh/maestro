@@ -13,12 +13,13 @@ interface CommandQueueProps {
   onClear: () => void;
   onQueueAll: () => void;
   onPauseTask: (id: number) => void;
+  onUpdateTask: (id: number, updates: Partial<Task>) => void;
   launchedId: number | null;
   projectPath: string;
   onSetPath: (path: string) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, launchedId, projectPath, onSetPath }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, launchedId, projectPath, onSetPath }: CommandQueueProps) {
   const itemKey = (item: QueueItem) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
@@ -98,7 +99,21 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           >{btn.icon}</button>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.taskName}</span>
+            {!isManual && (
+              <button
+                onClick={() => onUpdateTask(item.task, { autoApprove: !task?.autoApprove || undefined })}
+                title={task?.autoApprove ? 'Auto-approved — click to require review' : 'Click to auto-approve'}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: '11px', padding: '0 2px', flexShrink: 0,
+                  opacity: task?.autoApprove ? 1 : 0.3,
+                  color: task?.autoApprove ? 'var(--dm-success)' : 'var(--dm-text-light)',
+                }}
+              >{'\u2713'}</button>
+            )}
+          </div>
           {isActive && task?.progress ? (
             <span aria-live="polite" className={`progress-text-shimmer${status === 'waiting' ? ' text-amber' : ' text-accent'}`} style={{
               fontSize: '10px', display: 'block', marginTop: '1px',
@@ -143,6 +158,20 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             padding: '4px 10px', borderRadius: 'var(--dm-radius-sm)',
           }}>&#9654; Launch all</button>
         ) : null}
+        <button
+          onClick={() => {
+            const nonManual = queue.filter(item => !taskMap.get(item.task)?.manual);
+            const allApproved = nonManual.length > 0 && nonManual.every(item => taskMap.get(item.task)?.autoApprove);
+            nonManual.forEach(item => {
+              onUpdateTask(item.task, { autoApprove: allApproved ? undefined : true });
+            });
+          }}
+          className="btn btn-secondary btn-xs"
+          style={{
+            padding: '4px 10px',
+            color: queue.filter(item => !taskMap.get(item.task)?.manual).length > 0 && queue.filter(item => !taskMap.get(item.task)?.manual).every(item => taskMap.get(item.task)?.autoApprove) ? 'var(--dm-success)' : undefined,
+          }}
+        >{queue.filter(item => !taskMap.get(item.task)?.manual).length > 0 && queue.filter(item => !taskMap.get(item.task)?.manual).every(item => taskMap.get(item.task)?.autoApprove) ? 'Unapprove all' : '\u2713 Auto-approve all'}</button>
         <button onClick={onClear} className="btn btn-secondary btn-xs" style={{
           padding: '4px 10px',
         }}>Unqueue all</button>
@@ -186,6 +215,18 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                 >&#9654; Launch phase</button>
               </>
             ) : null}
+            <button
+              onClick={() => {
+                const nonManual = phaseItems.filter(item => !taskMap.get(item.task)?.manual);
+                const allApproved = nonManual.length > 0 && nonManual.every(item => taskMap.get(item.task)?.autoApprove);
+                nonManual.forEach(item => {
+                  onUpdateTask(item.task, { autoApprove: allApproved ? undefined : true });
+                });
+              }}
+              title={phaseItems.filter(item => !taskMap.get(item.task)?.manual).length > 0 && phaseItems.filter(item => !taskMap.get(item.task)?.manual).every(item => taskMap.get(item.task)?.autoApprove) ? 'Remove auto-approve from phase' : 'Auto-approve all in phase'}
+              className="btn-launch-phase"
+              style={{ padding: '1px 8px', color: phaseItems.filter(item => !taskMap.get(item.task)?.manual).length > 0 && phaseItems.filter(item => !taskMap.get(item.task)?.manual).every(item => taskMap.get(item.task)?.autoApprove) ? 'var(--dm-success)' : undefined }}
+            >{'\u2713'} Auto</button>
           </div>
           {/* Phase items with tree lines */}
           {phaseItems.map((item, itemIdx) => {
@@ -245,7 +286,21 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                     >{btn.icon}</button>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.taskName}</span>
+                      {!isManual && (
+                        <button
+                          onClick={() => onUpdateTask(item.task, { autoApprove: !task?.autoApprove || undefined })}
+                          title={task?.autoApprove ? 'Auto-approved — click to require review' : 'Click to auto-approve'}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            fontSize: '11px', padding: '0 2px', flexShrink: 0,
+                            opacity: task?.autoApprove ? 1 : 0.3,
+                            color: task?.autoApprove ? 'var(--dm-success)' : 'var(--dm-text-light)',
+                          }}
+                        >{'\u2713'}</button>
+                      )}
+                    </div>
                     {isActive && task?.progress ? (
                       <span aria-live="polite" className={`progress-text-shimmer${status === 'waiting' ? ' text-amber' : ' text-accent'}`} style={{
                         fontSize: '10px', display: 'block', marginTop: '1px',
@@ -280,6 +335,20 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         </div>
       ))}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+        <button
+          onClick={() => {
+            const nonManual = queue.filter(item => !taskMap.get(item.task)?.manual);
+            const allApproved = nonManual.length > 0 && nonManual.every(item => taskMap.get(item.task)?.autoApprove);
+            nonManual.forEach(item => {
+              onUpdateTask(item.task, { autoApprove: allApproved ? undefined : true });
+            });
+          }}
+          className="btn btn-secondary btn-xs"
+          style={{
+            padding: '4px 10px',
+            color: queue.filter(item => !taskMap.get(item.task)?.manual).length > 0 && queue.filter(item => !taskMap.get(item.task)?.manual).every(item => taskMap.get(item.task)?.autoApprove) ? 'var(--dm-success)' : undefined,
+          }}
+        >{queue.filter(item => !taskMap.get(item.task)?.manual).length > 0 && queue.filter(item => !taskMap.get(item.task)?.manual).every(item => taskMap.get(item.task)?.autoApprove) ? 'Unapprove all' : '\u2713 Auto-approve all'}</button>
         <button onClick={onClear} className="btn btn-secondary btn-xs" style={{
           padding: '4px 10px',
         }}>Unqueue all</button>
