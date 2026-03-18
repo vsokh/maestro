@@ -2,6 +2,11 @@ import React from 'react';
 import type { Task, QueueItem } from '../../types';
 import { itemKey, cmdForItem, getItemStatus, isAllAutoApproved } from './queueItemUtils.ts';
 import { QueueItemContent } from './QueueItemContent.tsx';
+import {
+  QUEUE_PARALLEL, QUEUE_LAUNCH_PHASE_TITLE, QUEUE_LAUNCH_PHASE,
+  QUEUE_REMOVE_PHASE_APPROVE, QUEUE_PHASE_APPROVE, QUEUE_AUTO_LABEL,
+  QUEUE_UNAPPROVE_ALL, QUEUE_APPROVE_ALL, QUEUE_UNQUEUE_ALL,
+} from '../../constants/strings.ts';
 
 interface PhaseViewProps {
   phases: QueueItem[][];
@@ -42,17 +47,17 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
             <span>Phase {idx + 1}</span>
             {phaseItems.length > 1 ? (
               <>
-                <span style={{ fontWeight: 400, opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>parallel</span>
+                <span style={{ fontWeight: 400, opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>{QUEUE_PARALLEL}</span>
                 <button
                   onClick={() => onLaunchPhase(phaseItems.map(item => ({
                     key: itemKey(item),
                     cmd: cmdForItem(item),
                     taskName: item.taskName,
                   })))}
-                  title="Launch all tasks in this phase"
+                  title={QUEUE_LAUNCH_PHASE_TITLE}
                   className="btn-launch-phase"
                   style={{ padding: '1px 8px' }}
-                >&#9654; Launch phase</button>
+                >{QUEUE_LAUNCH_PHASE}</button>
               </>
             ) : null}
             <button
@@ -61,10 +66,10 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
                 const allApproved = isAllAutoApproved(phaseItems, taskMap);
                 onBatchUpdateTasks(nonManual.map(item => ({ id: item.task, updates: { autoApprove: allApproved ? undefined : true } })));
               }}
-              title={isAllAutoApproved(phaseItems, taskMap) ? 'Remove auto-approve from phase' : 'Auto-approve all in phase'}
+              title={isAllAutoApproved(phaseItems, taskMap) ? QUEUE_REMOVE_PHASE_APPROVE : QUEUE_PHASE_APPROVE}
               className="btn-launch-phase"
               style={{ padding: '1px 8px', color: isAllAutoApproved(phaseItems, taskMap) ? 'var(--dm-success)' : undefined }}
-            >{'\u2713'} Auto</button>
+            >{QUEUE_AUTO_LABEL}</button>
           </div>
           {/* Phase items with tree lines */}
           {phaseItems.map((item, itemIdx) => {
@@ -133,10 +138,10 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
             padding: '4px 10px',
             color: isAllAutoApproved(queue, taskMap) ? 'var(--dm-success)' : undefined,
           }}
-        >{isAllAutoApproved(queue, taskMap) ? 'Unapprove all' : '\u2713 Auto-approve all'}</button>
+        >{isAllAutoApproved(queue, taskMap) ? QUEUE_UNAPPROVE_ALL : QUEUE_APPROVE_ALL}</button>
         <button onClick={onClear} className="btn btn-secondary btn-xs" style={{
           padding: '4px 10px',
-        }}>Unqueue all</button>
+        }}>{QUEUE_UNQUEUE_ALL}</button>
       </div>
     </div>
   );

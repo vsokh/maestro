@@ -4,6 +4,14 @@ import { Timeline } from './detail/Timeline.tsx';
 import { useAttachments, AttachmentsList } from './detail/Attachments.tsx';
 import { Dependencies } from './detail/Dependencies.tsx';
 import { EpicField } from './detail/EpicField.tsx';
+import {
+  DETAIL_EMPTY, DETAIL_STATUS_ARIA, DETAIL_PASTED, DETAIL_BLOCKED_PLACEHOLDER,
+  DETAIL_EDIT_TITLE, DETAIL_NEEDS_REVIEW, DETAIL_REVIEW_HELP, DETAIL_AUTO_APPROVE,
+  DETAIL_AUTO_APPROVE_HELP, DETAIL_NOTES_MANUAL, DETAIL_NOTES_CLAUDE,
+  DETAIL_NOTES_MANUAL_PLACEHOLDER, DETAIL_NOTES_CLAUDE_PLACEHOLDER,
+  DETAIL_ACTIVATE_TOOLTIP, DETAIL_ACTIVATE, DETAIL_MARK_DONE, DETAIL_MOVE_BACKLOG,
+  DETAIL_BACKLOG, DETAIL_QUEUE, DETAIL_CONFIRM_DELETE, DETAIL_DELETE,
+} from '../constants/strings.ts';
 import type { Task, TaskStatus, Epic } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -47,7 +55,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     }}>
       <div className="empty-state">
         <div style={{ fontSize: '24px', opacity: 0.4, marginBottom: '8px' }}>&#9678;</div>
-        Click a task to see details
+        {DETAIL_EMPTY}
       </div>
     </div>
   );
@@ -74,7 +82,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <select
-          aria-label="Task status"
+          aria-label={DETAIL_STATUS_ARIA}
           value={task.status}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
             const next = e.target.value as TaskStatus;
@@ -94,7 +102,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         </select>
         {pastedFeedback && (
           <span className="text-accent" style={{ fontSize: '11px', fontWeight: 600, animation: 'fadeIn 0.2s' }}>
-            Pasted!
+            {DETAIL_PASTED}
           </span>
         )}
       </div>
@@ -115,7 +123,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             onInput={(e: React.FormEvent<HTMLInputElement>) => setLocalBlockedReason((e.target as HTMLInputElement).value)}
             onBlur={() => onUpdateTask(task.id, { blockedReason: localBlockedReason })}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-            placeholder="Why is this blocked?"
+            placeholder={DETAIL_BLOCKED_PLACEHOLDER}
             className="input-blocked"
             style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
           />
@@ -143,7 +151,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onKeyDown={handleKeyActivate(() => { setEditName(task.fullName || task.name); setEditing(true); })}
           className="detail-title"
           style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', lineHeight: 1.4, padding: '4px 8px' }}
-          title="Click to edit"
+          title={DETAIL_EDIT_TITLE}
         >
           {task.fullName || task.name}
         </h3>
@@ -171,10 +179,10 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             onChange={e => onUpdateTask(task.id, { supervision: e.target.checked || undefined })}
             style={{ accentColor: 'var(--dm-amber)', cursor: 'pointer' }}
           />
-          <span style={{ fontWeight: 600 }}>Needs review</span>
+          <span style={{ fontWeight: 600 }}>{DETAIL_NEEDS_REVIEW}</span>
         </label>
         {task.supervision ? (
-          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>Complex or risky — review plan carefully</span>
+          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{DETAIL_REVIEW_HELP}</span>
         ) : null}
       </div>
 
@@ -186,22 +194,22 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             onChange={e => onUpdateTask(task.id, { autoApprove: e.target.checked || undefined })}
             style={{ accentColor: 'var(--dm-success)', cursor: 'pointer' }}
           />
-          <span style={{ fontWeight: 600 }}>Auto-approve</span>
+          <span style={{ fontWeight: 600 }}>{DETAIL_AUTO_APPROVE}</span>
         </label>
         {task.autoApprove ? (
-          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>Skip plan — go straight to implementation</span>
+          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{DETAIL_AUTO_APPROVE_HELP}</span>
         ) : null}
       </div>
 
       <div style={{ marginBottom: '16px' }}>
         <div className="label" style={{ marginBottom: '6px' }}>
-          {task.manual ? 'Steps / Notes' : 'Notes for Claude'}
+          {task.manual ? DETAIL_NOTES_MANUAL : DETAIL_NOTES_CLAUDE}
         </div>
         <textarea
           value={localNote}
           onInput={(e: React.FormEvent<HTMLTextAreaElement>) => setLocalNote((e.target as HTMLTextAreaElement).value)}
           onBlur={() => onUpdateNotes(task.id, localNote)}
-          placeholder={task.manual ? 'What you need to do...' : 'Instructions for Claude...'}
+          placeholder={task.manual ? DETAIL_NOTES_MANUAL_PLACEHOLDER : DETAIL_NOTES_CLAUDE_PLACEHOLDER}
           rows={4}
           className="textarea-field"
           style={{ width: '100%', fontSize: '12px', padding: '8px' }}
@@ -215,14 +223,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       {task.status === STATUS.BACKLOG ? (
         <button
           onClick={() => onUpdateTask(task.id, { status: STATUS.PENDING })}
-          title="Move from backlog to active tasks — it will appear in Up Next and can be queued"
+          title={DETAIL_ACTIVATE_TOOLTIP}
           className="btn btn-primary"
           style={{
             width: '100%', padding: '8px 16px', fontSize: '13px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
           }}
         >
-          Activate &#8594;
+          {DETAIL_ACTIVATE}
         </button>
       ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && task.manual ? (
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -234,14 +242,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
             }}
           >
-            Mark done &#10003;
+            {DETAIL_MARK_DONE}
           </button>
           <button
             onClick={() => onUpdateTask(task.id, { status: STATUS.BACKLOG })}
-            title="Move to backlog"
+            title={DETAIL_MOVE_BACKLOG}
             className="btn btn-secondary"
             style={{ padding: '8px 12px', fontSize: '12px' }}
-          >Backlog</button>
+          >{DETAIL_BACKLOG}</button>
         </div>
       ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && !task.manual ? (
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -253,14 +261,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
             }}
           >
-            Queue &#9654;
+            {DETAIL_QUEUE}
           </button>
           <button
             onClick={() => onUpdateTask(task.id, { status: STATUS.BACKLOG })}
-            title="Move to backlog"
+            title={DETAIL_MOVE_BACKLOG}
             className="btn btn-secondary"
             style={{ padding: '8px 12px', fontSize: '12px' }}
-          >Backlog</button>
+          >{DETAIL_BACKLOG}</button>
         </div>
       ) : null}
 
@@ -280,7 +288,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           border: confirmDelete ? '1px solid var(--dm-danger)' : undefined,
           color: confirmDelete ? 'white' : undefined,
         }}
-      >{confirmDelete ? 'Confirm delete?' : 'Delete task'}</button>
+      >{confirmDelete ? DETAIL_CONFIRM_DELETE : DETAIL_DELETE}</button>
     </div>
   );
 }

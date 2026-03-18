@@ -1,6 +1,7 @@
 import React from 'react';
 import { STATUS } from '../../constants/statuses.ts';
 import { TaskCard } from './TaskCard.tsx';
+import { EPIC_RENAME_TITLE } from '../../constants/strings.ts';
 import type { Task, QueueItem, EpicColor } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -51,7 +52,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
               tabIndex={0}
               onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
               onKeyDown={handleKeyActivate(() => { setEditingGroup(groupName); setEditGroupName(groupName); })}
-              title="Click to rename epic"
+              title={EPIC_RENAME_TITLE}
               className="epic-label"
               style={{
                 color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',

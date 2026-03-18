@@ -1,5 +1,6 @@
 import React from 'react';
 import { STATUS } from '../../constants/statuses.ts';
+import { DEPS_TITLE, DEPS_REMOVE_TITLE, DEPS_ADD_TITLE } from '../../constants/strings.ts';
 import type { Task } from '../../types';
 
 interface DependenciesProps {
@@ -24,7 +25,7 @@ export function Dependencies({ task, tasks, onUpdateTask }: DependenciesProps) {
   return (
     <div style={{ marginBottom: '16px' }}>
       <div className="label" style={{ marginBottom: '6px' }}>
-        Depends on {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
+        {DEPS_TITLE} {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
       </div>
       {selected.length > 0 ? (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
@@ -32,7 +33,7 @@ export function Dependencies({ task, tasks, onUpdateTask }: DependenciesProps) {
             <button
               key={t.id}
               onClick={() => toggleDep(t.id)}
-              title="Click to remove dependency"
+              title={DEPS_REMOVE_TITLE}
               className="dep-btn--selected"
               style={{ padding: '3px 10px' }}
             >
@@ -47,7 +48,7 @@ export function Dependencies({ task, tasks, onUpdateTask }: DependenciesProps) {
             <button
               key={t.id}
               onClick={() => toggleDep(t.id)}
-              title="Click to add dependency"
+              title={DEPS_ADD_TITLE}
               className="dep-btn--available"
               style={{ padding: '3px 10px' }}
             >

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { UNDO_BUTTON } from '../constants/strings.ts';
 
 import type { UndoEntry } from '../types';
 
@@ -43,7 +44,7 @@ export function UndoToast({ entry, onUndo, onDismiss }: UndoToastProps) {
         className="btn-undo"
         style={{ fontSize: '13px', padding: '2px 8px' }}
       >
-        Undo
+        {UNDO_BUTTON}
       </button>
       <button
         onClick={onDismiss}

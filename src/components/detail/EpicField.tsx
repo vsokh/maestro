@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { EPIC_PALETTE } from '../../constants/colors.ts';
 import { hashString } from '../../utils/hash.ts';
+import { EPIC_LABEL, EPIC_PLACEHOLDER } from '../../constants/strings.ts';
 import type { Task, Epic } from '../../types';
 
 interface EpicFieldProps {
@@ -21,7 +22,7 @@ export function EpicField({ task, epics, onUpdateTask }: EpicFieldProps) {
 
   return (
     <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <span className="label">Epic</span>
+      <span className="label">{EPIC_LABEL}</span>
       {task.group && epicColorMap[task.group] ? (
         <span style={{
           width: "8px", height: "8px", borderRadius: "50%",
@@ -32,7 +33,7 @@ export function EpicField({ task, epics, onUpdateTask }: EpicFieldProps) {
       <input
         value={task.group || ''}
         onInput={(e: React.FormEvent<HTMLInputElement>) => onUpdateTask(task.id, { group: (e.target as HTMLInputElement).value || undefined })}
-        placeholder="None"
+        placeholder={EPIC_PLACEHOLDER}
         list="epic-list"
         className="input-epic"
         style={{ flex: 1, padding: '3px 8px', fontSize: '12px' }}

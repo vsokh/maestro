@@ -14,6 +14,7 @@ import { UndoToast } from './components/UndoToast.tsx';
 import { ErrorToast } from './components/ErrorToast.tsx';
 import { QualityPanel } from './components/QualityPanel.tsx';
 import { useQuality } from './hooks/useQuality.ts';
+import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
 import type { StateData, UndoEntry } from './types';
 
 export function App() {
@@ -29,7 +30,7 @@ export function App() {
   const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask } = project;
 
   useEffect(() => {
-    document.title = projectName || 'Dev Manager';
+    document.title = projectName || APP_NAME;
   }, [projectName]);
 
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
@@ -217,7 +218,7 @@ export function App() {
                   className={`btn-tab ${productTab === tab ? 'btn-tab--active' : 'btn-tab--inactive'}`}
                   style={{ padding: '0 12px', marginBottom: -1 }}
                 >
-                  {tab === 'board' ? 'Board' : 'Quality'}
+                  {tab === 'board' ? TAB_BOARD : TAB_QUALITY}
                 </button>
               ))}
             </div>

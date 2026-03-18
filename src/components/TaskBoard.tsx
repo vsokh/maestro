@@ -6,6 +6,9 @@ import { STATUS } from '../constants/statuses.ts';
 import { StatusFilter } from './board/StatusFilter.tsx';
 import { EpicGroup } from './board/EpicGroup.tsx';
 import { DoneSection } from './board/DoneSection.tsx';
+import {
+  BOARD_UP_NEXT, BOARD_NO_TASKS, BOARD_NO_MATCHING, BOARD_ADD_TASK, BOARD_ARRANGE,
+} from '../constants/strings.ts';
 import type { Task, QueueItem, Epic } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -167,7 +170,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           </div>
         ) : null}
         <div className="label" style={{ marginBottom: '10px' }}>
-          Up next
+          {BOARD_UP_NEXT}
         </div>
         {pendingTasks.length >= 2 ? (
           <StatusFilter
@@ -203,12 +206,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         ))}
         {pendingTasks.length === 0 && !showNewForm ? (
           <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
-            No tasks yet
+            {BOARD_NO_TASKS}
           </div>
         ) : null}
         {pendingTasks.length > 0 && filteredPendingTasks.length === 0 && !showNewForm ? (
           <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
-            No matching tasks
+            {BOARD_NO_MATCHING}
           </div>
         ) : null}
         {!showNewForm ? (
@@ -223,7 +226,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               marginTop: '8px',
             }}
-          >+ Add task</div>
+          >{BOARD_ADD_TASK}</div>
         ) : null}
         {showNewForm ? (
           <div style={{ marginTop: '12px', maxWidth: '380px' }}>
@@ -242,7 +245,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               className="btn btn-amber-outline"
               style={{ padding: '5px 14px', fontSize: '12px' }}
             >
-              Arrange tasks
+              {BOARD_ARRANGE}
             </button>
             {(() => {
               const pendingNotQueued = tasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !(queue || []).some(q => q.task === t.id));

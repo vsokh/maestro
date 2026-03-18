@@ -1,5 +1,9 @@
 import React from 'react';
 import { STATUS } from '../../constants/statuses.ts';
+import {
+  FILTER_ALL, FILTER_PENDING, FILTER_IN_PROGRESS, FILTER_BLOCKED, FILTER_PAUSED,
+  FILTER_SEARCH_PLACEHOLDER,
+} from '../../constants/strings.ts';
 import type { Task } from '../../types';
 
 interface StatusFilterProps {
@@ -14,11 +18,11 @@ interface StatusFilterProps {
 
 export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, searchText, setSearchText, searchFocused: _searchFocused, setSearchFocused }: StatusFilterProps) {
   const statusFilters = [
-    { label: 'All', value: 'all' },
-    { label: 'Pending', value: STATUS.PENDING },
-    { label: 'In Progress', value: STATUS.IN_PROGRESS },
-    { label: 'Blocked', value: STATUS.BLOCKED },
-    { label: 'Paused', value: STATUS.PAUSED },
+    { label: FILTER_ALL, value: 'all' },
+    { label: FILTER_PENDING, value: STATUS.PENDING },
+    { label: FILTER_IN_PROGRESS, value: STATUS.IN_PROGRESS },
+    { label: FILTER_BLOCKED, value: STATUS.BLOCKED },
+    { label: FILTER_PAUSED, value: STATUS.PAUSED },
   ];
   const statusCounts: Record<string, number> = {};
   for (const t of pendingTasks) {
@@ -44,7 +48,7 @@ export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, sear
       </div>
       <input
         type="text"
-        placeholder="Search tasks..."
+        placeholder={FILTER_SEARCH_PLACEHOLDER}
         value={searchText}
         onInput={(e: React.FormEvent<HTMLInputElement>) => setSearchText((e.target as HTMLInputElement).value)}
         onFocus={() => setSearchFocused(true)}

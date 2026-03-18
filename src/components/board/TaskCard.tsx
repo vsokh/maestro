@@ -1,5 +1,9 @@
 import React from 'react';
 import { STATUS } from '../../constants/statuses.ts';
+import {
+  CARD_MANUAL_TITLE, CARD_PAUSE_TITLE, CARD_CANCEL_TITLE,
+  CARD_PAUSE_ARIA, CARD_CANCEL_ARIA,
+} from '../../constants/strings.ts';
 import type { Task } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -65,7 +69,7 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
       style={{ padding: '12px 16px', minWidth: '160px', flex: '1 1 160px', maxWidth: '260px' }}
     >
       <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-        {task.manual ? <span className="manual-badge" title="Manual task" style={{ padding: '1px 5px' }}>YOU</span> : null}
+        {task.manual ? <span className="manual-badge" title={CARD_MANUAL_TITLE} style={{ padding: '1px 5px' }}>YOU</span> : null}
         {task.name}
       </div>
       {task.dependsOn && task.dependsOn.length > 0 ? (
@@ -88,15 +92,15 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); onPauseTask(task.id); }}
-            aria-label="Pause task"
-            title="Pause — save progress, resume later"
+            aria-label={CARD_PAUSE_ARIA}
+            title={CARD_PAUSE_TITLE}
             className="btn-card-action btn-card-action--pause"
             style={{ padding: '1px 6px', flexShrink: 0 }}
           >&#9646;&#9646;</button>
           <button
             onClick={(e) => { e.stopPropagation(); onCancelTask(task.id); }}
-            aria-label="Cancel task"
-            title="Cancel — discard progress, reset to pending"
+            aria-label={CARD_CANCEL_ARIA}
+            title={CARD_CANCEL_TITLE}
             className="btn-card-action btn-card-action--cancel"
             style={{ padding: '1px 6px', flexShrink: 0 }}
           >&#10005;</button>

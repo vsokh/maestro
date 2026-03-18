@@ -1,6 +1,12 @@
 import React from 'react';
 import type { Task, QueueItem } from '../../types';
 import { itemKey, cmdForItem, getItemStatus, getButtonStyle, type ItemStatus } from './queueItemUtils.ts';
+import {
+  QUEUE_MANUAL_TITLE, QUEUE_MANUAL_YOU, QUEUE_LAUNCH_ARIA, QUEUE_LAUNCH_RESUME,
+  QUEUE_LAUNCH_TERMINAL, QUEUE_LAUNCH_SET_PATH, QUEUE_AUTO_APPROVED, QUEUE_CLICK_APPROVE,
+  QUEUE_PAUSED_DEFAULT, QUEUE_PAUSE_ARIA, QUEUE_PAUSE_TITLE, QUEUE_REMOVE_ARIA,
+  QUEUE_REMOVE_TITLE,
+} from '../../constants/strings.ts';
 
 interface QueueItemContentProps {
   item: QueueItem;
@@ -28,19 +34,19 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
     <>
       {isManual ? (
         variant === 'phase' ? (
-          <span title="Manual task (you)" style={{
+          <span title={QUEUE_MANUAL_YOU} style={{
             padding: '4px 8px', fontSize: '12px', flexShrink: 0, lineHeight: 1,
           }}>&#9997;</span>
         ) : (
-          <span className="manual-badge" title="Manual task" style={{
+          <span className="manual-badge" title={QUEUE_MANUAL_TITLE} style={{
             padding: '3px 6px', flexShrink: 0,
           }}>YOU</span>
         )
       ) : (
         <button
           onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-          aria-label="Launch task"
-          title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
+          aria-label={QUEUE_LAUNCH_ARIA}
+          title={isPaused ? QUEUE_LAUNCH_RESUME : projectPath ? QUEUE_LAUNCH_TERMINAL : QUEUE_LAUNCH_SET_PATH}
           className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
           style={{
             padding: '4px 8px', background: btn.bg,
@@ -54,7 +60,7 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
           {!isManual && (
             <button
               onClick={() => onUpdateTask(item.task, { autoApprove: !task?.autoApprove || undefined })}
-              title={task?.autoApprove ? 'Auto-approved \u2014 click to require review' : 'Click to auto-approve'}
+              title={task?.autoApprove ? QUEUE_AUTO_APPROVED : QUEUE_CLICK_APPROVE}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: '11px', padding: '0 2px', flexShrink: 0,
@@ -72,22 +78,22 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
         {isPaused ? (
           <span className="text-paused" style={{
             fontSize: '10px', display: 'block', marginTop: '1px',
-          }}>{task?.lastProgress || 'Paused \u2014 click \u25B6 to resume'}</span>
+          }}>{task?.lastProgress || QUEUE_PAUSED_DEFAULT}</span>
         ) : null}
       </div>
       {isActive && onPauseTask ? (
         <button
           onClick={() => onPauseTask(item.task)}
-          aria-label="Pause task"
-          title="Pause \u2014 save progress, resume later"
+          aria-label={QUEUE_PAUSE_ARIA}
+          title={QUEUE_PAUSE_TITLE}
           className="btn-queue-pause"
           style={{ padding: '2px 6px', fontSize: '12px', lineHeight: 1, flexShrink: 0 }}
         >&#9646;&#9646;</button>
       ) : null}
       <button
         onClick={() => onRemove(key)}
-        aria-label="Remove from queue"
-        title="Remove from queue"
+        aria-label={QUEUE_REMOVE_ARIA}
+        title={QUEUE_REMOVE_TITLE}
         className="btn-queue-remove"
         style={{ padding: '2px 6px', fontSize: '14px', lineHeight: 1 }}
       >x</button>

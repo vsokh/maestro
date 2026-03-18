@@ -7,6 +7,10 @@ import { RadarChart } from './quality/RadarChart';
 import { TimelineChart } from './quality/TimelineChart';
 import { Scorecard } from './quality/Scorecard';
 import { FindingsPanel } from './quality/FindingsPanel';
+import {
+  QUALITY_LOADING, QUALITY_UNAVAILABLE, QUALITY_RETRY, QUALITY_NO_DATA,
+  QUALITY_RADAR, QUALITY_HISTORY, QUALITY_BASELINE,
+} from '../constants/strings.ts';
 
 interface QualityPanelProps {
   latest: QualityReport | null;
@@ -21,7 +25,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
   const prev = useMemo(() => history.length > 1 ? history[history.length - 2] : null, [history]);
 
   if (loading) {
-    return <div className="text-muted" style={{ padding: 24, fontSize: 13 }}>Loading quality data...</div>;
+    return <div className="text-muted" style={{ padding: 24, fontSize: 13 }}>{QUALITY_LOADING}</div>;
   }
 
   if (error) {
@@ -29,7 +33,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
       <div style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>&#9888;</div>
         <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
-          Quality data unavailable
+          {QUALITY_UNAVAILABLE}
         </div>
         {onRetry && (
           <button
@@ -37,7 +41,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
             className="btn btn-secondary"
             style={{ fontSize: 12 }}
           >
-            Retry
+            {QUALITY_RETRY}
           </button>
         )}
       </div>
@@ -49,7 +53,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
       <div style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>&#9776;</div>
         <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
-          No quality data yet.
+          {QUALITY_NO_DATA}
         </div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
           <HealthcheckButton projectPath={projectPath} />
@@ -65,7 +69,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
   return (
     <div style={{ padding: '0 16px 16px' }}>
 
-      {/* ── Header row: grade + score + baseline pills ── */}
+      {/* -- Header row: grade + score + baseline pills -- */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12, flexWrap: 'wrap' }}>
         <div style={{
           width: 52, height: 52, borderRadius: '50%',
@@ -86,7 +90,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
               <span style={{ color: +scoreDelta > 0 ? 'var(--dm-success)' : +scoreDelta < 0 ? 'var(--dm-danger)' : 'var(--dm-text-muted)' }}>
                 {+scoreDelta > 0 ? '+' : ''}{scoreDelta}
               </span>
-            ) : 'baseline'}
+            ) : QUALITY_BASELINE}
             {prev ? ` vs ${prev.date}` : ''}
             {' \u00b7 '}
             <code style={{ fontSize: 10 }}>{latest.commitRef}</code>
@@ -108,28 +112,28 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
         <Pill ok>{b.bundleGzipKB ?? '?'}KB gzip</Pill>
       </div>
 
-      {/* ── Charts row ── */}
+      {/* -- Charts row -- */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
         <div style={{
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)', padding: 12,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div className="label-sm" style={{ marginBottom: 8 }}>Radar</div>
+          <div className="label-sm" style={{ marginBottom: 8 }}>{QUALITY_RADAR}</div>
           <RadarChart latest={latest} prev={prev} width={360} height={340} />
         </div>
         <div style={{
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)', padding: 12,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div className="label-sm" style={{ marginBottom: 8 }}>Score History</div>
+          <div className="label-sm" style={{ marginBottom: 8 }}>{QUALITY_HISTORY}</div>
           <TimelineChart history={history} width={280} height={200} />
         </div>
       </div>
 
-      {/* ── Scorecard table ── */}
+      {/* -- Scorecard table -- */}
       <Scorecard latest={latest} prev={prev} history={history} />
 
-      {/* ── Findings ── */}
+      {/* -- Findings -- */}
       <FindingsPanel findings={latest.topFindings ?? []} />
     </div>
   );

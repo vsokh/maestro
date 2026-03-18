@@ -1,6 +1,11 @@
 import type { Task, TaskStatus } from '../types';
 import React, { useState, useMemo } from 'react';
 import { suggestSkills } from '../skills.ts';
+import {
+  FORM_TITLE_PLACEHOLDER, FORM_EPIC_PLACEHOLDER, FORM_DESC_PLACEHOLDER,
+  FORM_MANUAL_LABEL, FORM_MANUAL_HELP, FORM_SKILLS_LABEL, FORM_SKILLS_AUTO,
+  FORM_SKILLS_PLACEHOLDER, FORM_SKILLS_MATCHED, FORM_CANCEL, FORM_SAVE, FORM_ADD_TASK,
+} from '../constants/strings.ts';
 
 interface CardFormProps {
   card: Partial<Task> | null;
@@ -42,14 +47,14 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
     <form onSubmit={handleSubmit} className="card-form" style={{ padding: '16px', marginBottom: '16px' }}>
       <input
         value={title} onInput={(e: React.FormEvent<HTMLInputElement>) => setTitle((e.target as HTMLInputElement).value)}
-        placeholder="Task title..." autoFocus
+        placeholder={FORM_TITLE_PLACEHOLDER} autoFocus
         className="input-card"
         style={{ width: '100%', padding: '6px 8px', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}
       />
       <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
         <input
           value={group} onInput={(e: React.FormEvent<HTMLInputElement>) => setGroup((e.target as HTMLInputElement).value)}
-          placeholder="Epic (e.g. Auth, DevToolbar)..."
+          placeholder={FORM_EPIC_PLACEHOLDER}
           list="group-list"
           className="input-card"
           style={{ flex: 1, padding: '6px 8px', fontSize: '12px' }}
@@ -62,7 +67,7 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
       </div>
       <textarea
         value={description} onInput={(e: React.FormEvent<HTMLTextAreaElement>) => setDescription((e.target as HTMLTextAreaElement).value)}
-        placeholder="Description (what needs to be done)..."
+        placeholder={FORM_DESC_PLACEHOLDER}
         rows={2}
         className="input-card"
         style={{ width: '100%', padding: '6px 8px', fontSize: '13px', marginBottom: '8px', resize: 'vertical' }}
@@ -72,27 +77,27 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
         fontSize: '12px', color: 'var(--dm-text-muted)', cursor: 'pointer', userSelect: 'none',
       }}>
         <input type="checkbox" checked={manual} onChange={e => setManual(e.target.checked)} />
-        Manual task <span style={{ fontSize: '10px', opacity: 0.7 }}>(done by you, not Claude)</span>
+        {FORM_MANUAL_LABEL} <span style={{ fontSize: '10px', opacity: 0.7 }}>{FORM_MANUAL_HELP}</span>
       </label>
       {!manual ? <div style={{ marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-          <span className="text-muted" style={{ fontSize: '11px', fontWeight: 500 }}>Skills</span>
+          <span className="text-muted" style={{ fontSize: '11px', fontWeight: 500 }}>{FORM_SKILLS_LABEL}</span>
           {!userEditedSkills && suggested.length > 0 ? (
-            <span className="text-accent" style={{ fontSize: '10px', fontStyle: 'italic' }}>auto-detected</span>
+            <span className="text-accent" style={{ fontSize: '10px', fontStyle: 'italic' }}>{FORM_SKILLS_AUTO}</span>
           ) : null}
         </div>
         <input
           value={displaySkills}
           onInput={(e: React.FormEvent<HTMLInputElement>) => { setManualSkills((e.target as HTMLInputElement).value); setUserEditedSkills(true); }}
           onFocus={() => { if (!userEditedSkills) { setManualSkills(suggested.join(', ')); setUserEditedSkills(true); } }}
-          placeholder="Auto-detected from title, or type manually..."
+          placeholder={FORM_SKILLS_PLACEHOLDER}
           className="input-card"
           style={{ width: '100%', padding: '6px 8px', fontSize: '12px', color: userEditedSkills ? 'var(--dm-text)' : 'var(--dm-accent)' }}
         />
         {suggested.length > 0 && !userEditedSkills ? (
           <div style={{ marginTop: '6px' }}>
             <div className="text-light" style={{ fontSize: '10px', lineHeight: 1.5 }}>
-              matched: {matches.map(m => (
+              {FORM_SKILLS_MATCHED} {matches.map(m => (
                 <code key={m.word} className="commit-ref" style={{
                   padding: '0 4px', marginRight: '3px', fontSize: '10px',
                 }}>"{m.word}"</code>
@@ -105,11 +110,11 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
         {onCancel ? (
           <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm" style={{
             padding: '6px 12px',
-          }}>Cancel</button>
+          }}>{FORM_CANCEL}</button>
         ) : null}
         <button type="submit" className="btn btn-primary btn-sm" style={{
           flex: 1, padding: '6px 12px',
-        }}>{card ? 'Save' : 'Add task'}</button>
+        }}>{card ? FORM_SAVE : FORM_ADD_TASK}</button>
       </div>
     </form>
   );

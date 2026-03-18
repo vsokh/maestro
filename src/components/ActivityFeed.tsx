@@ -1,5 +1,8 @@
 import type { Activity, Task } from '../types';
 import React, { useMemo } from 'react';
+import {
+  ACTIVITY_EMPTY, ACTIVITY_REMOVE_ARIA, ACTIVITY_REMOVE_TITLE,
+} from '../constants/strings.ts';
 
 function isCompleted(label: string) {
   return /completed|done/i.test(label);
@@ -45,7 +48,7 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: Ac
   if (entries.length === 0) {
     return (
       <div className="empty-state-sm" style={{ padding: '20px 16px' }}>
-        No activity yet
+        {ACTIVITY_EMPTY}
       </div>
     );
   }
@@ -94,13 +97,13 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: Ac
           {/* Remove */}
           <button
             onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
-            aria-label="Remove activity"
+            aria-label={ACTIVITY_REMOVE_ARIA}
             className="activity-remove activity-remove-btn"
             style={{
               fontSize: '11px', padding: '0 2px',
               lineHeight: 1, opacity: 0,
             }}
-            title="Remove"
+            title={ACTIVITY_REMOVE_TITLE}
           >×</button>
         </div>
       ))}

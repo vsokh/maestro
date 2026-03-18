@@ -1,6 +1,10 @@
 import React from 'react';
 import { PAUSED_COLOR } from '../../constants/colors.ts';
 import { STATUS } from '../../constants/statuses.ts';
+import {
+  TIMELINE_TITLE, TIMELINE_CREATED, TIMELINE_PENDING, TIMELINE_STARTED,
+  TIMELINE_PAUSED, TIMELINE_BLOCKED, TIMELINE_COMPLETED, TIMELINE_BACKLOG,
+} from '../../constants/strings.ts';
 import type { Task, HistoryEntry } from '../../types';
 
 function formatDate(iso: string | undefined) {
@@ -34,13 +38,13 @@ const dotColor: Record<string, string> = {
 };
 
 const label: Record<string, string> = {
-  [STATUS.CREATED]: 'Created',
-  [STATUS.PENDING]: 'Pending',
-  [STATUS.IN_PROGRESS]: 'Started',
-  [STATUS.PAUSED]: 'Paused',
-  [STATUS.BLOCKED]: 'Blocked',
-  [STATUS.DONE]: 'Completed',
-  [STATUS.BACKLOG]: 'Backlog',
+  [STATUS.CREATED]: TIMELINE_CREATED,
+  [STATUS.PENDING]: TIMELINE_PENDING,
+  [STATUS.IN_PROGRESS]: TIMELINE_STARTED,
+  [STATUS.PAUSED]: TIMELINE_PAUSED,
+  [STATUS.BLOCKED]: TIMELINE_BLOCKED,
+  [STATUS.DONE]: TIMELINE_COMPLETED,
+  [STATUS.BACKLOG]: TIMELINE_BACKLOG,
 };
 
 interface TimelineProps {
@@ -61,7 +65,7 @@ export function Timeline({ task }: TimelineProps) {
   return (
     <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
       <div className="label" style={{ marginBottom: '8px' }}>
-        Timeline
+        {TIMELINE_TITLE}
       </div>
       {history.map((entry, i) => {
         const next = history[i + 1];

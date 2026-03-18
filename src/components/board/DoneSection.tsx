@@ -1,4 +1,5 @@
 import React from 'react';
+import { SECTION_BACKLOG, SECTION_DONE } from '../../constants/strings.ts';
 import type { Task, EpicColor } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -36,7 +37,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
               padding: '8px 0', userSelect: 'none',
             }}
           >
-            <span className="label">Backlog</span>
+            <span className="label">{SECTION_BACKLOG}</span>
             <span className="section-toggle-count">{backlogTasks.length}</span>
             <span className="section-toggle-arrow" style={{ transform: showBacklog ? 'rotate(180deg)' : 'none' }}>&#9660;</span>
           </div>
@@ -82,7 +83,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
               padding: '8px 0', userSelect: 'none',
             }}
           >
-            <span className="label">Done</span>
+            <span className="label">{SECTION_DONE}</span>
             <span className="section-toggle-count">{doneTasks.length}</span>
             <span className="section-toggle-arrow" style={{ transform: showCompleted ? 'rotate(180deg)' : 'none' }}>&#9660;</span>
           </div>

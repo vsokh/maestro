@@ -1,13 +1,14 @@
 import React from 'react';
 import type { QualityFinding } from '../../types';
 import { DIM_LABELS } from './shared';
+import { FINDINGS_TITLE } from '../../constants/strings.ts';
 
 export function FindingsPanel({ findings }: { findings: QualityFinding[] }) {
   if (!findings || findings.length === 0) return null;
 
   return (
     <div>
-      <div className="label-sm" style={{ marginBottom: 8 }}>Top Findings</div>
+      <div className="label-sm" style={{ marginBottom: 8 }}>{FINDINGS_TITLE}</div>
       {findings.map((f, i) => {
         const dotColor = f.severity === 'high' ? 'var(--dm-danger)' : f.severity === 'medium' ? 'var(--dm-amber)' : 'var(--dm-accent)';
         return (

@@ -1,4 +1,9 @@
 import React, { useState, useCallback } from 'react';
+import {
+  APP_NAME, HEADER_DISCONNECT_ARIA, HEADER_SWITCH_PROJECT, HEADER_SYNCED,
+  HEADER_SYNC_ERROR, HEADER_CONNECTED, HEADER_TOGGLE_THEME_ARIA,
+  HEADER_LIGHT_MODE, HEADER_DARK_MODE,
+} from '../constants/strings.ts';
 
 interface HeaderProps {
   projectName: string;
@@ -33,28 +38,28 @@ export function Header({ projectName, status, onDisconnect }: HeaderProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           onClick={onDisconnect}
-          aria-label="Disconnect project"
-          title="Switch project"
+          aria-label={HEADER_DISCONNECT_ARIA}
+          title={HEADER_SWITCH_PROJECT}
           className="btn-ghost"
           style={{ fontSize: '14px', padding: '2px 6px', borderRadius: '4px' }}
         >←</button>
         <span style={{ fontWeight: 700, fontSize: '18px', color: 'var(--dm-text)' }}>{projectName}</span>
-        <div className={`dot-sync ${status === 'error' ? 'dot-sync--error' : 'dot-sync--ok'}`} style={{ flexShrink: 0 }} title={status === 'error' ? 'Sync error' : 'Connected'} />
+        <div className={`dot-sync ${status === 'error' ? 'dot-sync--error' : 'dot-sync--ok'}`} style={{ flexShrink: 0 }} title={status === 'error' ? HEADER_SYNC_ERROR : HEADER_CONNECTED} />
         <span className="text-light" style={{ fontSize: '14px' }}>/</span>
-        <span className="text-muted" style={{ fontWeight: 500, fontSize: '16px' }}>Dev Manager</span>
+        <span className="text-muted" style={{ fontWeight: 500, fontSize: '16px' }}>{APP_NAME}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {status === 'synced' ? (
           <span className="text-accent" style={{ fontSize: '12px', fontWeight: 500 }}>
-            Synced from Claude!
+            {HEADER_SYNCED}
           </span>
         ) : status === 'error' ? (
-          <span className="text-danger" style={{ fontSize: '11px' }}>Sync error</span>
+          <span className="text-danger" style={{ fontSize: '11px' }}>{HEADER_SYNC_ERROR}</span>
         ) : null}
         <button
           onClick={toggleTheme}
-          aria-label="Toggle theme"
-          title={dark ? 'Light mode' : 'Dark mode'}
+          aria-label={HEADER_TOGGLE_THEME_ARIA}
+          title={dark ? HEADER_LIGHT_MODE : HEADER_DARK_MODE}
           className="btn-theme-toggle"
           style={{ fontSize: '16px', padding: '4px', lineHeight: 1 }}
         >{dark ? '☀' : '☽'}</button>

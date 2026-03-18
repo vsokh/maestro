@@ -1,4 +1,8 @@
 import React from 'react';
+import {
+  PROJECT_PICKER_TITLE, PROJECT_PICKER_SUBTITLE, PROJECT_PICKER_CONNECT,
+  PROJECT_PICKER_CONNECTING, PROJECT_PICKER_ERROR, PROJECT_PICKER_LAST_OPENED,
+} from '../constants/strings.ts';
 
 interface ProjectPickerProps {
   onConnect: () => void;
@@ -76,8 +80,8 @@ export function ProjectPicker({ onConnect, onReconnect, lastProjectName, status 
       alignItems: 'center', justifyContent: 'center', gap: '32px',
     }}>
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontWeight: 700, fontSize: '28px', color: 'var(--dm-text)', marginBottom: '8px' }}>Dev Manager</h1>
-        <p className="text-light" style={{ fontSize: '14px' }}>Open a project folder to get started</p>
+        <h1 style={{ fontWeight: 700, fontSize: '28px', color: 'var(--dm-text)', marginBottom: '8px' }}>{PROJECT_PICKER_TITLE}</h1>
+        <p className="text-light" style={{ fontSize: '14px' }}>{PROJECT_PICKER_SUBTITLE}</p>
       </div>
 
       <button
@@ -90,7 +94,7 @@ export function ProjectPicker({ onConnect, onReconnect, lastProjectName, status 
           opacity: status === 'connecting' ? 0.7 : 1,
         }}
       >
-        {status === 'connecting' ? 'Connecting...' : 'Open project'}
+        {status === 'connecting' ? PROJECT_PICKER_CONNECTING : PROJECT_PICKER_CONNECT}
       </button>
 
       {lastProjectName ? (
@@ -99,13 +103,13 @@ export function ProjectPicker({ onConnect, onReconnect, lastProjectName, status 
           className="btn-reconnect"
           style={{ fontSize: '13px', padding: '8px 16px' }}
         >
-          Last opened: {lastProjectName}
+          {PROJECT_PICKER_LAST_OPENED} {lastProjectName}
         </button>
       ) : null}
 
       {status === 'error' ? (
         <div className="text-danger" style={{ fontSize: '13px' }}>
-          Could not connect. Make sure your browser supports the File System Access API.
+          {PROJECT_PICKER_ERROR}
         </div>
       ) : null}
     </div>

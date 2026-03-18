@@ -3,6 +3,7 @@ import type { QualityReport, QualityHistoryEntry } from '../../types';
 import { DIM_KEYS, DIM_LABELS, DIM_DESCRIPTIONS, scoreColor, trendFromScores } from './shared';
 import { Tooltip, TrendArrow } from './Tooltip';
 import { Sparkline } from './Sparkline';
+import { SCORECARD_HEADERS, SCORECARD_CLEAN } from '../../constants/strings.ts';
 
 interface ScorecardProps {
   latest: QualityReport;
@@ -15,7 +16,7 @@ export function Scorecard({ latest, prev, history }: ScorecardProps) {
     <table className="scorecard-table" style={{ marginBottom: 16 }}>
       <thead>
         <tr>
-          {['Dimension', 'Score', '', 'Weight', 'Issues', ''].map((h, i) => (
+          {SCORECARD_HEADERS.map((h, i) => (
             <th key={i} className="scorecard-th" style={{ padding: '6px 8px' }}>{h}</th>
           ))}
         </tr>
@@ -55,7 +56,7 @@ export function Scorecard({ latest, prev, history }: ScorecardProps) {
                 }}>{d.weight}</span>
               </td>
               <td className="text-muted" style={{ padding: '7px 8px', fontSize: 12 }}>
-                {d.issues > 0 ? `${d.issues} issues` : 'Clean'}
+                {d.issues > 0 ? `${d.issues} issues` : SCORECARD_CLEAN}
               </td>
               <td style={{ padding: '7px 8px' }}>
                 <Sparkline dimKey={key} history={history} />

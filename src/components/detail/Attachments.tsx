@@ -1,6 +1,10 @@
 import type { Task } from '../../types';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { readAttachmentUrl } from '../../fs.ts';
+import {
+  ATTACHMENTS_TITLE, ATTACHMENTS_PLACEHOLDER, ATTACHMENTS_LOADING,
+  ATTACHMENTS_DELETE_ARIA, ATTACHMENTS_DELETE_TITLE,
+} from '../../constants/strings.ts';
 
 /**
  * Custom hook for attachment drag/drop/paste handling.
@@ -133,11 +137,11 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }: Attachm
   return (
     <div style={{ marginBottom: '16px' }}>
       <div className="label" style={{ marginBottom: '6px' }}>
-        Screenshots
+        {ATTACHMENTS_TITLE}
       </div>
       {attachments.length === 0 ? (
         <div className="attachment-placeholder" style={{ padding: '12px' }}>
-          Paste or drop screenshots here
+          {ATTACHMENTS_PLACEHOLDER}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -155,7 +159,7 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }: Attachm
                 />
               ) : (
                 <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dm-bg)', fontSize: '11px', color: 'var(--dm-text-light)' }}>
-                  Loading...
+                  {ATTACHMENTS_LOADING}
                 </div>
               )}
               <div style={{
@@ -166,7 +170,7 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }: Attachm
               </div>
               <button
                 onClick={() => onDeleteAttachment(task.id, att.id)}
-                aria-label="Remove attachment"
+                aria-label={ATTACHMENTS_DELETE_ARIA}
                 className="attachment-delete-btn attachment-delete"
                 style={{
                   position: 'absolute', top: '4px', right: '4px',
@@ -174,7 +178,7 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }: Attachm
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   opacity: 0, fontSize: '12px', lineHeight: 1, padding: 0,
                 }}
-                title="Delete attachment"
+                title={ATTACHMENTS_DELETE_TITLE}
               >
                 &#215;
               </button>

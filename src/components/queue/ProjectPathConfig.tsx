@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import {
+  QUEUE_PATH_PLACEHOLDER, QUEUE_SAVE, QUEUE_CANCEL, QUEUE_SET_PATH, QUEUE_EDIT,
+} from '../../constants/strings.ts';
 
 interface ProjectPathConfigProps {
   projectPath: string;
@@ -25,7 +28,7 @@ export function ProjectPathConfig({ projectPath, onSetPath, showBorder }: Projec
           value={pathInput}
           onInput={(e: React.FormEvent<HTMLInputElement>) => setPathInput((e.target as HTMLInputElement).value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSavePath()}
-          placeholder="C:\Users\you\Projects\my-project"
+          placeholder={QUEUE_PATH_PLACEHOLDER}
           autoFocus
           className="mono"
           style={{
@@ -36,10 +39,10 @@ export function ProjectPathConfig({ projectPath, onSetPath, showBorder }: Projec
         />
         <button onClick={handleSavePath} className="btn btn-primary btn-xs" style={{
           padding: '6px 10px',
-        }}>Save</button>
+        }}>{QUEUE_SAVE}</button>
         <button onClick={() => setEditingPath(false)} className="btn btn-secondary btn-xs" style={{
           padding: '6px 8px',
-        }}>Cancel</button>
+        }}>{QUEUE_CANCEL}</button>
       </div>
     );
   }
@@ -54,12 +57,12 @@ export function ProjectPathConfig({ projectPath, onSetPath, showBorder }: Projec
           <span className="queue-path" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, opacity: 0.7 }}>{projectPath}</span>
           <button onClick={() => { setPathInput(projectPath); setEditingPath(true); }} className="btn-link text-light" style={{
             fontSize: '11px', flexShrink: 0,
-          }}>edit</button>
+          }}>{QUEUE_EDIT}</button>
         </>
       ) : (
         <button onClick={() => setEditingPath(true)} className="btn-link text-amber" style={{
           fontSize: '11px',
-        }}>Set project path to enable launch</button>
+        }}>{QUEUE_SET_PATH}</button>
       )}
     </div>
   );

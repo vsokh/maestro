@@ -1,5 +1,9 @@
 import React, { useMemo } from 'react';
 import { computePhases } from '../utils/computePhases.ts';
+import {
+  QUEUE_LAUNCH_ALL, QUEUE_UNAPPROVE_ALL, QUEUE_APPROVE_ALL,
+  QUEUE_UNQUEUE_ALL, QUEUE_EMPTY,
+} from '../constants/strings.ts';
 import type { Task, QueueItem } from '../types';
 import { itemKey, cmdForItem, getRowClass, getItemStatus, isAllAutoApproved } from './queue/queueItemUtils.ts';
 import { QueueItemContent } from './queue/QueueItemContent.tsx';
@@ -54,7 +58,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             taskName: item.taskName,
           })))} className="btn btn-accent-outline btn-xs" style={{
             padding: '4px 10px', borderRadius: 'var(--dm-radius-sm)',
-          }}>&#9654; Launch all</button>
+          }}>{QUEUE_LAUNCH_ALL}</button>
         ) : null}
         <button
           onClick={() => {
@@ -67,10 +71,10 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             padding: '4px 10px',
             color: isAllAutoApproved(queue, taskMap) ? 'var(--dm-success)' : undefined,
           }}
-        >{isAllAutoApproved(queue, taskMap) ? 'Unapprove all' : '\u2713 Auto-approve all'}</button>
+        >{isAllAutoApproved(queue, taskMap) ? QUEUE_UNAPPROVE_ALL : QUEUE_APPROVE_ALL}</button>
         <button onClick={onClear} className="btn btn-secondary btn-xs" style={{
           padding: '4px 10px',
-        }}>Unqueue all</button>
+        }}>{QUEUE_UNQUEUE_ALL}</button>
       </div>
     </div>
   );
@@ -81,7 +85,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         <div className="empty-state-sm" style={{
           padding: '20px 16px', lineHeight: 1.6,
         }}>
-          Queue tasks from the detail panel, then launch each in its own terminal.
+          {QUEUE_EMPTY}
         </div>
       ) : phases ? (
         <PhaseView
