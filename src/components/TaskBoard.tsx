@@ -8,7 +8,7 @@ import { EpicGroup } from './board/EpicGroup.tsx';
 import { DoneSection } from './board/DoneSection.tsx';
 import type { Task, QueueItem, Epic } from '../types';
 
-const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
+const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
 };
 

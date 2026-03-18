@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Task, EpicColor } from '../../types';
 
-const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
+const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
 };
 

@@ -3,7 +3,7 @@ import { STATUS } from '../../constants/statuses.ts';
 import { TaskCard } from './TaskCard.tsx';
 import type { Task, QueueItem, EpicColor } from '../../types';
 
-const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
+const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
 };
 

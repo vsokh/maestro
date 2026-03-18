@@ -1,11 +1,11 @@
 const FILLER_WORDS = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
 
 export function escapePS(s: string): string {
-  return s.replace(/'/g, "''");
+  return s.replace(/'/g, "''").replace(/[\r\n]+/g, ' ');
 }
 
 export function escapeCmd(s: string): string {
-  return s.replace(/"/g, '""');
+  return s.replace(/"/g, '""').replace(/%/g, '%%').replace(/[\r\n]+/g, ' ');
 }
 
 export function shortTitle(name: string): string {

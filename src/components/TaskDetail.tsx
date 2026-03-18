@@ -6,7 +6,7 @@ import { Dependencies } from './detail/Dependencies.tsx';
 import { EpicField } from './detail/EpicField.tsx';
 import type { Task, TaskStatus, Epic } from '../types';
 
-const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
+const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
 };
 

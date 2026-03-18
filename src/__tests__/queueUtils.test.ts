@@ -21,6 +21,14 @@ describe('escapePS', () => {
   it('does not affect double quotes', () => {
     expect(escapePS('say "hello"')).toBe('say "hello"');
   });
+
+  it('replaces newlines with spaces', () => {
+    expect(escapePS("line1\nline2")).toBe("line1 line2");
+  });
+
+  it('handles carriage return + newline', () => {
+    expect(escapePS("line1\r\nline2")).toBe("line1 line2");
+  });
 });
 
 describe('escapeCmd', () => {
@@ -38,6 +46,18 @@ describe('escapeCmd', () => {
 
   it('does not affect single quotes', () => {
     expect(escapeCmd("it's fine")).toBe("it's fine");
+  });
+
+  it('escapes percent signs', () => {
+    expect(escapeCmd("100%")).toBe("100%%");
+  });
+
+  it('escapes percent signs in variable-like patterns', () => {
+    expect(escapeCmd("%PATH%")).toBe("%%PATH%%");
+  });
+
+  it('replaces newlines with spaces', () => {
+    expect(escapeCmd("line1\nline2")).toBe("line1 line2");
   });
 });
 

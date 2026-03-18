@@ -5,7 +5,7 @@ function isCompleted(label: string) {
   return /completed|done/i.test(label);
 }
 
-const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
+const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
 };
 
