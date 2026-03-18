@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { DIM_KEYS, DIM_SHORT } from './shared';
+import type { QualityReport, QualityHistoryEntry } from '../../types';
 
 function drawPoly(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, n: number, start: number, step: number, scores: number[], fill: string, stroke: string, lineWidth: number) {
   ctx.beginPath();
@@ -18,7 +19,7 @@ function drawPoly(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: numb
   ctx.stroke();
 }
 
-export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest: any; prev: any; width?: number; height?: number }) {
+export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest: QualityReport | null; prev: QualityHistoryEntry | null; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -88,9 +89,9 @@ export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest
     }
 
     // Previous overlay
-    if (prev) {
+    if (prev?.dimensions) {
       drawPoly(ctx, cx, cy, R, n, start, step,
-        DIM_KEYS.map(k => typeof prev.dimensions[k] === 'number' ? prev.dimensions[k] : 0),
+        DIM_KEYS.map(k => typeof prev.dimensions![k] === 'number' ? prev.dimensions![k] as number : 0),
         'rgba(106,141,190,0.1)', borderColor, 1);
     }
 

@@ -26,6 +26,7 @@ const defaultProps = () => ({
   launchedId: null,
   projectPath: '',
   onSetPath: vi.fn(),
+  onBatchUpdateTasks: vi.fn(),
 });
 
 describe('CommandQueue', () => {

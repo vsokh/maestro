@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { DIM_KEYS, DIM_SHORT } from './shared';
+import type { QualityHistoryEntry } from '../../types';
 
-export function TimelineChart({ history, width = 360, height = 200 }: { history: any[]; width?: number; height?: number }) {
+export function TimelineChart({ history, width = 360, height = 200 }: { history: QualityHistoryEntry[]; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ idx: number; x: number; y: number } | null>(null);
@@ -61,7 +62,7 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
       ctx.fillText(String(history[0].overallScore.toFixed(1)), px, py - 10);
       ctx.fillStyle = mutedColor;
       ctx.font = '9px monospace';
-      ctx.fillText(String(history[0].commitRef), px, height - pad.b + 14);
+      ctx.fillText(history[0].commitRef || '', px, height - pad.b + 14);
       return;
     }
 
@@ -116,7 +117,7 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
       // X label
       ctx.fillStyle = mutedColor;
       ctx.font = '9px monospace';
-      ctx.fillText(history[i].commitRef, px, height - pad.b + 14);
+      ctx.fillText(history[i].commitRef || '', px, height - pad.b + 14);
     }
   }, [history, width, height, hover, pad]);
 
@@ -155,8 +156,10 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
     if (!cur?.dimensions || !prv?.dimensions) return null;
 
     const diffs = DIM_KEYS.map(key => {
-      const curVal = cur.dimensions[key]?.score ?? (typeof cur.dimensions[key] === 'number' ? cur.dimensions[key] : null);
-      const prvVal = prv.dimensions[key]?.score ?? (typeof prv.dimensions[key] === 'number' ? prv.dimensions[key] : null);
+      const curDim = cur.dimensions![key];
+      const prvDim = prv.dimensions![key];
+      const curVal = typeof curDim === 'number' ? curDim : (curDim?.score ?? null);
+      const prvVal = typeof prvDim === 'number' ? prvDim : (prvDim?.score ?? null);
       if (curVal == null || prvVal == null) return null;
       const delta = curVal - prvVal;
       if (delta === 0) return null;

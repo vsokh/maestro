@@ -9,7 +9,7 @@ import { DoneSection } from './board/DoneSection.tsx';
 import {
   BOARD_UP_NEXT, BOARD_NO_TASKS, BOARD_NO_MATCHING, BOARD_ADD_TASK, BOARD_ARRANGE,
 } from '../constants/strings.ts';
-import type { Task, QueueItem, Epic } from '../types';
+import type { Task, QueueItem, Epic, EpicColor } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
@@ -44,7 +44,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
   // Derive colors from epics registry (stable), fallback to hash for unregistered
   const epicColors = useMemo(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, EpicColor> = {};
     const usedIndices = new Set();
     // First pass: registered epics with stored color
     (epics || []).forEach(e => {

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { EPIC_PALETTE } from '../../constants/colors.ts';
 import { hashString } from '../../utils/hash.ts';
 import { EPIC_LABEL, EPIC_PLACEHOLDER } from '../../constants/strings.ts';
-import type { Task, Epic } from '../../types';
+import type { Task, Epic, EpicColor } from '../../types';
 
 interface EpicFieldProps {
   task: Task;
@@ -12,7 +12,7 @@ interface EpicFieldProps {
 
 export function EpicField({ task, epics, onUpdateTask }: EpicFieldProps) {
   const epicColorMap = useMemo(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, EpicColor> = {};
     (epics || []).forEach(e => {
       const idx = (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length;
       map[e.name] = EPIC_PALETTE[idx];
