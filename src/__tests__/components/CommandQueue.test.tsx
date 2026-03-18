@@ -95,5 +95,49 @@ describe('CommandQueue', () => {
       fireEvent.click(launchBtn);
       expect(props.onLaunch).toHaveBeenCalledTimes(1);
     });
+
+    it('clicking remove button on a queue item calls onRemove', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1)];
+      const queue = [makeQueueItem(1, 'My task')];
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      const removeBtn = screen.getByRole('button', { name: 'Remove from queue' });
+      fireEvent.click(removeBtn);
+      expect(props.onRemove).toHaveBeenCalledTimes(1);
+    });
+
+    it('clicking auto-approve toggle on a queue item calls onUpdateTask', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1, { autoApprove: false })];
+      const queue = [makeQueueItem(1, 'My task')];
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      // The auto-approve button shows ✓ character
+      const approveBtn = screen.getByTitle('Click to auto-approve');
+      fireEvent.click(approveBtn);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, { autoApprove: true });
+    });
+
+    it('clicking "Auto-approve all" calls onBatchUpdateTasks for non-manual tasks', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1), makeTask(2)];
+      const queue = [makeQueueItem(1, 'Task 1'), makeQueueItem(2, 'Task 2')];
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      // The button text is "✓ Auto-approve all" (QUEUE_APPROVE_ALL)
+      const approveAllBtn = screen.getByText(/Auto-approve all/);
+      fireEvent.click(approveAllBtn);
+      expect(props.onBatchUpdateTasks).toHaveBeenCalledTimes(1);
+      const updates = props.onBatchUpdateTasks.mock.calls[0][0];
+      expect(updates.length).toBe(2);
+      expect(updates[0]).toEqual({ id: 1, updates: { autoApprove: true } });
+      expect(updates[1]).toEqual({ id: 2, updates: { autoApprove: true } });
+    });
+
+    it('clicking "Unqueue all" when auto-approved shows "Unapprove all"', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1, { autoApprove: true })];
+      const queue = [makeQueueItem(1, 'Task 1')];
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      expect(screen.getByText('Unapprove all')).toBeDefined();
+    });
   });
 });

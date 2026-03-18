@@ -110,5 +110,42 @@ describe('CardForm', () => {
       const savedTask = props.onSave.mock.calls[0][0];
       expect(savedTask.description).toBe('A detailed description');
     });
+
+    it('editing existing task pre-fills title from card prop', () => {
+      const card = makeTask(1, { name: 'Existing task', fullName: 'Existing task' });
+      render(<CardForm {...defaultProps()} card={card} />);
+      const titleInput = screen.getByDisplayValue('Existing task');
+      expect(titleInput).toBeDefined();
+    });
+
+    it('epic/group input value is included in onSave payload', () => {
+      const props = defaultProps();
+      render(<CardForm {...props} />);
+      const titleInput = screen.getByPlaceholderText('Task title...');
+      fireEvent.input(titleInput, { target: { value: 'Some task' } });
+      // Epic placeholder is 'Epic (e.g. Auth, DevToolbar)...'
+      const epicInput = screen.getByPlaceholderText(/Epic/);
+      fireEvent.input(epicInput, { target: { value: 'Auth' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+      expect(props.onSave).toHaveBeenCalledTimes(1);
+      expect(props.onSave.mock.calls[0][0].group).toBe('Auth');
+    });
+
+    it('editing existing task shows "Save" button instead of "Add task"', () => {
+      const card = makeTask(1, { name: 'Edit me' });
+      render(<CardForm {...defaultProps()} card={card} />);
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Add task' })).toBeNull();
+    });
+
+    it('manual task submission sets skills to empty array', () => {
+      const props = defaultProps();
+      render(<CardForm {...props} />);
+      fireEvent.input(screen.getByPlaceholderText('Task title...'), { target: { value: 'Manual work' } });
+      fireEvent.click(screen.getByRole('checkbox')); // toggle manual
+      fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+      expect(props.onSave.mock.calls[0][0].skills).toEqual([]);
+      expect(props.onSave.mock.calls[0][0].manual).toBe(true);
+    });
   });
 });

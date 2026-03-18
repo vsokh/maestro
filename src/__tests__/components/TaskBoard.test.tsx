@@ -102,5 +102,77 @@ describe('TaskBoard', () => {
       fireEvent.click(queueAllBtn);
       expect(props.onQueueAll).toHaveBeenCalledTimes(1);
     });
+
+    it('clicking a task card calls onSelectTask with task id', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1, { name: 'Login feature', group: 'Auth' })];
+      const epics: Epic[] = [{ name: 'Auth', color: 0 }];
+      render(<TaskBoard {...props} tasks={tasks} epics={epics} />);
+      const taskName = screen.getByText('Login feature');
+      fireEvent.click(taskName);
+      expect(props.onSelectTask).toHaveBeenCalledWith(1);
+    });
+
+    it('clicking empty board space deselects task', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1, { name: 'Login feature', group: 'Auth' })];
+      const epics: Epic[] = [{ name: 'Auth', color: 0 }];
+      const { container } = render(<TaskBoard {...props} tasks={tasks} epics={epics} selectedTask={1} />);
+      // Click the outer div (not a card, button, or input)
+      fireEvent.click(container.firstChild!);
+      expect(props.onSelectTask).toHaveBeenCalledWith(null);
+    });
+
+    it('search input filters tasks by name', () => {
+      const props = defaultProps();
+      const tasks = [
+        makeTask(1, { name: 'Login page' }),
+        makeTask(2, { name: 'Signup form' }),
+        makeTask(3, { name: 'Login API' }),
+      ];
+      render(<TaskBoard {...props} tasks={tasks} />);
+      const searchInput = screen.getByPlaceholderText('Search tasks...');
+      fireEvent.input(searchInput, { target: { value: 'Login' } });
+      expect(screen.getByText('Login page')).toBeDefined();
+      expect(screen.getByText('Login API')).toBeDefined();
+      expect(screen.queryByText('Signup form')).toBeNull();
+    });
+
+    it('status filter tabs filter tasks by status', () => {
+      const props = defaultProps();
+      const tasks = [
+        makeTask(1, { name: 'Task A', status: 'pending' }),
+        makeTask(2, { name: 'Task B', status: 'blocked', blockedReason: 'Waiting' }),
+        makeTask(3, { name: 'Task C', status: 'pending' }),
+      ];
+      render(<TaskBoard {...props} tasks={tasks} />);
+      // Click the "Blocked" filter button (it shows "Blocked 1")
+      const blockedFilter = screen.getByRole('button', { name: /^Blocked/ });
+      fireEvent.click(blockedFilter);
+      expect(screen.getByText('Task B')).toBeDefined();
+      expect(screen.queryByText('Task A')).toBeNull();
+      expect(screen.queryByText('Task C')).toBeNull();
+    });
+
+    it('adding a task through the form calls onAddTask and hides the form', () => {
+      const props = defaultProps();
+      render(<TaskBoard {...props} />);
+      fireEvent.click(screen.getByText('+ Add task'));
+      const titleInput = screen.getByPlaceholderText('Task title...');
+      fireEvent.input(titleInput, { target: { value: 'New feature' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+      expect(props.onAddTask).toHaveBeenCalledTimes(1);
+      expect(props.onAddTask.mock.calls[0][0].name).toBe('New feature');
+      // Form should be hidden after submission
+      expect(screen.queryByPlaceholderText('Task title...')).toBeNull();
+    });
+
+    it('cancelling the add task form hides it', () => {
+      render(<TaskBoard {...defaultProps()} />);
+      fireEvent.click(screen.getByText('+ Add task'));
+      expect(screen.getByPlaceholderText('Task title...')).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.queryByPlaceholderText('Task title...')).toBeNull();
+    });
   });
 });

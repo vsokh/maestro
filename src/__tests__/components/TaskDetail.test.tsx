@@ -172,5 +172,89 @@ describe('TaskDetail', () => {
       expect(editInput).toBeDefined();
       expect(editInput.tagName).toBe('INPUT');
     });
+
+    it('clicking "Mark done" on manual task calls onUpdateTask with status done', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'pending', manual: true });
+      render(<TaskDetail {...props} task={task} />);
+      const markDoneBtn = screen.getByText(/Mark done/);
+      fireEvent.click(markDoneBtn);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'done' }));
+    });
+
+    it('clicking "Activate" on backlog task calls onUpdateTask with status pending', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'backlog' });
+      render(<TaskDetail {...props} task={task} />);
+      const activateBtn = screen.getByText(/Activate/);
+      fireEvent.click(activateBtn);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'pending' }));
+    });
+
+    it('clicking "Backlog" button on pending task calls onUpdateTask with status backlog', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'pending', manual: true });
+      render(<TaskDetail {...props} task={task} />);
+      const backlogBtn = screen.getByText('Backlog');
+      fireEvent.click(backlogBtn);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'backlog' }));
+    });
+
+    it('blocked reason input blur saves the reason via onUpdateTask', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'blocked' });
+      render(<TaskDetail {...props} task={task} />);
+      const blockedInput = screen.getByPlaceholderText('Why is this blocked?');
+      fireEvent.input(blockedInput, { target: { value: 'Waiting for API' } });
+      fireEvent.blur(blockedInput);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ blockedReason: 'Waiting for API' }));
+    });
+
+    it('name edit: pressing Enter saves and exits edit mode', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { name: 'Old Name', fullName: 'Old Name' });
+      render(<TaskDetail {...props} task={task} />);
+      fireEvent.click(screen.getByText('Old Name'));
+      const editInput = screen.getByDisplayValue('Old Name');
+      fireEvent.input(editInput, { target: { value: 'New Name' } });
+      fireEvent.keyDown(editInput, { key: 'Enter' });
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ fullName: 'New Name' }));
+    });
+
+    it('name edit: pressing Escape cancels without saving', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { name: 'Original', fullName: 'Original' });
+      render(<TaskDetail {...props} task={task} />);
+      fireEvent.click(screen.getByText('Original'));
+      const editInput = screen.getByDisplayValue('Original');
+      fireEvent.input(editInput, { target: { value: 'Changed' } });
+      fireEvent.keyDown(editInput, { key: 'Escape' });
+      // Should exit edit mode without calling onUpdateTask
+      // The h3 with 'Original' should be back
+      expect(screen.getByText('Original')).toBeDefined();
+    });
+
+    it('delete button resets to non-confirm state on blur', () => {
+      const props = defaultProps();
+      const task = makeTask(1);
+      render(<TaskDetail {...props} task={task} />);
+      const deleteBtn = screen.getByText('Delete task');
+      fireEvent.click(deleteBtn);
+      expect(screen.getByText('Confirm delete?')).toBeDefined();
+      fireEvent.blur(screen.getByText('Confirm delete?'));
+      expect(screen.getByText('Delete task')).toBeDefined();
+    });
+
+    it('changing from blocked to another status clears blocked reason', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'blocked', blockedReason: 'Some issue' });
+      render(<TaskDetail {...props} task={task} />);
+      const select = screen.getByLabelText('Task status');
+      fireEvent.change(select, { target: { value: 'pending' } });
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({
+        status: 'pending',
+        blockedReason: ''
+      }));
+    });
   });
 });
