@@ -36,6 +36,8 @@ interface TaskDetailProps {
 export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }: TaskDetailProps) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [localDesc, setLocalDesc] = useState('');
   const [localNote, setLocalNote] = useState('');
   const [localBlockedReason, setLocalBlockedReason] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -43,12 +45,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, dirHandle, onAddAttachment);
 
   const [prevResetKey, setPrevResetKey] = useState('');
-  const resetKey = `${task?.id}|${notes}|${task?.blockedReason || ''}`;
+  const resetKey = `${task?.id}|${notes}|${task?.blockedReason || ''}|${task?.description || ''}`;
   if (resetKey !== prevResetKey) {
     setPrevResetKey(resetKey);
     setLocalNote(notes || '');
     setLocalBlockedReason(task?.blockedReason || '');
+    setLocalDesc(task?.description || '');
     setEditing(false);
+    setEditingDesc(false);
     setConfirmDelete(false);
   }
 
@@ -144,7 +148,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           className="input-detail-title"
           style={{
             width: '100%', fontSize: '14px', lineHeight: 1.4,
-            padding: '4px 8px', marginBottom: '16px',
+            padding: '4px 8px', marginBottom: '8px',
           }}
         />
       ) : (
@@ -154,13 +158,41 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onClick={() => { setEditName(task.fullName || task.name); setEditing(true); }}
           onKeyDown={handleKeyActivate(() => { setEditName(task.fullName || task.name); setEditing(true); })}
           className="detail-title"
-          style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', lineHeight: 1.4, padding: '4px 8px' }}
+          style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', lineHeight: 1.4, padding: '4px 8px' }}
           title={DETAIL_EDIT_TITLE}
         >
           {task.fullName || task.name}
         </h3>
       )}
 
+      {editingDesc ? (
+        <textarea
+          value={localDesc}
+          onInput={(e: React.FormEvent<HTMLTextAreaElement>) => setLocalDesc((e.target as HTMLTextAreaElement).value)}
+          onBlur={() => { onUpdateTask(task.id, { description: localDesc }); setEditingDesc(false); }}
+          onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === 'Escape') setEditingDesc(false); }}
+          autoFocus
+          rows={3}
+          className="textarea-field"
+          style={{ width: '100%', fontSize: '12px', padding: '6px 8px', marginBottom: '16px' }}
+        />
+      ) : (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => { setLocalDesc(task.description || ''); setEditingDesc(true); }}
+          onKeyDown={handleKeyActivate(() => { setLocalDesc(task.description || ''); setEditingDesc(true); })}
+          title="Click to edit description"
+          style={{
+            fontSize: '12px', lineHeight: 1.5, padding: '4px 8px', marginBottom: '16px',
+            color: task.description ? 'var(--dm-text)' : 'var(--dm-text-light)',
+            opacity: task.description ? 0.8 : 0.5,
+            cursor: 'text',
+          }}
+        >
+          {task.description || 'Add a description...'}
+        </div>
+      )}
 
       {task.skills && task.skills.length > 0 ? (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>

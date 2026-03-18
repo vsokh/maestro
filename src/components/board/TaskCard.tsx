@@ -73,6 +73,11 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
         {task.manual ? <span className="manual-badge" title={CARD_MANUAL_TITLE} style={{ padding: '1px 5px' }}>YOU</span> : null}
         {task.name}
       </div>
+      {task.description ? (
+        <div className="card-description" style={{ marginTop: '2px', fontSize: '11px', opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {task.description}
+        </div>
+      ) : null}
       {task.dependsOn && task.dependsOn.length > 0 ? (
         <div className="card-deps-info" style={{ marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           after: {task.dependsOn.map(depId => {
