@@ -160,7 +160,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         stateChanged = true;
       }
 
-      const progressEntries = await readProgressFiles(dirHandle);
+      const progressEntries = await readProgressFiles(dirHandle, onError);
       let needsWrite = false;
 
       if (Object.keys(progressEntries).length > 0) {
@@ -252,7 +252,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
 
   const pauseTask = useCallback(async (taskId: number) => {
     if (!dirHandle) return;
-    const progressEntries = await readProgressFiles(dirHandle);
+    const progressEntries = await readProgressFiles(dirHandle, onError);
     const prog = progressEntries[taskId];
 
     await deleteProgressFile(dirHandle, taskId);

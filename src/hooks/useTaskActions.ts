@@ -105,7 +105,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, on
     try {
       const task = tasks.find(t => t.id === taskId);
       const att = (task?.attachments || []).find(a => a.id === attachmentId);
-      if (att) await deleteAttachment(dirHandle, taskId, att.filename);
+      if (att) await deleteAttachment(dirHandle, taskId, att.filename, onError);
       const attachments = (task?.attachments || []).filter(a => a.id !== attachmentId);
       handleUpdateTask(taskId, { attachments });
     } catch (err) {

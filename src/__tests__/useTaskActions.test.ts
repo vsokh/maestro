@@ -405,7 +405,7 @@ describe('useTaskActions', () => {
         await result.current.handleDeleteAttachment(1, 'att_1');
       });
 
-      expect(deleteAttachment).toHaveBeenCalledWith(fakeDirHandle, 1, 'pic.png');
+      expect(deleteAttachment).toHaveBeenCalledWith(fakeDirHandle, 1, 'pic.png', expect.any(Function));
       expect(save).toHaveBeenCalledTimes(1);
       const savedData = save.mock.calls[0][0] as StateData;
       const updatedTask = savedData.tasks[0];

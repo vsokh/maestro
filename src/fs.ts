@@ -170,13 +170,13 @@ export async function saveAttachment(projectHandle: FileSystemDirectoryHandle, t
   return `.devmanager/attachments/${taskId}/${filename}`;
 }
 
-export async function deleteAttachment(projectHandle: FileSystemDirectoryHandle, taskId: number, filename: string): Promise<void> {
+export async function deleteAttachment(projectHandle: FileSystemDirectoryHandle, taskId: number, filename: string, onError?: (msg: string) => void): Promise<void> {
   try {
     const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
     const attachDir = await dmDir.getDirectoryHandle('attachments');
     const taskDir = await attachDir.getDirectoryHandle(String(taskId));
     await taskDir.removeEntry(filename);
-  } catch (err) { console.error('deleteAttachment failed:', err); }
+  } catch (err) { console.error('deleteAttachment failed:', err); onError?.('Failed to delete attachment'); }
 }
 
 export async function readAttachmentUrl(projectHandle: FileSystemDirectoryHandle, taskId: number, filename: string): Promise<string | null> {
@@ -190,7 +190,7 @@ export async function readAttachmentUrl(projectHandle: FileSystemDirectoryHandle
   } catch (err) { console.error('readAttachmentUrl failed:', err); return null; }
 }
 
-export async function readProgressFiles(projectHandle: FileSystemDirectoryHandle): Promise<Record<string, ProgressEntry>> {
+export async function readProgressFiles(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<Record<string, ProgressEntry>> {
   try {
     const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
     const progDir = await dmDir.getDirectoryHandle('progress');
@@ -211,12 +211,13 @@ export async function readProgressFiles(projectHandle: FileSystemDirectoryHandle
           } else {
             entries[key] = JSON.parse(text);
           }
-        } catch (err) { console.error('Failed to parse progress file:', name, err); }
+        } catch (err) { console.error('Failed to parse progress file:', name, err); onError?.('Failed to read progress file: ' + name); }
       }
     }
     return entries;
   } catch (err) {
     console.error('readProgressFiles failed:', err);
+    onError?.('Failed to read progress files');
     return {};
   }
 }
@@ -255,7 +256,7 @@ export async function snapshotState(projectHandle: FileSystemDirectoryHandle, on
     await writable.write(text);
     await writable.close();
 
-    await pruneBackups(projectHandle, 10);
+    await pruneBackups(projectHandle, 10, onError);
     return filename;
   } catch (err) { console.error('snapshotState failed:', err); onError?.('Failed to create backup'); return null; }
 }
@@ -280,7 +281,7 @@ export async function listBackups(projectHandle: FileSystemDirectoryHandle): Pro
   } catch (err) { console.error('listBackups failed:', err); return []; }
 }
 
-export async function pruneBackups(projectHandle: FileSystemDirectoryHandle, keep: number = 10): Promise<void> {
+export async function pruneBackups(projectHandle: FileSystemDirectoryHandle, keep: number = 10, onError?: (msg: string) => void): Promise<void> {
   try {
     const files = await listBackups(projectHandle);
     if (files.length <= keep) return;
@@ -289,5 +290,5 @@ export async function pruneBackups(projectHandle: FileSystemDirectoryHandle, kee
     for (const file of files.slice(keep)) {
       await backupDir.removeEntry(file.name);
     }
-  } catch (err) { console.error('pruneBackups failed:', err); }
+  } catch (err) { console.error('pruneBackups failed:', err); onError?.('Failed to clean up old backups'); }
 }
