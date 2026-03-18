@@ -74,6 +74,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <select
+          aria-label="Task status"
           value={task.status}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
             const next = e.target.value as any;
