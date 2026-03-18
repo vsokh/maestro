@@ -197,7 +197,7 @@ export async function readProgressFiles(projectHandle: FileSystemDirectoryHandle
     for await (const [name, handle] of (progDir as FileSystemDirectoryHandleExt).entries()) {
       if (name.endsWith('.json') && handle.kind === 'file') {
         try {
-          const file = await handle.getFile();
+          const file = await (handle as FileSystemFileHandle).getFile();
           const text = await file.text();
           const key = name.replace('.json', '');
           const taskId = parseInt(key, 10);
@@ -271,7 +271,7 @@ export async function listBackups(projectHandle: FileSystemDirectoryHandle): Pro
     const files: BackupFile[] = [];
     for await (const [name, handle] of (backupDir as FileSystemDirectoryHandleExt).entries()) {
       if (name.startsWith('state-') && name.endsWith('.json') && handle.kind === 'file') {
-        const file = await handle.getFile();
+        const file = await (handle as FileSystemFileHandle).getFile();
         files.push({ name, lastModified: file.lastModified });
       }
     }
