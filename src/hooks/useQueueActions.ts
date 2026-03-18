@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ensureDevManagerDir } from '../fs.ts';
 import { STATUS } from '../constants/statuses.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
+import { escapePS, escapeCmd, shortTitle } from '../utils/queueUtils.ts';
 import type { StateData, Task, QueueItem, Activity } from '../types';
 
 function launchProtocol(url: string): void {
@@ -97,9 +98,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   const handleLaunchTask = (itemKey: number, cmd: string, taskName: string) => {
     if (!projectPath) return;
     const path = projectPath.replace(/\\/g, '/');
-    const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
-    const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
-    const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
+    const title = shortTitle(taskName);
     const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent(cmd) + '?' + encodeURIComponent(title);
     launchProtocol(url);
     setLaunchedId(itemKey);
@@ -109,14 +108,6 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
     if (!projectPath || !dirHandle) return;
     const dir = projectPath.replace(/\\/g, '\\');
-    const filler = new Set(['the','a','an','for','to','of','in','as','and','with','me','my','its','is','be']);
-    const shortTitle = (name: string) => {
-      const words = name.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
-      return words.slice(0, 2).join(' ') || name.split(/\s+/).slice(0, 2).join(' ');
-    };
-
-    const escapePS = (s: string) => s.replace(/'/g, "''");
-    const escapeCmd = (s: string) => s.replace(/"/g, '""');
 
     try {
       const dmDir = await ensureDevManagerDir(dirHandle);
