@@ -31,6 +31,9 @@ export function App() {
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
   const glowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<Element | null>(null);
+
   const quality = useQuality(dirHandle);
 
   const [projectPath, setProjectPathState] = useState('');
@@ -72,6 +75,66 @@ export function App() {
       setProjectPathState(paths[projectName] || '');
     } catch (err) { console.error('Failed to read dm_project_paths from localStorage:', err); }
   }, [projectName]);
+
+  // Focus trap for mobile detail panel
+  useEffect(() => {
+    if (!selectedTask) {
+      // Restore focus when panel closes
+      if (previousFocusRef.current && previousFocusRef.current instanceof HTMLElement) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+      return;
+    }
+
+    // Save the currently focused element
+    previousFocusRef.current = document.activeElement;
+
+    const panel = detailPanelRef.current;
+    if (!panel) return;
+
+    const focusableSelector = 'button, input, select, textarea, [tabindex]:not([tabindex="-1"]), a[href]';
+
+    // Focus the first focusable element in the panel
+    const focusFirst = () => {
+      const focusable = panel.querySelectorAll<HTMLElement>(focusableSelector);
+      if (focusable.length > 0) {
+        focusable[0].focus();
+      }
+    };
+
+    // Delay slightly to ensure the panel is rendered
+    const rafId = requestAnimationFrame(focusFirst);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    panel.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      panel.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedTask]);
 
   if (!connected || !data) {
     return (
@@ -194,10 +257,17 @@ export function App() {
               {selectedTask && (
                 <div className={'dm-detail-backdrop' + (selectedTask ? ' open' : '')} onClick={() => setSelectedTask(null)} />
               )}
-              <div className={'dm-detail-panel' + (selectedTask ? ' open' : '')} style={{
-                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-                boxShadow: 'var(--dm-shadow-sm)',
-              }}>
+              <div
+                ref={detailPanelRef}
+                className={'dm-detail-panel' + (selectedTask ? ' open' : '')}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Task detail"
+                style={{
+                  background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+                  boxShadow: 'var(--dm-shadow-sm)',
+                }}
+              >
                 <SectionHeader title="Detail" />
                 <TaskDetail
                   task={selectedTaskData}

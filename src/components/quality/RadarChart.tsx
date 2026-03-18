@@ -109,5 +109,5 @@ export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest
     }
   }, [latest, prev, width, height]);
 
-  return <canvas ref={canvasRef} style={{ maxWidth: '100%' }} />;
+  return <canvas ref={canvasRef} role="img" aria-label="Code quality radar chart showing scores across dimensions" style={{ maxWidth: '100%' }} />;
 }

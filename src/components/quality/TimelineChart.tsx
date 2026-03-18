@@ -174,7 +174,7 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHover(null)}
     >
-      <canvas ref={canvasRef} style={{ maxWidth: '100%', cursor: hover ? 'pointer' : 'default' }} />
+      <canvas ref={canvasRef} role="img" aria-label="Quality score timeline chart" style={{ maxWidth: '100%', cursor: hover ? 'pointer' : 'default' }} />
       {hover && tooltipContent && (
         <div className="tooltip-popup" style={{
           position: 'absolute',

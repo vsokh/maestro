@@ -52,5 +52,5 @@ export function Sparkline({ dimKey, history, width = 64, height = 20 }: { dimKey
   }, [dimKey, history, width, height]);
 
   if (!history || history.length < 2) return <span style={{ width, display: 'inline-block' }} />;
-  return <canvas ref={canvasRef} />;
+  return <canvas ref={canvasRef} role="img" aria-label={`Trend sparkline for ${dimKey}`} />;
 }

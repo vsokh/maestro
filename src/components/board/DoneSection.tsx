@@ -28,6 +28,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
           <div
             role="button"
             tabIndex={0}
+            aria-expanded={showBacklog}
             onClick={() => setShowBacklog(p => !p)}
             onKeyDown={handleKeyActivate(() => setShowBacklog(p => !p))}
             style={{
@@ -73,6 +74,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
           <div
             role="button"
             tabIndex={0}
+            aria-expanded={showCompleted}
             onClick={() => setShowCompleted(p => !p)}
             onKeyDown={handleKeyActivate(() => setShowCompleted(p => !p))}
             style={{
