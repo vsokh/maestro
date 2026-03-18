@@ -50,6 +50,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
             <div
               role="button"
               tabIndex={0}
+              aria-label={'Rename epic ' + groupName}
               onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
               onKeyDown={handleKeyActivate(() => { setEditingGroup(groupName); setEditGroupName(groupName); })}
               title={EPIC_RENAME_TITLE}

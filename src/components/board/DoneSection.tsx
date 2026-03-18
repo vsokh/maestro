@@ -55,7 +55,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
-                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
+                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
                         className={`task-card--backlog-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}`}
                         style={{ padding: '5px 10px' }}
                       >
@@ -101,7 +101,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
-                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
+                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
                         className={`task-card--done-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}`}
                         style={{ padding: '5px 10px' }}
                       >

@@ -63,6 +63,7 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
       data-task-id={task.id}
       role="button"
       tabIndex={0}
+      aria-label={task.name}
       onClick={() => onSelectTask(task.id)}
       onKeyDown={handleKeyActivate(() => onSelectTask(task.id))}
       className={className}
