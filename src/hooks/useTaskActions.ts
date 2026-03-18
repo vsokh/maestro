@@ -42,6 +42,14 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, on
     updateData({ tasks: newTasks, activity: newActivity });
   };
 
+  const handleBatchUpdateTasks = (updates: Array<{ id: number; updates: Partial<Task> }>) => {
+    const newTasks = tasks.map(t => {
+      const entry = updates.find(u => u.id === t.id);
+      return entry ? { ...t, ...entry.updates } : t;
+    });
+    updateData({ tasks: newTasks });
+  };
+
   const handleUpdateNotes = (id: number, note: string) => {
     updateData({ taskNotes: { ...taskNotes, [id]: note } });
   };
@@ -108,6 +116,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, on
 
   return {
     handleUpdateTask,
+    handleBatchUpdateTasks,
     handleUpdateNotes,
     handleAddTask,
     handleRenameGroup,

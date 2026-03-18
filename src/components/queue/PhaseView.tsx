@@ -13,11 +13,12 @@ interface PhaseViewProps {
   onRemove: (key: number) => void;
   onPauseTask: (id: number) => void;
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
+  onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   onClear: () => void;
   projectPath: string;
 }
 
-export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onClear, projectPath }: PhaseViewProps) {
+export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, projectPath }: PhaseViewProps) {
   return (
     <div>
       {phases.map((phaseItems, idx) => (
@@ -58,9 +59,7 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
               onClick={() => {
                 const nonManual = phaseItems.filter(item => !taskMap.get(item.task)?.manual);
                 const allApproved = isAllAutoApproved(phaseItems, taskMap);
-                nonManual.forEach(item => {
-                  onUpdateTask(item.task, { autoApprove: allApproved ? undefined : true });
-                });
+                onBatchUpdateTasks(nonManual.map(item => ({ id: item.task, updates: { autoApprove: allApproved ? undefined : true } })));
               }}
               title={isAllAutoApproved(phaseItems, taskMap) ? 'Remove auto-approve from phase' : 'Auto-approve all in phase'}
               className="btn-launch-phase"
@@ -127,9 +126,7 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
           onClick={() => {
             const nonManual = queue.filter(item => !taskMap.get(item.task)?.manual);
             const allApproved = isAllAutoApproved(queue, taskMap);
-            nonManual.forEach(item => {
-              onUpdateTask(item.task, { autoApprove: allApproved ? undefined : true });
-            });
+            onBatchUpdateTasks(nonManual.map(item => ({ id: item.task, updates: { autoApprove: allApproved ? undefined : true } })));
           }}
           className="btn btn-secondary btn-xs"
           style={{

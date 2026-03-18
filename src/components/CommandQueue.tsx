@@ -16,12 +16,13 @@ interface CommandQueueProps {
   onQueueAll: () => void;
   onPauseTask: (id: number) => void;
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
+  onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   launchedId: number | null;
   projectPath: string;
   onSetPath: (path: string) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, launchedId, projectPath, onSetPath }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId, projectPath, onSetPath }: CommandQueueProps) {
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
@@ -59,9 +60,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           onClick={() => {
             const nonManual = queue.filter(item => !taskMap.get(item.task)?.manual);
             const allApproved = isAllAutoApproved(queue, taskMap);
-            nonManual.forEach(item => {
-              onUpdateTask(item.task, { autoApprove: allApproved ? undefined : true });
-            });
+            onBatchUpdateTasks(nonManual.map(item => ({ id: item.task, updates: { autoApprove: allApproved ? undefined : true } })));
           }}
           className="btn btn-secondary btn-xs"
           style={{
@@ -95,6 +94,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           onRemove={onRemove}
           onPauseTask={onPauseTask}
           onUpdateTask={onUpdateTask}
+          onBatchUpdateTasks={onBatchUpdateTasks}
           onClear={onClear}
           projectPath={projectPath}
         />
