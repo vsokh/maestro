@@ -90,20 +90,21 @@ The orchestrator will read your task and notes, explore the codebase, and presen
 ## How It Works
 
 ```
-You (Browser)                   Orchestrator (Claude Code)           Sub-agents
-     |                                    |                              |
- Create tasks                             |                              |
- Write notes ──► .devmanager/state.json ─►|                              |
- Queue work                               |                              |
-     |                          ▶ Launch via play button                  |
-     |                                    |                              |
-     |                           Read queue + notes                      |
-     |                           Plan approach ──► you approve           |
-     |                           Delegate ───────────────────────► work
-     |                           Review ◄────────────────────────── done
-     |                           Write back ──► state.json               |
-     |                                    |                              |
- See results ◄── auto-sync                |                              |
+  You (Browser)              Orchestrator (Claude Code)          Sub-agents
+       |                              |                              |
+  Create tasks                        |                              |
+  Write notes ─── state.json ───►     |                              |
+  Queue work                          |                              |
+       |                              |                              |
+       |          ▶ Launch via play button                          |
+       |                              |                              |
+       |                     Read queue + notes                      |
+       |                     Plan approach ──► you approve           |
+       |                     Delegate ──────────────────────────►  work
+       |                     Review  ◄──────────────────────────   done
+       |                     Write back ──► state.json               |
+       |                              |                              |
+  See results ◄── auto-sync           |                              |
 ```
 
 ## Tech Stack
