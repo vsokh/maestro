@@ -9,55 +9,60 @@ A browser-based task manager that pairs with [Claude Code](https://docs.anthropi
 - Chrome or Edge (requires File System Access API)
 - Windows Terminal (for one-click launch)
 
-## Quick Start
+## Setup
+
+### 1. Install and run
 
 ```bash
-# 1. Clone the repo
 git clone <repo-url>
 cd dev-manager
-
-# 2. Install dependencies
 npm install
-
-# 3. Start the dev server
 npm run dev
 ```
 
-Open **http://localhost:5173** in Chrome or Edge.
+Open the URL shown in your terminal (usually `http://localhost:5173`) in **Chrome or Edge**.
 
-## Connect a Project
+### 2. Connect a project
 
-1. Click **Open project** and select any folder that has a codebase you want to manage.
-2. Dev Manager creates a `.devmanager/` folder inside that project to store tasks and state.
-3. The connection is remembered — next time you open Dev Manager it reconnects automatically.
+Dev Manager doesn't manage its own code — it manages **your other projects**. You need to point it at a project folder.
 
-## Using It
+- Click **Open project** on the landing screen.
+- In the folder picker, navigate to the **root folder of the project** you want to manage (e.g. your app's repo).
+- Your browser will ask you to grant read/write access — click **Allow**.
 
-### Create Tasks
-Use the task form to add work items. Give each task a clear name and optional description.
+Dev Manager creates a `.devmanager/` folder inside that project to store tasks, notes, and state. The connection is remembered — next time you open Dev Manager it reconnects automatically.
 
-### Write Notes
-Select a task and write instructions in the detail panel. These notes tell Claude Code exactly what you want done.
+### 3. Create tasks
 
-### Queue Work
-Hit the queue button on a task to add it to the work queue. Queued tasks are what the orchestrator picks up.
+Use the task form on the left to add work items. Give each task a clear name and optional description.
 
-### Launch Claude Code
-Each queued task has a **play button** that opens Claude Code in a new terminal tab, pre-loaded with the orchestrator skill and your task. Before first use, you need to set up the protocol handler (see below).
+### 4. Write notes
 
-### See Results
-Dev Manager polls for changes every 3 seconds. When Claude Code finishes work and writes results back, you'll see updates automatically.
+Click a task to open the detail panel on the right. Write instructions here — these notes tell Claude Code exactly what you want done.
 
-## One-Click Launch Setup (Windows)
+### 5. Queue work
 
-This registers a `claudecode://` URL protocol so the play buttons can open Claude Code directly.
+Hit the **queue button** on a task to add it to the work queue at the bottom. Queued tasks are what the orchestrator picks up.
+
+### 6. Register the launch protocol (Windows, one-time)
+
+The play buttons next to queued tasks need a way to open Claude Code from the browser. This step registers a `claudecode://` URL protocol on your machine — similar to how `mailto:` links open your email client.
 
 ```bash
-# Run once — no admin required
 install-protocol.cmd
 ```
 
-After this, set your project path in the queue panel (stored per project in your browser).
+No admin required. You only need to do this once.
+
+### 7. Set your project path
+
+In the queue panel, set the path to your project folder (e.g. `C:\Users\you\Projects\my-app`). This is stored per project in your browser.
+
+### 8. Launch
+
+Click the **play button** next to a queued task. Claude Code opens in a new terminal tab with the orchestrator skill loaded and your task ready to go.
+
+The orchestrator will read your task and notes, explore the codebase, and present a plan. You approve it, and it delegates the work to sub-agents. When it's done, it writes results back — Dev Manager picks up the changes automatically (polls every 3 seconds).
 
 ## Scripts
 
