@@ -7,7 +7,7 @@ A browser-based task manager that pairs with [Claude Code](https://docs.anthropi
 - [Node.js](https://nodejs.org/) (v18 or later)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and working
 - Chrome or Edge (requires File System Access API)
-- Windows Terminal (for one-click launch)
+- A terminal emulator (Windows Terminal, gnome-terminal, kitty, alacritty, or xterm)
 
 ## Setup
 
@@ -47,19 +47,25 @@ Click a task to open the detail panel on the right. Write instructions here — 
 
 Hit the **queue button** on a task to add it to the work queue at the bottom. Queued tasks are what the orchestrator picks up.
 
-### 7. Register the launch protocol (Windows, one-time)
+### 7. Register the launch protocol (one-time)
 
 The play buttons next to queued tasks need a way to open Claude Code from the browser. This step registers a `claudecode://` URL protocol on your machine — similar to how `mailto:` links open your email client.
 
+**Windows:**
 ```bash
 install-protocol.cmd
 ```
 
-No admin required. You only need to do this once.
+**Linux:**
+```bash
+chmod +x install-protocol.sh && ./install-protocol.sh
+```
+
+No admin/root required. You only need to do this once.
 
 ### 8. Set your project path
 
-In the queue panel, click **"Set project path to enable launch"** and enter the path to your project folder (e.g. `C:\Users\you\Projects\my-app`). This is stored per project in your browser.
+In the queue panel, click **"Set project path to enable launch"** and enter the path to your project folder (e.g. `C:\Users\you\Projects\my-app` on Windows or `/home/you/projects/my-app` on Linux). This is stored per project in your browser.
 
 ![Set project path in the queue panel](docs/set-project-path.png)
 
