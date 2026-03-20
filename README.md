@@ -14,9 +14,7 @@ A browser-based task manager that pairs with [Claude Code](https://docs.anthropi
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/vsokh/dev-manager.git
-cd dev-manager
-npm install
+git clone https://github.com/vsokh/dev-manager.git && cd dev-manager && npm install
 ```
 
 ### 2. Start the dev server
