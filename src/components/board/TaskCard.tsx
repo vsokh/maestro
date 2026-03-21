@@ -70,6 +70,7 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
       style={{ padding: '12px 16px', minWidth: '160px', flex: '1 1 160px', maxWidth: '260px' }}
     >
       <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <span style={{ opacity: 0.4, fontSize: '11px', fontWeight: 500 }}>#{task.id}</span>
         {task.manual ? <span className="manual-badge" title={CARD_MANUAL_TITLE} style={{ padding: '1px 5px' }}>YOU</span> : null}
         {task.name}
       </div>
