@@ -102,6 +102,10 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
     ctx.fill();
 
     // Points
+    let lastScoreLabelX = -Infinity;
+    let lastXLabelX = -Infinity;
+    const MIN_SCORE_SPACING = 28;
+    const MIN_XLABEL_SPACING = 38;
     for (let i = 0; i < n; i++) {
       const px = pad.l + i * stepX;
       const py = pad.t + plotH - (history[i].overallScore / 10) * plotH;
@@ -113,14 +117,32 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
       ctx.strokeStyle = surfaceColor;
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.fillStyle = textColor;
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(history[i].overallScore.toFixed(1), px, py - 9);
-      // X label
-      ctx.fillStyle = mutedColor;
-      ctx.font = '9px monospace';
-      ctx.fillText(history[i].commitRef || '', px, height - pad.b + 14);
+
+      // Score label — skip if too close to last rendered label, always show first & last
+      const isFirst = i === 0;
+      const isLast = i === n - 1;
+      if (isFirst || isLast || px - lastScoreLabelX >= MIN_SCORE_SPACING) {
+        ctx.fillStyle = textColor;
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(history[i].overallScore.toFixed(1), px, py - 9);
+        lastScoreLabelX = px;
+      }
+
+      // X label — rotated 45°, skip if too close to last rendered label
+      const commitLabel = history[i].commitRef || '';
+      if (commitLabel && px - lastXLabelX >= MIN_XLABEL_SPACING) {
+        ctx.save();
+        ctx.translate(px, height - pad.b + 14);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = mutedColor;
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(commitLabel, 0, 0);
+        ctx.restore();
+        lastXLabelX = px;
+      }
     }
   }, [history, width, height, hover, pad]);
 
