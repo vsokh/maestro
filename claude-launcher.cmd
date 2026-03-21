@@ -45,9 +45,9 @@ if "!cmd!"=="__launch_file" (
   exit /b
 )
 
-:: Write temp script to avoid nested-quote issues
-:: Quoting "/orchestrator arrange" as a single arg only works in a standalone script
-set "tmpfile=%TEMP%\claude-launch-%RANDOM%.ps1"
+:: Write launch script into .devmanager/ (keeps temp files together for easy cleanup)
+if not exist "!dir!\.devmanager" mkdir "!dir!\.devmanager"
+set "tmpfile=!dir!\.devmanager\launch-single.ps1"
 (
   echo $Host.UI.RawUI.WindowTitle = '!title!'
   echo claude --dangerously-skip-permissions '!cmd!'

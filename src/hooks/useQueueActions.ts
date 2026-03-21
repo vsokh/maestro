@@ -114,6 +114,14 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     try {
       const dmDir = await ensureDevManagerDir(dirHandle);
 
+      // Clean up old launch-*.ps1 files
+      const needed = new Set(items.map(item => `launch-${item.key}.ps1`));
+      for await (const name of (dmDir as any).keys()) {
+        if (name.startsWith('launch-') && name.endsWith('.ps1') && !needed.has(name)) {
+          await dmDir.removeEntry(name);
+        }
+      }
+
       for (const item of items) {
         const taskScript = `$Host.UI.RawUI.WindowTitle = '${escapePS(shortTitle(item.taskName))}'\r\nclaude --dangerously-skip-permissions '${escapePS(item.cmd)}'\r\n`;
         const fh = await dmDir.getFileHandle(`launch-${item.key}.ps1`, { create: true });
@@ -126,7 +134,13 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
         `--title "${escapeCmd(shortTitle(item.taskName))}" --suppressApplicationTitle -d "${dir}" pwsh -NoLogo -NoExit -File "${dir}\\.devmanager\\launch-${item.key}.ps1"`
       );
       const layoutArgs = buildGridLayout(paneArgs);
-      const script = `@echo off\r\nstart "" wt.exe -w new ${layoutArgs}\r\n`;
+
+      // Multi-line launch.cmd for readability
+      const segments = layoutArgs.split(' ; ');
+      const lines = segments.map((seg, i) =>
+        i === 0 ? `  ${seg}` : `  ; ${seg}`
+      );
+      const script = `@echo off\r\nstart "" wt.exe -w new ^\r\n${lines.join(' ^\r\n')}\r\n`;
 
       const fileHandle = await dmDir.getFileHandle('launch.cmd', { create: true });
       const writable = await fileHandle.createWritable();

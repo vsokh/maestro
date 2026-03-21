@@ -31,52 +31,79 @@ export function shortTitle(name: string): string {
 }
 
 /**
- * Build a Windows Terminal command that arranges panes in a grid layout.
- * - 1 pane: full screen
- * - 2 panes: side by side
- * - 3 panes: 3 columns
- * - 4 panes: 2×2 grid
- * - 5 panes: 3 top + 2 bottom
- * - 6 panes: 3×2 grid
+ * Build a Windows Terminal command that arranges panes in an even grid.
+ *
+ * Uses sqrt-based grid dimensions so pane counts scale naturally:
+ *   1 → full screen         5 → 3+2        9  → 3+3+3
+ *   2 → 2 columns           6 → 3+3        10 → 4+3+3
+ *   3 → 3 columns           7 → 3+2+2      12 → 4+4+4
+ *   4 → 2×2                 8 → 3+3+2
+ *
+ * Extra panes go to the top rows so the widest (fewest-column) rows
+ * sit at the bottom where the eye rests.
  */
 export function buildGridLayout(paneArgs: string[]): string {
   const n = paneArgs.length;
   if (n === 0) return '';
+  if (n === 1) return `new-tab ${paneArgs[0]}`;
+
+  // 2–3 panes: single row
+  if (n <= 3) {
+    const parts = [`new-tab ${paneArgs[0]}`];
+    for (let k = 1; k < n; k++) {
+      const remaining = n - k;
+      const size = remaining > 1 ? ` --size ${(remaining / (remaining + 1)).toFixed(2)}` : '';
+      parts.push(`split-pane -V${size} ${paneArgs[k]}`);
+    }
+    return parts.join(' ; ');
+  }
+
+  // 4+ panes: compute grid dimensions
+  const cols = Math.ceil(Math.sqrt(n));
+  const rows = Math.ceil(n / cols);
+
+  // Distribute panes evenly — top rows get the extras
+  const base = Math.floor(n / rows);
+  const extra = n % rows;
+  const rowCounts: number[] = [];
+  for (let r = 0; r < rows; r++) {
+    rowCounts.push(r < extra ? base + 1 : base);
+  }
+
+  // Map row → pane indices
+  const rowPanes: number[][] = [];
+  let idx = 0;
+  for (const count of rowCounts) {
+    const row: number[] = [];
+    for (let c = 0; c < count; c++) row.push(idx++);
+    rowPanes.push(row);
+  }
 
   const parts: string[] = [];
 
-  if (n <= 3) {
-    // Single row of n columns
-    parts.push(`new-tab ${paneArgs[0]}`);
-    for (let k = 1; k < n; k++) {
-      const size = n > 2 ? ` --size ${((n - k) / (n - k + 1)).toFixed(2)}` : '';
-      parts.push(`split-pane -V${size} ${paneArgs[k]}`);
+  // First pane fills the whole window
+  parts.push(`new-tab ${paneArgs[rowPanes[0][0]]}`);
+
+  // Create horizontal splits to establish rows (top → bottom)
+  // Row heights are proportional to column count so every pane gets equal area.
+  // E.g. 5 panes (3+2): top row 60% height, bottom 40% → each pane = 20%.
+  for (let r = 1; r < rows; r++) {
+    const sumBelow = rowCounts.slice(r).reduce((a, b) => a + b, 0);
+    const sumFromHere = rowCounts.slice(r - 1).reduce((a, b) => a + b, 0);
+    const size = (sumBelow / sumFromHere).toFixed(2);
+    parts.push(`split-pane -H --size ${size} ${paneArgs[rowPanes[r][0]]}`);
+  }
+
+  // Build each row's columns from bottom → top
+  // (focus lands on the last row after the H-splits above)
+  for (let r = rows - 1; r >= 0; r--) {
+    const indices = rowPanes[r];
+    for (let c = 1; c < indices.length; c++) {
+      const remaining = indices.length - c;
+      const size = remaining > 1 ? ` --size ${(remaining / (remaining + 1)).toFixed(2)}` : '';
+      parts.push(`split-pane -V${size} ${paneArgs[indices[c]]}`);
     }
-  } else {
-    // Two rows: top gets ceil(n/2), bottom gets the rest
-    const topCount = Math.ceil(n / 2);
-    const bottomCount = n - topCount;
-
-    // First pane (top-left, full screen)
-    parts.push(`new-tab ${paneArgs[0]}`);
-
-    // Split into top/bottom rows
-    parts.push(`split-pane -H --size 0.5 ${paneArgs[topCount]}`);
-
-    // Build bottom row (focus is on bottom-left after the H split)
-    for (let k = 1; k < bottomCount; k++) {
-      const size = bottomCount > 2 ? ` --size ${((bottomCount - k) / (bottomCount - k + 1)).toFixed(2)}` : '';
-      parts.push(`split-pane -V${size} ${paneArgs[topCount + k]}`);
-    }
-
-    // Move focus back to top row
-    parts.push('move-focus -d up');
-
-    // Build top row (focus is on top-left)
-    for (let k = 1; k < topCount; k++) {
-      const size = topCount > 2 ? ` --size ${((topCount - k) / (topCount - k + 1)).toFixed(2)}` : '';
-      parts.push(`split-pane -V${size} ${paneArgs[k]}`);
-    }
+    if (r > 0) parts.push('move-focus -d up');
   }
 
   return parts.join(' ; ');
