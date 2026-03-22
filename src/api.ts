@@ -100,4 +100,8 @@ export const api = {
 
   // Info
   getInfo: () => get<{ projectPath: string; projectName: string }>('/api/info'),
+
+  // Projects (multi-project)
+  listProjects: () => get<Array<{ path: string; name: string; active: boolean }>>('/api/projects'),
+  switchProject: (path: string) => put<{ ok: true; projectPath: string; projectName: string }>('/api/project', { path }),
 };

@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-03-14T22:36:00.434Z",
+  "savedAt": "2026-03-22T23:18:38.823Z",
   "project": "dev-manager",
   "tasks": [
     {
@@ -23,7 +23,6 @@
         "senior-frontend"
       ],
       "status": "done",
-      "dependsOn": [],
       "startedAt": "2026-03-14T20:52:18.183Z",
       "completedAt": "2026-03-14",
       "group": "Task Board"
@@ -37,7 +36,6 @@
         "senior-frontend"
       ],
       "status": "done",
-      "dependsOn": [],
       "startedAt": "2026-03-14T20:52:30.916Z",
       "completedAt": "2026-03-14",
       "group": "Task Board"
@@ -51,7 +49,6 @@
         "senior-frontend"
       ],
       "status": "done",
-      "dependsOn": [],
       "startedAt": "2026-03-14T21:23:10.048Z",
       "completedAt": "2026-03-14",
       "blockedReason": "",
@@ -66,7 +63,6 @@
         "senior-frontend"
       ],
       "status": "done",
-      "dependsOn": [],
       "startedAt": "2026-03-14T21:22:17.947Z",
       "completedAt": "2026-03-14",
       "blockedReason": "",
@@ -80,8 +76,7 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "done",
-      "dependsOn": [],
+      "status": "in-progress",
       "startedAt": "2026-03-14T20:52:10.955Z",
       "completedAt": "2026-03-14",
       "commitRef": "86c4a6e",
@@ -106,8 +101,7 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "done",
-      "dependsOn": [],
+      "status": "in-progress",
       "startedAt": "2026-03-14T20:52:10.955Z",
       "completedAt": "2026-03-14",
       "commitRef": "ad1ac73",
@@ -249,12 +243,81 @@
       "dependsOn": [
         20
       ]
+    },
+    {
+      "id": 57,
+      "name": "Bridge server + headless launch",
+      "fullName": "Replace File System Access API with Node.js bridge server and add headless AI execution",
+      "description": "Phase 1+2 of product vision. Bridge server on localhost:4545 with REST API + WebSocket. Headless process spawning for Claude/Codex/Cursor. Cross-platform, any browser. Multi-project switching.",
+      "status": "done",
+      "group": "Product Vision",
+      "createdAt": "2026-03-22T22:18:26.354Z",
+      "completedAt": "2026-03-23",
+      "commitRef": "f938629",
+      "branch": "task-57-bridge-server-evolution"
+    },
+    {
+      "id": 58,
+      "name": "Output panel UI",
+      "fullName": "Show live AI output in the board — render streamed process output",
+      "description": "The bridge server already captures stdout/stderr from AI processes and streams it via WebSocket. Build a UI panel that shows this output live — so the manager can see what the AI is doing without opening a terminal. Expandable per-task output viewer in the queue or detail panel.",
+      "status": "in-progress",
+      "group": "Product Vision",
+      "createdAt": "2026-03-23T12:00:00.000Z",
+      "progress": "Reading queue...",
+      "startedAt": "2026-03-22T23:16:56.577Z"
+    },
+    {
+      "id": 59,
+      "name": "Project templates",
+      "fullName": "Starter kits for game, web, and mobile projects with pre-configured skills and agents",
+      "description": "Bundles per project type: game (game-designer, gameplay-programmer, qa-tester), web (senior-frontend, backend, databases, ui-ux), mobile (mobile-dev, ui-ux, backend). Each includes .claude/skills/, .claude/agents/, default epic-to-skill mappings, and optional scaffold command. Template picker on first project setup.",
+      "status": "pending",
+      "group": "Product Vision",
+      "createdAt": "2026-03-23T12:00:00.000Z"
+    },
+    {
+      "id": 60,
+      "name": "Engine selector UI",
+      "fullName": "Let users pick their preferred AI engine per project — Claude, Codex, or Cursor",
+      "description": "The bridge server already supports claude, codex, and cursor engine adapters. Add a UI setting (per project) to choose the default engine. Show engine icon on launch buttons. Allow per-task engine override in the detail panel.",
+      "status": "pending",
+      "group": "Product Vision",
+      "createdAt": "2026-03-23T12:00:00.000Z"
+    },
+    {
+      "id": 61,
+      "name": "npx devmanager",
+      "fullName": "Publish to npm so users can run 'npx devmanager' to install and start",
+      "description": "Package the bridge server + built UI for npm publish. Scope the package name (@devmanager/cli or devmanager). Add postinstall or first-run setup. One command: npx devmanager ./my-project — installs, builds, starts server, opens browser. Update README with quick start guide.",
+      "status": "pending",
+      "group": "Product Vision",
+      "createdAt": "2026-03-23T12:00:00.000Z"
+    },
+    {
+      "id": 62,
+      "name": "Static hosting support",
+      "fullName": "Deploy UI to Vercel/Netlify with bridge server connection",
+      "description": "Make the web UI deployable as a static site (Vercel, Netlify, GitHub Pages). The UI connects to a local bridge server via configurable URL. User runs bridge server locally, opens hosted UI, enters bridge URL. No need to clone the repo or run npm install for the UI part.",
+      "status": "pending",
+      "group": "Product Vision",
+      "createdAt": "2026-03-23T12:00:00.000Z"
     }
   ],
   "features": [],
   "queue": [],
   "taskNotes": {},
   "activity": [
+    {
+      "id": "act_1774221257759",
+      "time": 1774221257759,
+      "label": "5 Product Vision tasks queued"
+    },
+    {
+      "id": "act_1774220068266_arrange",
+      "time": 1774220068266,
+      "label": "Tasks arranged into epics"
+    },
     {
       "id": "act_1773527760434",
       "time": 1773527760434,
@@ -316,6 +379,10 @@
     {
       "name": "Task Board",
       "color": 7
+    },
+    {
+      "name": "Product Vision",
+      "color": 3
     }
   ]
 }

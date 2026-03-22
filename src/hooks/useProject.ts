@@ -101,6 +101,12 @@ export function mergeProgressIntoState(
   };
 }
 
+interface ProjectInfo {
+  path: string;
+  name: string;
+  active: boolean;
+}
+
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;
   const [connected, setConnected] = useState(false);
@@ -109,6 +115,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   const [data, setData] = useState<StateData | null>(null);
   const [skillsConfig, setSkillsConfig] = useState<SkillsConfig | null>(null);
   const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([]);
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWriteTime = useRef(0);
@@ -147,6 +154,12 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       setAvailableSkills(discovered);
       const sc = await readSkillsConfig();
       setSkillsConfig(sc);
+
+      // Fetch projects list
+      try {
+        const proj = await api.listProjects();
+        setProjects(proj);
+      } catch { /* server might not support multi-project yet */ }
 
       setData(stateData);
       setConnected(true);
@@ -198,6 +211,10 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         if (msg.type === 'quality') {
           // Quality updates are handled by useQuality hook
         }
+        if (msg.type === 'project-switched') {
+          // Server switched to a different project — reconnect
+          connectToServer();
+        }
       }, () => {
         // On WebSocket close — attempt reconnect after 3 seconds
         setTimeout(() => {
@@ -218,9 +235,13 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     };
   }, [connected]);
 
-  // Auto-connect on mount
+  // Auto-connect on mount, retry once on failure
   useEffect(() => {
-    connectToServer();
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    connectToServer().catch(() => {
+      retryTimer = setTimeout(connectToServer, 2000);
+    });
+    return () => { if (retryTimer) clearTimeout(retryTimer); };
   }, [connectToServer]);
 
   const connect = useCallback(async () => {
@@ -303,5 +324,20 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     });
   }, []);
 
-  return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills };
+  const switchProject = useCallback(async (path: string) => {
+    setConnected(false);
+    setData(null);
+    setStatus('connecting');
+    try {
+      await api.switchProject(path);
+      // The server will broadcast 'project-switched' which triggers connectToServer
+      // But also call it directly for immediate feedback
+      await connectToServer();
+    } catch (err) {
+      console.error('Switch project failed:', err);
+      setStatus('error');
+    }
+  }, [connectToServer]);
+
+  return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject };
 }

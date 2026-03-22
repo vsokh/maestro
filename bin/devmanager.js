@@ -6,8 +6,7 @@ import { stat } from 'node:fs/promises';
 async function main() {
   const args = process.argv.slice(2);
 
-  // Parse flags
-  let projectArg = null;
+  const projectArgs = [];
   let port = null;
 
   for (let i = 0; i < args.length; i++) {
@@ -17,59 +16,61 @@ async function main() {
         console.error('Error: --port must be a number');
         process.exit(1);
       }
-      i++; // skip next arg
+      i++;
     } else if (args[i] === '--help' || args[i] === '-h') {
       printUsage();
       process.exit(0);
     } else if (!args[i].startsWith('-')) {
-      projectArg = args[i];
+      projectArgs.push(args[i]);
     }
   }
 
-  if (!projectArg) {
+  if (projectArgs.length === 0) {
     printUsage();
     process.exit(1);
   }
 
-  const projectPath = resolve(projectArg);
-
-  // Validate directory exists
-  try {
-    const s = await stat(projectPath);
-    if (!s.isDirectory()) {
-      console.error(`Error: "${projectPath}" is not a directory`);
+  // Validate all project directories
+  const projectPaths = [];
+  for (const arg of projectArgs) {
+    const projectPath = resolve(arg);
+    try {
+      const s = await stat(projectPath);
+      if (!s.isDirectory()) {
+        console.error(`Error: "${projectPath}" is not a directory`);
+        process.exit(1);
+      }
+      projectPaths.push(projectPath);
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        console.error(`Error: directory not found: "${projectPath}"`);
+      } else {
+        console.error(`Error: cannot access "${projectPath}": ${err.message}`);
+      }
       process.exit(1);
     }
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.error(`Error: directory not found: "${projectPath}"`);
-    } else {
-      console.error(`Error: cannot access "${projectPath}": ${err.message}`);
-    }
-    process.exit(1);
   }
 
-  // Set port if provided
   if (port) {
     process.env.PORT = String(port);
   }
 
-  // Start server
   const { startServer } = await import('../server/index.js');
-  startServer(projectPath);
+  startServer(projectPaths);
 }
 
 function printUsage() {
   console.log('');
-  console.log('Usage: devmanager <project-path> [options]');
+  console.log('Usage: devmanager <project-path> [project-path2 ...] [options]');
   console.log('');
   console.log('Options:');
   console.log('  --port <number>   Port to listen on (default: 4545)');
   console.log('  --help, -h        Show this help message');
   console.log('');
-  console.log('Example:');
+  console.log('Examples:');
   console.log('  devmanager ./my-project');
-  console.log('  devmanager /home/user/projects/app --port 8080');
+  console.log('  devmanager ./project-a ./project-b ./project-c');
+  console.log('  devmanager . --port 8080');
   console.log('');
 }
 

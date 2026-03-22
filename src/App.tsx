@@ -28,7 +28,7 @@ export function App() {
   }, []);
 
   const project = useProject({ onError: showError });
-  const { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills } = project;
+  const { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject } = project;
 
   useEffect(() => {
     document.title = projectName || APP_NAME;
@@ -104,7 +104,7 @@ export function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header projectName={projectName} status={status} onDisconnect={disconnect} onOpenSkills={() => setShowSkillsConfig(true)} />
+      <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} />
 
       <div className="dm-container">
 

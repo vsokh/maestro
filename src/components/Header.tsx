@@ -1,18 +1,27 @@
 import React, { useState, useCallback } from 'react';
 import {
-  APP_NAME, HEADER_DISCONNECT_ARIA, HEADER_SWITCH_PROJECT, HEADER_SYNCED,
+  APP_NAME, HEADER_SYNCED,
   HEADER_SYNC_ERROR, HEADER_CONNECTED, HEADER_TOGGLE_THEME_ARIA,
   HEADER_LIGHT_MODE, HEADER_DARK_MODE,
 } from '../constants/strings.ts';
 
+interface ProjectInfo {
+  path: string;
+  name: string;
+  active: boolean;
+}
+
 interface HeaderProps {
   projectName: string;
   status: string;
-  onDisconnect: () => void;
+  projects?: ProjectInfo[];
+  onSwitchProject?: (path: string) => void;
+  onOpenSkills?: () => void;
 }
 
-export function Header({ projectName, status, onDisconnect }: HeaderProps) {
+export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills }: HeaderProps) {
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  const [showPicker, setShowPicker] = useState(false);
 
   const toggleTheme = useCallback(() => {
     const next = !dark;
@@ -26,6 +35,8 @@ export function Header({ projectName, status, onDisconnect }: HeaderProps) {
     }
   }, [dark]);
 
+  const hasMultipleProjects = projects && projects.length > 1;
+
   return (
     <header className="dm-header header" style={{
       display: 'flex',
@@ -35,18 +46,49 @@ export function Header({ projectName, status, onDisconnect }: HeaderProps) {
       top: 0,
       zIndex: 10,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button
-          onClick={onDisconnect}
-          aria-label={HEADER_DISCONNECT_ARIA}
-          title={HEADER_SWITCH_PROJECT}
-          className="btn-ghost"
-          style={{ fontSize: '14px', padding: '2px 6px', borderRadius: '4px' }}
-        >←</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
+        {hasMultipleProjects && (
+          <button
+            onClick={() => setShowPicker(!showPicker)}
+            className="btn-ghost"
+            title="Switch project"
+            style={{ fontSize: '14px', padding: '2px 6px', borderRadius: '4px' }}
+          >{showPicker ? '×' : '⇄'}</button>
+        )}
         <span style={{ fontWeight: 700, fontSize: '18px', color: 'var(--dm-text)' }}>{projectName}</span>
         <div className={`dot-sync ${status === 'error' ? 'dot-sync--error' : 'dot-sync--ok'}`} style={{ flexShrink: 0 }} title={status === 'error' ? HEADER_SYNC_ERROR : HEADER_CONNECTED} />
         <span className="text-light" style={{ fontSize: '14px' }}>/</span>
         <span className="text-muted" style={{ fontWeight: 500, fontSize: '16px' }}>{APP_NAME}</span>
+
+        {showPicker && hasMultipleProjects && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, marginTop: '8px',
+            background: 'var(--dm-surface)', border: '1px solid var(--dm-border)',
+            borderRadius: 'var(--dm-radius)', boxShadow: 'var(--dm-shadow-sm)',
+            padding: '4px 0', minWidth: '200px', zIndex: 100,
+          }}>
+            {projects!.map(p => (
+              <button
+                key={p.path}
+                onClick={() => {
+                  if (!p.active && onSwitchProject) {
+                    onSwitchProject(p.path);
+                  }
+                  setShowPicker(false);
+                }}
+                className="btn-ghost"
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '8px 16px', fontSize: '14px', borderRadius: 0,
+                  fontWeight: p.active ? 700 : 400,
+                  color: p.active ? 'var(--dm-accent)' : 'var(--dm-text)',
+                }}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {status === 'synced' ? (
@@ -56,6 +98,15 @@ export function Header({ projectName, status, onDisconnect }: HeaderProps) {
         ) : status === 'error' ? (
           <span className="text-danger" style={{ fontSize: '11px' }}>{HEADER_SYNC_ERROR}</span>
         ) : null}
+        {onOpenSkills && (
+          <button
+            onClick={onOpenSkills}
+            aria-label="Skill categories"
+            title="Configure skill categories"
+            className="btn-ghost"
+            style={{ fontSize: '14px', padding: '4px 6px' }}
+          >&#9881;</button>
+        )}
         <button
           onClick={toggleTheme}
           aria-label={HEADER_TOGGLE_THEME_ARIA}

@@ -52,7 +52,7 @@ Check:
 | Notes | Branch | Action |
 |-------|--------|--------|
 | yes | yes | **Resume with code.** Worktree should exist (if not: `git worktree add .devmanager/worktrees/task-{taskId} task-{taskId}-{slug}`). Read notes, skip to step 5. |
-| yes | no | **Resume exploration.** Read notes, present plan for approval, skip to step 4. |
+| yes | no | **Resume exploration.** Read notes. If `autoApprove`: skip to step 4. Otherwise: present plan for approval, skip to step 4. |
 | no | no | **Fresh task.** Continue to step 3. |
 
 ### 3. Explore + plan (fresh tasks only)
@@ -65,7 +65,7 @@ Agent(subagent_type="Explore", prompt="Find all files related to [feature]. I ne
 
 Write progress: `"Planning approach..."`
 
-Decide: what files change, technical approach, risks.
+Decide: what changes, approach, risks. (Keep technical details in notes file — present product framing to user.)
 
 **Save notes immediately** to `.devmanager/notes/{taskId}.md`:
 ```markdown
@@ -83,7 +83,9 @@ Decide: what files change, technical approach, risks.
 
 This file lives on master — survives session interruptions at any phase.
 
-Present the plan to the user. **STOP. Wait for approval.** Do NOT launch sub-agents until they say go.
+**If the task has `autoApprove: true`:** Skip presenting the plan — proceed directly to step 4 (create worktree) and step 5 (delegate). Still save the notes file.
+
+**Otherwise:** Present the plan to the user. **STOP. Wait for approval.** Do NOT launch sub-agents until they say go.
 
 ### 4. Create worktree + branch (after approval only)
 
@@ -188,11 +190,25 @@ Read state.json + `git log --oneline -10`. Output: pending tasks, queue count, r
 
 ---
 
+## Communication style — speak product, not code
+
+The user wears a **manager hat**. Talk to them in product terms:
+
+- **Plans:** Frame as user-facing outcomes, not file changes. "Users will see a loading spinner during login" not "Add a spinner component to AuthPage.jsx".
+- **Progress:** Describe what's happening in product terms. "Setting up the login flow" not "Modifying OAuth callback handler".
+- **Issues found:** Explain the user impact. "Right now if login fails, users see a blank screen — we'll add a clear error message" not "The catch block is empty in handleAuth()".
+- **Results:** Report what shipped. "Users can now log in with Google — errors show a friendly message" not "Added try/catch in auth.js and a Toast component".
+- **Risks:** Frame as product risk. "This could break existing sessions" not "The token format changed in the JWT payload".
+
+**Keep technical details for sub-agent prompts only.** The manager doesn't need file paths, function names, or implementation specifics unless they ask.
+
+---
+
 ## Key rules
 
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
 2. **Delegate, don't implement.** Sub-agents write code. You plan, review, and coordinate.
 3. **NEVER write to state.json** (except arrange: `dependsOn`/`group` only). No activity entries, no new tasks, no status changes. All communication is through progress files.
-4. **Wait for approval** before delegating. Present plan, then STOP.
+4. **Wait for approval** before delegating — unless the task has `autoApprove: true`, in which case skip straight to implementation.
 5. **Worktree per task.** Use `git worktree add` — never `git checkout`. Main repo stays on master. Sub-agents work in `.devmanager/worktrees/task-{id}/`.
 6. **Stay in scope.** Only do what the task asks. Don't create new tasks or rearrange things. If you discover something, tell the user.

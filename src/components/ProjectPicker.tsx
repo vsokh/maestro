@@ -72,6 +72,8 @@ export function ProjectPicker({ onConnect, status }: ProjectPickerProps) {
     return <LoadingSkeleton />;
   }
 
+  const showRetry = status === 'error' || status === 'disconnected';
+
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
@@ -79,18 +81,15 @@ export function ProjectPicker({ onConnect, status }: ProjectPickerProps) {
     }}>
       <div style={{ textAlign: 'center' }}>
         <h1 style={{ fontWeight: 700, fontSize: '28px', color: 'var(--dm-text)', marginBottom: '8px' }}>{PROJECT_PICKER_TITLE}</h1>
-        <p className="text-light" style={{ fontSize: '14px' }}>{PROJECT_PICKER_SUBTITLE}</p>
+        <p className="text-light" style={{ fontSize: '14px' }}>
+          {status === 'error' ? PROJECT_PICKER_ERROR : PROJECT_PICKER_SUBTITLE}
+        </p>
       </div>
 
-      {status === 'error' && (
-        <>
-          <p className="text-danger" style={{ fontSize: '13px' }}>
-            {PROJECT_PICKER_ERROR}
-          </p>
-          <button onClick={onConnect} className="btn-connect" style={{ padding: '14px 36px', fontSize: '16px' }}>
-            {PROJECT_PICKER_CONNECT}
-          </button>
-        </>
+      {showRetry && (
+        <button onClick={onConnect} className="btn-connect" style={{ padding: '14px 36px', fontSize: '16px' }}>
+          {PROJECT_PICKER_CONNECT}
+        </button>
       )}
     </div>
   );

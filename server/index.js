@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { WebSocketServer } from 'ws';
-import { resolve, join, extname } from 'node:path';
+import { resolve, join, extname, basename } from 'node:path';
 import { readFile, stat } from 'node:fs/promises';
 import { handleApi } from './api.js';
 import { startWatcher } from './watcher.js';
@@ -27,22 +27,57 @@ const MIME_TYPES = {
   '.map': 'application/json',
 };
 
+// --- Multi-project state ---
+let activeProjectPath = '';
+let projectPaths = [];
+let cleanupWatcher = null;
+
+export function getActiveProject() {
+  return activeProjectPath;
+}
+
+export function getProjects() {
+  return projectPaths.map(p => ({ path: p, name: basename(p), active: p === activeProjectPath }));
+}
+
+export function switchProject(newPath) {
+  if (!projectPaths.includes(newPath)) {
+    // Add new project to list
+    projectPaths.push(newPath);
+  }
+  activeProjectPath = newPath;
+
+  // Restart file watcher for new project
+  if (cleanupWatcher) cleanupWatcher();
+  cleanupWatcher = startWatcher(newPath, broadcast);
+
+  // Notify all clients to reconnect
+  broadcast({ type: 'project-switched', projectPath: newPath, projectName: basename(newPath) });
+  console.log(`  Switched to: ${newPath}`);
+}
+
+// --- WebSocket ---
 const clients = new Set();
 
 export function broadcast(message) {
   const data = typeof message === 'string' ? message : JSON.stringify(message);
   for (const ws of clients) {
-    if (ws.readyState === 1) { // WebSocket.OPEN
-      try {
-        ws.send(data);
-      } catch (err) {
-        console.error('WebSocket send error:', err.message);
-      }
+    if (ws.readyState === 1) {
+      try { ws.send(data); } catch (err) { console.error('WebSocket send error:', err.message); }
     }
   }
 }
 
-export function startServer(projectPath) {
+// --- Server ---
+export function startServer(initialProjectPaths) {
+  // Accept single path or array
+  if (typeof initialProjectPaths === 'string') {
+    projectPaths = [initialProjectPaths];
+  } else {
+    projectPaths = [...initialProjectPaths];
+  }
+  activeProjectPath = projectPaths[0];
+
   const distDir = resolve(import.meta.dirname, '..', 'dist');
 
   const server = createServer(async (req, res) => {
@@ -55,7 +90,6 @@ export function startServer(projectPath) {
       res.setHeader('Access-Control-Max-Age', '86400');
     }
 
-    // Handle preflight
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
@@ -63,8 +97,7 @@ export function startServer(projectPath) {
     }
 
     try {
-      // Try API routes first
-      const handled = await handleApi(req, res, projectPath);
+      const handled = await handleApi(req, res);
       if (handled) return;
 
       // Serve static files from dist/
@@ -73,7 +106,6 @@ export function startServer(projectPath) {
 
       const filePath = join(distDir, pathname);
 
-      // Security: prevent path traversal
       if (!filePath.startsWith(distDir)) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Forbidden' }));
@@ -91,7 +123,6 @@ export function startServer(projectPath) {
         res.writeHead(200, { 'Content-Type': contentType });
         res.end(content);
       } catch {
-        // SPA fallback: serve index.html for unmatched routes
         try {
           const indexPath = join(distDir, 'index.html');
           const content = await readFile(indexPath);
@@ -109,7 +140,6 @@ export function startServer(projectPath) {
     }
   });
 
-  // WebSocket server on same port
   const wss = new WebSocketServer({ server, path: '/ws' });
 
   wss.on('connection', (ws) => {
@@ -121,30 +151,28 @@ export function startServer(projectPath) {
     });
   });
 
-  // Start file watcher
-  startWatcher(projectPath, broadcast);
+  // Start file watcher for initial project
+  cleanupWatcher = startWatcher(activeProjectPath, broadcast);
 
-  // Startup
   server.listen(PORT, HOST, () => {
     console.log('');
     console.log('Dev Manager bridge server');
-    console.log(`  Project:   ${projectPath}`);
+    console.log(`  Projects:  ${projectPaths.map(p => basename(p)).join(', ')}`);
+    console.log(`  Active:    ${activeProjectPath}`);
     console.log(`  Server:    http://${HOST}:${PORT}`);
-    console.log(`  WebSocket: ws://${HOST}:${PORT}/ws`);
     console.log('');
   });
 
-  // Graceful shutdown
   function shutdown() {
     console.log('\nShutting down...');
     const pm = getProcessManager();
     pm.killAll();
+    if (cleanupWatcher) cleanupWatcher();
     wss.close();
     server.close(() => {
       console.log('Server closed.');
       process.exit(0);
     });
-    // Force exit after 5s
     setTimeout(() => process.exit(1), 5000);
   }
 
@@ -152,4 +180,11 @@ export function startServer(projectPath) {
   process.on('SIGTERM', shutdown);
 
   return server;
+}
+
+// Auto-start when run directly
+const isMain = process.argv[1] && import.meta.url === 'file:///' + process.argv[1].replace(/\\/g, '/');
+if (isMain) {
+  const projectPath = resolve(process.argv[2] || '.');
+  startServer(projectPath);
 }

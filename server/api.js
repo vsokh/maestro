@@ -127,7 +127,10 @@ function matchRoute(method, pathname, routeMethod, routePattern) {
 
 // --- API handler ---
 
-export async function handleApi(req, res, projectPath) {
+export async function handleApi(req, res) {
+  const { getActiveProject, getProjects, switchProject } = await import('./index.js');
+  const projectPath = getActiveProject();
+
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
   const method = req.method;
@@ -136,6 +139,36 @@ export async function handleApi(req, res, projectPath) {
   if (!pathname.startsWith('/api/')) return false;
 
   try {
+    // GET /api/projects — list all registered projects
+    if (method === 'GET' && pathname === '/api/projects') {
+      jsonResponse(res, 200, getProjects());
+      return true;
+    }
+
+    // PUT /api/project — switch active project
+    if (method === 'PUT' && pathname === '/api/project') {
+      const body = await parseJsonBody(req);
+      const { path: newPath } = body;
+      if (!newPath) {
+        jsonResponse(res, 400, { error: 'Missing path' });
+        return true;
+      }
+      const resolved = join(newPath); // normalize
+      try {
+        const s = await stat(resolved);
+        if (!s.isDirectory()) {
+          jsonResponse(res, 400, { error: 'Not a directory' });
+          return true;
+        }
+      } catch {
+        jsonResponse(res, 400, { error: 'Directory not found' });
+        return true;
+      }
+      switchProject(resolved);
+      jsonResponse(res, 200, { ok: true, projectPath: resolved, projectName: basename(resolved) });
+      return true;
+    }
+
     // GET /api/info
     if (method === 'GET' && pathname === '/api/info') {
       jsonResponse(res, 200, {
