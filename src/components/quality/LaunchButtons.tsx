@@ -3,18 +3,20 @@ import {
   LAUNCH_HEALTHCHECK_CMD, LAUNCH_HEALTHCHECK, LAUNCH_HEALTHCHECK_ACTIVE,
   LAUNCH_AUTOFIX_CMD, LAUNCH_AUTOFIX, LAUNCH_AUTOFIX_ACTIVE,
 } from '../../constants/strings.ts';
-import { launchClaude } from '../../utils/launchClaude.ts';
+import { api } from '../../api.ts';
 
-export function HealthcheckButton({ projectPath }: { projectPath: string }) {
+export function HealthcheckButton() {
   const [launched, setLaunched] = useState(false);
 
-  const handleRun = () => {
-    launchClaude(projectPath, LAUNCH_HEALTHCHECK_CMD, LAUNCH_HEALTHCHECK);
-    setLaunched(true);
-    setTimeout(() => setLaunched(false), 5000);
+  const handleRun = async () => {
+    try {
+      await api.launch(0, LAUNCH_HEALTHCHECK_CMD);
+      setLaunched(true);
+      setTimeout(() => setLaunched(false), 5000);
+    } catch (err) {
+      console.error('Failed to launch healthcheck:', err);
+    }
   };
-
-  if (!projectPath) return null;
 
   return (
     <button
@@ -27,16 +29,18 @@ export function HealthcheckButton({ projectPath }: { projectPath: string }) {
   );
 }
 
-export function AutofixButton({ projectPath }: { projectPath: string }) {
+export function AutofixButton() {
   const [launched, setLaunched] = useState(false);
 
-  const handleRun = () => {
-    launchClaude(projectPath, LAUNCH_AUTOFIX_CMD, LAUNCH_AUTOFIX);
-    setLaunched(true);
-    setTimeout(() => setLaunched(false), 5000);
+  const handleRun = async () => {
+    try {
+      await api.launch(0, LAUNCH_AUTOFIX_CMD);
+      setLaunched(true);
+      setTimeout(() => setLaunched(false), 5000);
+    } catch (err) {
+      console.error('Failed to launch autofix:', err);
+    }
   };
-
-  if (!projectPath) return null;
 
   return (
     <button

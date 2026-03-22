@@ -18,10 +18,9 @@ interface QualityPanelProps {
   loading: boolean;
   error?: boolean;
   onRetry?: () => void;
-  projectPath: string;
 }
 
-export function QualityPanel({ latest, history, loading, error, onRetry, projectPath }: QualityPanelProps) {
+export function QualityPanel({ latest, history, loading, error, onRetry }: QualityPanelProps) {
   const prev = useMemo(() => history.length > 1 ? history[history.length - 2] : null, [history]);
 
   if (loading) {
@@ -56,8 +55,8 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
           {QUALITY_NO_DATA}
         </div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-          <HealthcheckButton projectPath={projectPath} />
-          <AutofixButton projectPath={projectPath} />
+          <HealthcheckButton />
+          <AutofixButton />
         </div>
       </div>
     );
@@ -99,8 +98,8 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-          <HealthcheckButton projectPath={projectPath} />
-          <AutofixButton projectPath={projectPath} />
+          <HealthcheckButton />
+          <AutofixButton />
         </div>
       </div>
 

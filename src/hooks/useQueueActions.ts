@@ -1,25 +1,12 @@
 import { useState } from 'react';
-import { ensureDevManagerDir } from '../fs.ts';
+import { api } from '../api.ts';
 import { STATUS } from '../constants/statuses.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
-import { escapePS, escapeCmd, shortTitle, buildGridLayout } from '../utils/queueUtils.ts';
-import { QUEUE_LAUNCH_SET_PATH } from '../constants/strings.ts';
 import type { StateData, Task, QueueItem, Activity } from '../types';
-
-function launchProtocol(url: string): void {
-  const a = document.createElement('a');
-  a.href = url;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
 
 interface UseQueueActionsParams {
   data: StateData | null;
   save: (data: StateData) => void;
-  dirHandle: FileSystemDirectoryHandle | null;
-  projectPath: string;
   snapshotBeforeAction: (label: string) => void;
   onError: (msg: string) => void;
 }
@@ -30,7 +17,7 @@ interface LaunchPhaseItem {
   taskName: string;
 }
 
-export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction, onError }: UseQueueActionsParams) {
+export function useQueueActions({ data, save, snapshotBeforeAction, onError }: UseQueueActionsParams) {
   const [launchedId, setLaunchedId] = useState<number | null>(null);
 
   const tasks: Task[] = data?.tasks || [];
@@ -96,76 +83,37 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     updateData({ queue: [] });
   };
 
-  const handleLaunchTask = (itemKey: number, cmd: string, taskName: string) => {
-    if (!projectPath) { onError(QUEUE_LAUNCH_SET_PATH); return; }
-    const path = projectPath.replace(/\\/g, '/');
-    const title = shortTitle(taskName);
-    const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent(cmd) + '?' + encodeURIComponent(title);
-    launchProtocol(url);
-    setLaunchedId(itemKey);
-    setTimeout(() => setLaunchedId(null), 3000);
+  const handleLaunchTask = async (itemKey: number, cmd: string, _taskName: string) => {
+    try {
+      await api.launch(itemKey, cmd);
+      setLaunchedId(itemKey);
+      setTimeout(() => setLaunchedId(null), 3000);
+    } catch (err) {
+      console.error('Failed to launch task:', err);
+      onError('Failed to launch task');
+    }
   };
 
   const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
-    if (!projectPath) { onError(QUEUE_LAUNCH_SET_PATH); return; }
-    if (!dirHandle) return;
-    const dir = projectPath.replace(/\\/g, '\\');
-
     try {
-      const dmDir = await ensureDevManagerDir(dirHandle);
-
-      // Clean up old launch-*.ps1 files
-      const needed = new Set(items.map(item => `launch-${item.key}.ps1`));
-      for await (const name of (dmDir as any).keys()) {
-        if (name.startsWith('launch-') && name.endsWith('.ps1') && !needed.has(name)) {
-          await dmDir.removeEntry(name);
-        }
-      }
-
       for (const item of items) {
-        const taskScript = `$Host.UI.RawUI.WindowTitle = '${escapePS(shortTitle(item.taskName))}'\r\nclaude --dangerously-skip-permissions '${escapePS(item.cmd)}'\r\n`;
-        const fh = await dmDir.getFileHandle(`launch-${item.key}.ps1`, { create: true });
-        const w = await fh.createWritable();
-        await w.write(taskScript);
-        await w.close();
+        await api.launch(item.key, item.cmd);
       }
-
-      const paneArgs = items.map(item =>
-        `--title "${escapeCmd(shortTitle(item.taskName))}" --suppressApplicationTitle -d "${dir}" pwsh -NoLogo -NoExit -File "${dir}\\.devmanager\\launch-${item.key}.ps1"`
-      );
-      const layoutArgs = buildGridLayout(paneArgs);
-
-      // Multi-line launch.cmd for readability
-      const segments = layoutArgs.split(' ; ');
-      const lines = segments.map((seg, i) =>
-        i === 0 ? `  ${seg}` : `  ; ${seg}`
-      );
-      const script = `@echo off\r\nstart "" wt.exe -w new ^\r\n${lines.join(' ^\r\n')}\r\n`;
-
-      const fileHandle = await dmDir.getFileHandle('launch.cmd', { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(script);
-      await writable.close();
+      items.forEach(item => setLaunchedId(item.key));
+      setTimeout(() => setLaunchedId(null), 3000);
     } catch (err) {
-      console.error('Failed to write launch scripts:', err);
-      if (onError) onError('Failed to write launch scripts');
-      return;
+      console.error('Failed to launch phase:', err);
+      onError('Failed to launch phase');
     }
-
-    const path = projectPath.replace(/\\/g, '/');
-    launchProtocol('claudecode:' + encodeURIComponent(path) + '?__launch_file?Launch%20phase');
-
-    items.forEach(item => {
-      setLaunchedId(item.key);
-    });
-    setTimeout(() => setLaunchedId(null), 3000);
   };
 
-  const handleArrange = () => {
-    if (!projectPath) { onError(QUEUE_LAUNCH_SET_PATH); return; }
-    const path = projectPath.replace(/\\/g, '/');
-    const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent('/orchestrator arrange') + '?' + encodeURIComponent('Arrange tasks');
-    launchProtocol(url);
+  const handleArrange = async () => {
+    try {
+      await api.launch(0, '/orchestrator arrange');
+    } catch (err) {
+      console.error('Failed to launch arrange:', err);
+      onError('Failed to launch arrange');
+    }
   };
 
   return {

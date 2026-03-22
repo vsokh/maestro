@@ -11,6 +11,21 @@ export interface HistoryEntry {
   at: string;
 }
 
+export interface SkillInfo {
+  name: string;
+  description: string;
+  type: 'skill' | 'agent';
+}
+
+export interface EpicMapping {
+  skills: string[];
+  agents: string[];
+}
+
+export interface SkillsConfig {
+  epics: Record<string, EpicMapping>;
+}
+
 export interface Task {
   id: number;
   name: string;
@@ -156,21 +171,4 @@ export interface UndoEntry {
   data: StateData;
   label: string;
   timestamp: number;
-}
-
-// File System Access API extensions (not yet in TS stdlib)
-interface FileSystemPermissionDescriptor {
-  mode?: 'read' | 'readwrite';
-}
-
-export interface FileSystemDirectoryHandleExt extends FileSystemDirectoryHandle {
-  queryPermission(descriptor?: FileSystemPermissionDescriptor): Promise<PermissionState>;
-  requestPermission(descriptor?: FileSystemPermissionDescriptor): Promise<PermissionState>;
-  entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
-}
-
-declare global {
-  interface Window {
-    showDirectoryPicker?(options?: { mode?: 'read' | 'readwrite'; startIn?: FileSystemHandle }): Promise<FileSystemDirectoryHandle>;
-  }
 }

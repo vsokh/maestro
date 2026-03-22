@@ -1,19 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { StateData, Activity, Task } from '../types';
+import type { StateData, Activity, Task, SkillsConfig, SkillInfo } from '../types';
+import { api } from '../api.ts';
+import { connectWebSocket } from '../api.ts';
 import {
-  loadDirHandle,
-  saveDirHandle,
-  verifyHandle,
-  requestAccess,
   readState,
   writeState,
   createDefaultState,
-  ensureOrchestratorSkill,
-  ensureCodehealthSkill,
-  ensureAutofixSkill,
+  syncSkills,
   readProgressFiles,
   deleteProgressFile,
-  syncSkills,
+  discoverSkillsAndAgents,
+  readSkillsConfig,
+  writeSkillsConfig,
 } from '../fs.ts';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error';
@@ -105,192 +103,165 @@ export function mergeProgressIntoState(
 
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;
-  const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [projectName, setProjectName] = useState('');
   const [data, setData] = useState<StateData | null>(null);
-  const [lastProjectName, setLastProjectName] = useState(() => {
-    try { return localStorage.getItem('dm_last_project') || ''; } catch (err) { console.error('Failed to read dm_last_project from localStorage:', err); return ''; }
-  });
+  const [skillsConfig, setSkillsConfig] = useState<SkillsConfig | null>(null);
+  const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWriteTime = useRef(0);
-  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const dataRef = useRef<StateData | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => { dataRef.current = data; }, [data]);
 
-  const flushSave = useCallback(async () => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
+  const connectToServer = useCallback(async () => {
+    setStatus('connecting');
+    try {
+      // Get project info from server
+      const info = await api.getInfo();
+      setProjectName(info.projectName);
+
+      // Read initial state
+      const existing = await readState();
+      let stateData: StateData;
+      if (existing) {
+        stateData = existing.data;
+        lastWriteTime.current = existing.lastModified;
+      } else {
+        stateData = createDefaultState(info.projectName);
+        await writeState(stateData);
+        lastWriteTime.current = Date.now();
+      }
+
+      const resolvedName = stateData.project || info.projectName;
+      setProjectName(resolvedName);
+
+      // Sync skills
+      await syncSkills();
+
+      // Discover skills
+      const discovered = await discoverSkillsAndAgents();
+      setAvailableSkills(discovered);
+      const sc = await readSkillsConfig();
+      setSkillsConfig(sc);
+
+      setData(stateData);
+      setConnected(true);
+      setStatus('connected');
+    } catch (err) {
+      console.error('Connection failed:', err);
+      setStatus('error');
     }
   }, []);
 
-  const connectWithHandle = useCallback(async (handle: FileSystemDirectoryHandle) => {
-    await flushSave();
-
-    setStatus('connecting');
-    const name = handle.name;
-    setProjectName(name);
-    setLastProjectName(name);
-    try { localStorage.setItem('dm_last_project', name); } catch (err) { console.error('Failed to write dm_last_project to localStorage:', err); }
-
-    const existing = await readState(handle, onError);
-    let stateData: StateData;
-    if (existing) {
-      stateData = existing.data;
-      lastWriteTime.current = existing.lastModified;
-    } else {
-      stateData = createDefaultState(name);
-      await writeState(handle, stateData, onError);
-      lastWriteTime.current = Date.now();
-    }
-
-    const resolvedName = stateData.project || name;
-    setProjectName(resolvedName);
-
-    try { sessionStorage.setItem('dm_tab_project', resolvedName); } catch (err) { console.error('Failed to write dm_tab_project to sessionStorage:', err); }
-
-    await ensureOrchestratorSkill(handle, onError);
-    await ensureCodehealthSkill(handle, onError);
-    await ensureAutofixSkill(handle, onError);
-
-    await saveDirHandle(handle, resolvedName);
-    setDirHandle(handle);
-    setData(stateData);
-    setConnected(true);
-    setStatus('connected');
-  }, [flushSave, onError]);
-
+  // WebSocket effect for real-time updates
   useEffect(() => {
-    (async () => {
-      const tabProject = sessionStorage.getItem('dm_tab_project') || null;
-      const handle = await loadDirHandle(tabProject);
-      if (handle && await verifyHandle(handle)) {
-        await connectWithHandle(handle);
-      }
-    })();
-  }, [connectWithHandle]);
+    if (!connected) return;
+
+    const setupWs = () => {
+      const ws = connectWebSocket((msg) => {
+        if (msg.type === 'state') {
+          if (msg.lastModified > lastWriteTime.current + 1000) {
+            setData(msg.data);
+            lastWriteTime.current = msg.lastModified;
+            if (msg.data.project) setProjectName(msg.data.project);
+            setStatus('synced');
+            setTimeout(() => setStatus('connected'), 2000);
+          }
+        }
+        if (msg.type === 'progress') {
+          setData(prev => {
+            if (!prev) return prev;
+            const mergeResult = mergeProgressIntoState(prev, msg.data);
+            if (mergeResult.hasChanges) {
+              if (mergeResult.needsWrite) {
+                mergeResult.data.savedAt = new Date().toISOString();
+                writeState(mergeResult.data).then(() => {
+                  lastWriteTime.current = Date.now();
+                });
+                // Clean up completed tasks' progress files
+                for (const id of mergeResult.completedTaskIds) {
+                  deleteProgressFile(id);
+                }
+                if (mergeResult.arrangeCompleted) {
+                  deleteProgressFile('arrange');
+                }
+              }
+              return mergeResult.data;
+            }
+            return prev;
+          });
+        }
+        if (msg.type === 'quality') {
+          // Quality updates are handled by useQuality hook
+        }
+      }, () => {
+        // On WebSocket close — attempt reconnect after 3 seconds
+        setTimeout(() => {
+          if (wsRef.current === ws) {
+            wsRef.current = setupWs();
+          }
+        }, 3000);
+      });
+      return ws;
+    };
+
+    wsRef.current = setupWs();
+
+    return () => {
+      const ws = wsRef.current;
+      wsRef.current = null;
+      if (ws) ws.close();
+    };
+  }, [connected]);
+
+  // Auto-connect on mount
+  useEffect(() => {
+    connectToServer();
+  }, [connectToServer]);
 
   const connect = useCallback(async () => {
-    setStatus('connecting');
-
-    if (!window.showDirectoryPicker) {
-      setStatus('error');
-      return;
-    }
-    try {
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-      await connectWithHandle(handle);
-    } catch (e: unknown) {
-      if (e instanceof DOMException && e.name === 'AbortError') setStatus('disconnected');
-      else setStatus('error');
-    }
-  }, [connectWithHandle]);
-
-  const reconnect = useCallback(async () => {
-    const targetName = lastProjectName || null;
-    const handle = await loadDirHandle(targetName);
-    if (handle) {
-      if (await requestAccess(handle, onError)) {
-        await connectWithHandle(handle);
-        return;
-      }
-    }
-    await connect();
-  }, [connect, connectWithHandle, lastProjectName, onError]);
+    await connectToServer();
+  }, [connectToServer]);
 
   const disconnect = useCallback(async () => {
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
-      if (dirHandle && dataRef.current) {
-        await writeState(dirHandle, dataRef.current, onError);
+      if (dataRef.current) {
+        await writeState(dataRef.current);
       }
     }
-    if (pollTimer.current) clearInterval(pollTimer.current);
-    setDirHandle(null);
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
     setConnected(false);
     setData(null);
     setProjectName('');
     setStatus('disconnected');
-  }, [dirHandle, onError]);
+  }, []);
 
   const save = useCallback((newData: StateData) => {
     const updated = { ...newData, savedAt: new Date().toISOString() };
     setData(updated);
-    if (!dirHandle) return;
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      const ok = await writeState(dirHandle, updated, onError);
+      const ok = await writeState(updated);
       if (ok) lastWriteTime.current = Date.now();
       setStatus(ok ? 'connected' : 'error');
     }, 500);
-  }, [dirHandle, onError]);
-
-  useEffect(() => {
-    if (!connected || !dirHandle) return;
-    pollTimer.current = setInterval(async () => {
-      const result = await readState(dirHandle);
-      if (!result) return;
-
-      let stateData = result.data;
-      let stateChanged = false;
-
-      if (result.lastModified > lastWriteTime.current + 1000) {
-        lastWriteTime.current = result.lastModified;
-        stateChanged = true;
-      }
-
-      const progressEntries = await readProgressFiles(dirHandle, onError);
-      const mergeResult = mergeProgressIntoState(stateData, progressEntries);
-      stateData = mergeResult.data;
-      if (mergeResult.hasChanges) stateChanged = true;
-
-      // Clean up progress files for completed tasks and arrange
-      if (mergeResult.arrangeCompleted) {
-        await deleteProgressFile(dirHandle, 'arrange', onError);
-      }
-      for (const id of mergeResult.completedTaskIds) {
-        await deleteProgressFile(dirHandle, id, onError);
-        try {
-          const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
-          const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
-          if (notesDir) await notesDir.removeEntry(id + '.md').catch(e => console.warn('Failed to remove notes file for task ' + id + ':', e));
-          await dmDir.removeEntry('launch-' + id + '.cmd').catch(e => console.warn('Failed to remove launch file for task ' + id + ':', e));
-        } catch (err) { console.error('Failed to clean up after task completion:', err); }
-      }
-
-      if (mergeResult.needsWrite) {
-        stateData.savedAt = new Date().toISOString();
-        const ok = await writeState(dirHandle, stateData);
-        if (ok) lastWriteTime.current = Date.now();
-        stateChanged = true;
-      }
-
-      if (stateChanged) {
-        setData(stateData);
-        if (stateData.project) setProjectName(stateData.project);
-        setStatus('synced');
-        setTimeout(() => setStatus('connected'), 2000);
-      } else {
-        setStatus(prev => prev === 'error' ? 'connected' : prev);
-      }
-
-      await syncSkills(dirHandle);
-    }, 3000);
-    return () => { if (pollTimer.current) clearInterval(pollTimer.current); };
-  }, [connected, dirHandle, onError]);
+  }, []);
 
   const pauseTask = useCallback(async (taskId: number) => {
-    if (!dirHandle) return;
-    const progressEntries = await readProgressFiles(dirHandle, onError);
+    const progressEntries = await readProgressFiles();
     const prog = progressEntries[taskId];
 
-    await deleteProgressFile(dirHandle, taskId, onError);
+    await deleteProgressFile(taskId);
 
     setData(prev => {
       if (!prev) return prev;
@@ -305,28 +276,32 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         };
       });
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
-      writeState(dirHandle, updated, onError).then(ok => {
+      writeState(updated).then(ok => {
         if (ok) lastWriteTime.current = Date.now();
       });
       return updated;
     });
-  }, [dirHandle, onError]);
+  }, []);
+
+  const saveSkills = useCallback(async (config: SkillsConfig) => {
+    setSkillsConfig(config);
+    await writeSkillsConfig(config);
+  }, []);
 
   const cancelTask = useCallback(async (taskId: number) => {
-    if (!dirHandle) return;
-    await deleteProgressFile(dirHandle, taskId, onError);
+    await deleteProgressFile(taskId);
     setData(prev => {
       if (!prev) return prev;
       const tasks = (prev.tasks || []).map(t =>
         t.id === taskId ? { ...t, status: 'pending' as const, progress: undefined, lastProgress: undefined, branch: undefined } : t
       );
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
-      writeState(dirHandle, updated, onError).then(ok => {
+      writeState(updated).then(ok => {
         if (ok) lastWriteTime.current = Date.now();
       });
       return updated;
     });
-  }, [dirHandle, onError]);
+  }, []);
 
-  return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask };
+  return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills };
 }

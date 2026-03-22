@@ -3,7 +3,7 @@ import type { Task, QueueItem } from '../../types';
 import { itemKey, cmdForItem, getItemStatus, getButtonStyle, type ItemStatus } from './queueItemUtils.ts';
 import {
   QUEUE_MANUAL_TITLE, QUEUE_MANUAL_YOU, QUEUE_LAUNCH_ARIA, QUEUE_LAUNCH_RESUME,
-  QUEUE_LAUNCH_TERMINAL, QUEUE_LAUNCH_SET_PATH, QUEUE_AUTO_APPROVED, QUEUE_CLICK_APPROVE,
+  QUEUE_LAUNCH_TERMINAL, QUEUE_AUTO_APPROVED, QUEUE_CLICK_APPROVE,
   QUEUE_PAUSED_DEFAULT, QUEUE_PAUSE_ARIA, QUEUE_PAUSE_TITLE, QUEUE_REMOVE_ARIA,
   QUEUE_REMOVE_TITLE,
 } from '../../constants/strings.ts';
@@ -16,12 +16,11 @@ interface QueueItemContentProps {
   onPauseTask: (id: number) => void;
   onRemove: (key: number) => void;
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
-  projectPath: string;
   taskMap: Map<number, Task>;
   variant?: 'flat' | 'phase';
 }
 
-export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask, onRemove, onUpdateTask, projectPath, taskMap, variant = 'flat' }: QueueItemContentProps) {
+export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat' }: QueueItemContentProps) {
   const key = itemKey(item);
   const isLaunched = launchedId === key;
   const status: ItemStatus = getItemStatus(item, taskMap);
@@ -46,7 +45,7 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
         <button
           onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
           aria-label={QUEUE_LAUNCH_ARIA}
-          title={isPaused ? QUEUE_LAUNCH_RESUME : projectPath ? QUEUE_LAUNCH_TERMINAL : QUEUE_LAUNCH_SET_PATH}
+          title={isPaused ? QUEUE_LAUNCH_RESUME : QUEUE_LAUNCH_TERMINAL}
           className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
           style={{
             padding: '4px 8px', background: btn.bg,

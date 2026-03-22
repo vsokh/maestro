@@ -8,7 +8,6 @@ import type { Task, QueueItem } from '../types';
 import { itemKey, cmdForItem, getRowClass, getItemStatus, isAllAutoApproved } from './queue/queueItemUtils.ts';
 import { QueueItemContent } from './queue/QueueItemContent.tsx';
 import { PhaseView } from './queue/PhaseView.tsx';
-import { ProjectPathConfig } from './queue/ProjectPathConfig.tsx';
 
 interface CommandQueueProps {
   queue: QueueItem[];
@@ -22,11 +21,9 @@ interface CommandQueueProps {
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   launchedId: number | null;
-  projectPath: string;
-  onSetPath: (path: string) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId, projectPath, onSetPath }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId }: CommandQueueProps) {
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
@@ -45,7 +42,6 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             onPauseTask={onPauseTask}
             onRemove={onRemove}
             onUpdateTask={onUpdateTask}
-            projectPath={projectPath}
             taskMap={taskMap}
           />
         </div>
@@ -100,15 +96,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           onUpdateTask={onUpdateTask}
           onBatchUpdateTasks={onBatchUpdateTasks}
           onClear={onClear}
-          projectPath={projectPath}
         />
       ) : renderFlatList()}
-
-      <ProjectPathConfig
-        projectPath={projectPath}
-        onSetPath={onSetPath}
-        showBorder={queue.length === 0}
-      />
     </div>
   );
 }

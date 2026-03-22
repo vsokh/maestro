@@ -28,12 +28,11 @@ interface TaskDetailProps {
   onDeleteTask: (id: number) => void;
   notes: string;
   onUpdateNotes: (id: number, note: string) => void;
-  dirHandle: FileSystemDirectoryHandle | null;
   onAddAttachment: (taskId: number, file: File) => void;
   onDeleteAttachment: (taskId: number, attachmentId: string) => void;
 }
 
-export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }: TaskDetailProps) {
+export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, onAddAttachment, onDeleteAttachment }: TaskDetailProps) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
@@ -42,7 +41,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   const [localBlockedReason, setLocalBlockedReason] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, dirHandle, onAddAttachment);
+  const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, onAddAttachment);
 
   const [prevResetKey, setPrevResetKey] = useState('');
   const resetKey = `${task?.id}|${notes}|${task?.blockedReason || ''}|${task?.description || ''}`;

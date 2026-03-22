@@ -14,6 +14,7 @@ import { ActivityFeed } from './components/ActivityFeed.tsx';
 import { UndoToast } from './components/UndoToast.tsx';
 import { ErrorToast } from './components/ErrorToast.tsx';
 import { QualityPanel } from './components/QualityPanel.tsx';
+import { SkillsConfigPanel } from './components/SkillsConfigPanel.tsx';
 import { useQuality } from './hooks/useQuality.ts';
 import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
 
@@ -27,7 +28,7 @@ export function App() {
   }, []);
 
   const project = useProject({ onError: showError });
-  const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask } = project;
+  const { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills } = project;
 
   useEffect(() => {
     document.title = projectName || APP_NAME;
@@ -36,35 +37,24 @@ export function App() {
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
 
   const [productTab, setProductTab] = useState<'board' | 'quality'>('board');
+  const [showSkillsConfig, setShowSkillsConfig] = useState(false);
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
   const glowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const detailPanelRef = useFocusTrap(selectedTask != null);
 
-  const quality = useQuality(dirHandle);
+  const quality = useQuality();
 
-  const [projectPath, setProjectPathState] = useState('');
+  const { undoEntry, snapshotBeforeAction, handleUndo, dismissUndo } = useUndo({ data, save, showError });
 
-  const { undoEntry, snapshotBeforeAction, handleUndo, dismissUndo } = useUndo({ data, save, dirHandle, showError });
-
-  const taskActions = useTaskActions({ data, save, dirHandle, snapshotBeforeAction, onError: showError });
-  const queueActions = useQueueActions({ data, save, dirHandle, projectPath, snapshotBeforeAction, onError: showError });
-
-  useEffect(() => {
-    if (!projectName) return;
-    try {
-      const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
-      setProjectPathState(paths[projectName] || '');
-    } catch (err) { console.error('Failed to read dm_project_paths from localStorage:', err); }
-  }, [projectName]);
+  const taskActions = useTaskActions({ data, save, snapshotBeforeAction, onError: showError });
+  const queueActions = useQueueActions({ data, save, snapshotBeforeAction, onError: showError });
 
   if (!connected || !data) {
     return (
       <ProjectPicker
         onConnect={connect}
-        onReconnect={reconnect}
-        lastProjectName={lastProjectName}
         status={status}
       />
     );
@@ -110,20 +100,11 @@ export function App() {
     setTimeout(tryScroll, 50);
   };
 
-  const setProjectPath = (path: string) => {
-    setProjectPathState(path);
-    try {
-      const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
-      paths[projectName] = path;
-      localStorage.setItem('dm_project_paths', JSON.stringify(paths));
-    } catch (err) { console.error('Failed to save dm_project_paths to localStorage:', err); }
-  };
-
   const selectedTaskData = tasks.find(t => t.id === selectedTask) || null;
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header projectName={projectName} status={status} onDisconnect={disconnect} />
+      <Header projectName={projectName} status={status} onDisconnect={disconnect} onOpenSkills={() => setShowSkillsConfig(true)} />
 
       <div className="dm-container">
 
@@ -148,7 +129,7 @@ export function App() {
 
           {productTab === 'quality' && (
             <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
-              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} error={quality.error} onRetry={quality.retry} projectPath={projectPath} />
+              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} error={quality.error} onRetry={quality.retry} />
             </div>
           )}
         </div>
@@ -173,6 +154,7 @@ export function App() {
                     onUpdateEpics={taskActions.handleUpdateEpics}
                     queue={queue}
                     glowTaskId={glowTaskId}
+                    skillsConfig={skillsConfig}
                   />
                 </div>
               </div>
@@ -201,9 +183,9 @@ export function App() {
                   onDeleteTask={handleDeleteTask}
                   notes={selectedTask ? (taskNotes[selectedTask] || '') : ''}
                   onUpdateNotes={taskActions.handleUpdateNotes}
-                  dirHandle={dirHandle}
                   onAddAttachment={taskActions.handleAddAttachment}
                   onDeleteAttachment={taskActions.handleDeleteAttachment}
+                  availableSkills={availableSkills}
                 />
               </div>
             </div>
@@ -211,7 +193,7 @@ export function App() {
             <div className="dm-grid-bottom">
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} />
               </div>
 
               <div className="panel">
@@ -222,6 +204,15 @@ export function App() {
           </>
         )}
       </div>
+      {showSkillsConfig ? (
+        <SkillsConfigPanel
+          config={skillsConfig}
+          availableSkills={availableSkills}
+          epicNames={[...new Set([...epics.map(e => e.name), ...tasks.map(t => t.group).filter(Boolean) as string[]])]}
+          onSave={(cfg) => saveSkills(cfg)}
+          onClose={() => setShowSkillsConfig(false)}
+        />
+      ) : null}
       <UndoToast entry={undoEntry} onUndo={handleUndo} onDismiss={dismissUndo} />
       <ErrorToast message={errorMessage} onDismiss={() => { if (errorTimer.current) clearTimeout(errorTimer.current); setErrorMessage(null); }} />
     </div>

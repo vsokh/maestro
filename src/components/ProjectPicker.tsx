@@ -1,13 +1,11 @@
 import React from 'react';
 import {
   PROJECT_PICKER_TITLE, PROJECT_PICKER_SUBTITLE, PROJECT_PICKER_CONNECT,
-  PROJECT_PICKER_CONNECTING, PROJECT_PICKER_ERROR, PROJECT_PICKER_LAST_OPENED,
+  PROJECT_PICKER_ERROR,
 } from '../constants/strings.ts';
 
 interface ProjectPickerProps {
   onConnect: () => void;
-  onReconnect: () => void;
-  lastProjectName: string;
   status: string;
 }
 
@@ -69,7 +67,7 @@ function LoadingSkeleton() {
   );
 }
 
-export function ProjectPicker({ onConnect, onReconnect, lastProjectName, status }: ProjectPickerProps) {
+export function ProjectPicker({ onConnect, status }: ProjectPickerProps) {
   if (status === 'connecting') {
     return <LoadingSkeleton />;
   }
@@ -84,34 +82,16 @@ export function ProjectPicker({ onConnect, onReconnect, lastProjectName, status 
         <p className="text-light" style={{ fontSize: '14px' }}>{PROJECT_PICKER_SUBTITLE}</p>
       </div>
 
-      <button
-        onClick={onConnect}
-        disabled={status === 'connecting'}
-        className="btn-connect"
-        style={{
-          padding: '14px 36px', fontSize: '16px',
-          cursor: status === 'connecting' ? 'wait' : 'pointer',
-          opacity: status === 'connecting' ? 0.7 : 1,
-        }}
-      >
-        {status === 'connecting' ? PROJECT_PICKER_CONNECTING : PROJECT_PICKER_CONNECT}
-      </button>
-
-      {lastProjectName ? (
-        <button
-          onClick={onReconnect}
-          className="btn-reconnect"
-          style={{ fontSize: '13px', padding: '8px 16px' }}
-        >
-          {PROJECT_PICKER_LAST_OPENED} {lastProjectName}
-        </button>
-      ) : null}
-
-      {status === 'error' ? (
-        <div className="text-danger" style={{ fontSize: '13px' }}>
-          {PROJECT_PICKER_ERROR}
-        </div>
-      ) : null}
+      {status === 'error' && (
+        <>
+          <p className="text-danger" style={{ fontSize: '13px' }}>
+            {PROJECT_PICKER_ERROR}
+          </p>
+          <button onClick={onConnect} className="btn-connect" style={{ padding: '14px 36px', fontSize: '16px' }}>
+            {PROJECT_PICKER_CONNECT}
+          </button>
+        </>
+      )}
     </div>
   );
 }

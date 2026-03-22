@@ -5,12 +5,11 @@ import type { StateData, Task, Epic, QueueItem, Activity, Attachment } from '../
 interface UseTaskActionsParams {
   data: StateData | null;
   save: (data: StateData) => void;
-  dirHandle: FileSystemDirectoryHandle | null;
   snapshotBeforeAction: (label: string) => void;
   onError: (msg: string) => void;
 }
 
-export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, onError }: UseTaskActionsParams) {
+export function useTaskActions({ data, save, snapshotBeforeAction, onError }: UseTaskActionsParams) {
   const tasks: Task[] = data?.tasks || [];
   const epics: Epic[] = data?.epics || [];
   const queue: QueueItem[] = data?.queue || [];
@@ -85,10 +84,9 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, on
   };
 
   const handleAddAttachment = async (taskId: number, file: File) => {
-    if (!dirHandle) return;
     try {
       const filename = file.name;
-      const path = await saveAttachment(dirHandle, taskId, filename, file);
+      const path = await saveAttachment(taskId, filename, file);
       const attachment: Attachment = { id: 'att_' + Date.now(), filename, path };
       const task = tasks.find(t => t.id === taskId);
       const attachments = [...(task?.attachments || []), attachment];
@@ -100,12 +98,11 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction, on
   };
 
   const handleDeleteAttachment = async (taskId: number, attachmentId: string) => {
-    if (!dirHandle) return;
     snapshotBeforeAction('Attachment deleted');
     try {
       const task = tasks.find(t => t.id === taskId);
       const att = (task?.attachments || []).find(a => a.id === attachmentId);
-      if (att) await deleteAttachment(dirHandle, taskId, att.filename, onError);
+      if (att) await deleteAttachment(taskId, att.filename);
       const attachments = (task?.attachments || []).filter(a => a.id !== attachmentId);
       handleUpdateTask(taskId, { attachments });
     } catch (err) {

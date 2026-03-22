@@ -8,11 +8,9 @@ export const APP_NAME = 'Dev Manager';
 
 // -- Project Picker --
 export const PROJECT_PICKER_TITLE = 'Dev Manager';
-export const PROJECT_PICKER_SUBTITLE = 'Open a project folder to get started';
-export const PROJECT_PICKER_CONNECT = 'Open project';
-export const PROJECT_PICKER_CONNECTING = 'Connecting...';
-export const PROJECT_PICKER_ERROR = 'Could not connect. Make sure your browser supports the File System Access API.';
-export const PROJECT_PICKER_LAST_OPENED = 'Last opened:'; // followed by project name
+export const PROJECT_PICKER_SUBTITLE = 'Connecting to bridge server...';
+export const PROJECT_PICKER_CONNECT = 'Retry connection';
+export const PROJECT_PICKER_ERROR = 'Could not connect to bridge server at localhost:4545. Make sure the server is running.';
 
 // -- Header --
 export const HEADER_DISCONNECT_ARIA = 'Disconnect project';
@@ -117,19 +115,29 @@ export const FORM_MANUAL_LABEL = 'Manual task';
 export const FORM_MANUAL_HELP = '(done by you, not Claude)';
 export const FORM_SKILLS_LABEL = 'Skills';
 export const FORM_SKILLS_AUTO = 'auto-detected';
+export const FORM_SKILLS_FROM_CATEGORY = 'from epic';
 export const FORM_SKILLS_PLACEHOLDER = 'Auto-detected from title, or type manually...';
 export const FORM_SKILLS_MATCHED = 'matched:';
 export const FORM_CANCEL = 'Cancel';
 export const FORM_SAVE = 'Save';
 export const FORM_ADD_TASK = 'Add task';
 
+// -- Skills Config --
+export const SKILLS_TITLE = 'Skill Categories';
+export const SKILLS_EMPTY = 'No categories yet. Add one to get started.';
+export const SKILLS_ADD = '+ Add category';
+export const SKILLS_NAME_PLACEHOLDER = 'Category name (e.g. frontend)';
+export const SKILLS_LIST_PLACEHOLDER = 'skill-1, skill-2, skill-3';
+export const SKILLS_REMOVE_TITLE = 'Remove category';
+export const SKILLS_CLOSE = 'Close';
+
 // -- Command Queue --
 export const QUEUE_MANUAL_TITLE = 'Manual task';
 export const QUEUE_MANUAL_YOU = 'Manual task (you)';
 export const QUEUE_LAUNCH_ARIA = 'Launch task';
 export const QUEUE_LAUNCH_RESUME = 'Resume task';
-export const QUEUE_LAUNCH_TERMINAL = 'Launch in terminal';
-export const QUEUE_LAUNCH_SET_PATH = 'Set project path first';
+export const QUEUE_LAUNCH_TERMINAL = 'Launch task';
+export const QUEUE_LAUNCH_SET_PATH = 'Bridge server not connected';
 export const QUEUE_AUTO_APPROVED = 'Auto-approved \u2014 click to require review';
 export const QUEUE_CLICK_APPROVE = 'Click to auto-approve';
 export const QUEUE_PAUSED_DEFAULT = 'Paused \u2014 click \u25B6 to resume';

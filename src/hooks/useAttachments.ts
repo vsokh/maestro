@@ -1,52 +1,31 @@
 import type { Task } from '../types';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { readAttachmentUrl } from '../fs.ts';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { api } from '../api.ts';
 
 /**
  * Custom hook for attachment drag/drop/paste handling.
  * Returns state and event handlers that TaskDetail attaches to its wrapper div.
  */
-export function useAttachments(task: Task | null, dirHandle: FileSystemDirectoryHandle | null, onAddAttachment: (taskId: number, file: File) => void) {
+export function useAttachments(task: Task | null, onAddAttachment: (taskId: number, file: File) => void) {
   const [pastedFeedback, setPastedFeedback] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const dragCounter = useRef(0);
-  const thumbUrlsRef = useRef<Record<string, string>>({});
 
-  // Keep ref in sync with state (via effect, not render)
+  // Build thumbnail URLs when task/attachments change
+  // These are now simple HTTP URLs, no blob URL management needed
   useEffect(() => {
-    thumbUrlsRef.current = thumbUrls;
-  }, [thumbUrls]);
-
-  // Load thumbnail URLs when task/attachments change
-  useEffect(() => {
-    if (!task || !dirHandle || !task.attachments?.length) return;
-
-    let cancelled = false;
+    if (!task?.attachments?.length) {
+      setThumbUrls({});
+      return;
+    }
     const urls: Record<string, string> = {};
-
-    (async () => {
-      for (const att of task.attachments!) {
-        if (cancelled) break;
-        const url = await readAttachmentUrl(dirHandle, task.id, att.filename);
-        if (url) urls[att.id] = url;
-      }
-      if (!cancelled) setThumbUrls(urls);
-    })();
-
-    return () => {
-      cancelled = true;
-      // Revoke old URLs to prevent memory leaks
-      Object.values(urls).forEach((u) => { try { URL.revokeObjectURL(u as string); } catch (err) { console.warn('revokeObjectURL failed:', err); } });
-    };
-  }, [task, dirHandle]);
-
-  // Clean up thumb URLs on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(thumbUrlsRef.current).forEach((u) => { try { URL.revokeObjectURL(u as string); } catch (err) { console.warn('revokeObjectURL failed:', err); } });
-    };
-  }, []);
+    for (const att of task.attachments) {
+      urls[att.id] = api.getAttachmentUrl(task.id, att.filename);
+    }
+    setThumbUrls(urls);
+    // No cleanup needed — these are regular URLs, not blob URLs
+  }, [task]);
 
   const handleImageFile = useCallback((file: File | null) => {
     if (!file || !file.type.startsWith('image/')) return;
