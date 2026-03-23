@@ -755,7 +755,8 @@ export async function handleApi(req, res) {
           spawnProc('wt', [
             '-w', '0', 'nt',
             '--title', tabTitle, '--suppressApplicationTitle',
-            '--', 'cmd', '/k', `cd /d "${projectPath}" && ${cliName} "${command.replace(/"/g, '\\"')}"`
+            '-d', projectPath,
+            '--', 'pwsh', '-NoExit', '-Command', `& ${cliName} --dangerously-skip-permissions "${command.replace(/"/g, '`"')}"`,
           ], {
             cwd: projectPath,
             detached: true,
