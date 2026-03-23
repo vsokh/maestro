@@ -15,7 +15,6 @@ IMPORTANT: When the task is complete, write the progress file to .devmanager/pro
 
 The summary should be written for a product manager — describe the user-facing outcome, not the code changes. Example: "Notifications now respond instantly when tapped — eliminated the 2-3 second freeze by switching to optimistic updates. Also fixed stale data on navigation back."`;
   }
-  }
   if (/^\/orchestrator\s+arrange/.test(command)) {
     return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics. Write the updated state back to .devmanager/state.json.
 
