@@ -68,6 +68,7 @@ export function mergeProgressIntoState(
         completedAt: prog.completedAt || new Date().toISOString(),
         commitRef: prog.commitRef || tasks[idx].commitRef || undefined,
         branch: prog.branch || tasks[idx].branch || undefined,
+        summary: prog.summary || tasks[idx].summary || undefined,
         progress: undefined,
       };
       queue = queue.filter(q => q.task !== id);
@@ -79,6 +80,7 @@ export function mergeProgressIntoState(
       };
       if (prog.commitRef) actEntry.commitRef = prog.commitRef;
       if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
+      if (prog.summary) actEntry.changes = [prog.summary];
       activity.unshift(actEntry);
       completedTaskIds.push(id);
       needsWrite = true;

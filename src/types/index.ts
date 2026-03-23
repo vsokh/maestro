@@ -50,6 +50,7 @@ export interface Task {
   commitRef?: string;
   history?: HistoryEntry[];
   engine?: string;
+  summary?: string;
 }
 
 export interface QueueItem {
@@ -82,6 +83,7 @@ export interface ProgressEntry {
   label?: string;
   filesChanged?: number;
   changes?: string[];
+  summary?: string;
 }
 
 export interface StateData {

@@ -204,6 +204,17 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
       <Timeline task={task} />
 
+      {task.summary && (
+        <div style={{
+          marginBottom: '12px', padding: '10px 12px',
+          background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)',
+          borderLeft: '3px solid var(--dm-success)',
+        }}>
+          <div className="label" style={{ fontSize: '10px', margin: '0 0 4px', color: 'var(--dm-success)' }}>What shipped</div>
+          <div style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--dm-text)' }}>{task.summary}</div>
+        </div>
+      )}
+
       <EpicField task={task} epics={epics} onUpdateTask={onUpdateTask} />
 
       <TaskFlags task={task} onUpdateTask={onUpdateTask} />

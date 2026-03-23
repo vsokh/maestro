@@ -8,7 +8,13 @@ function buildClaudePrompt(command) {
   // In -p mode, slash commands don't work. Convert to plain prompts.
   const taskMatch = command.match(/^\/orchestrator\s+task\s+(\d+)/);
   if (taskMatch) {
-    return `Read .devmanager/state.json, find task #${taskMatch[1]}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.`;
+    return `Read .devmanager/state.json, find task #${taskMatch[1]}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.
+
+IMPORTANT: When the task is complete, write the progress file to .devmanager/progress/${taskMatch[1]}.json with this format:
+{"status":"done","completedAt":"<ISO date>","commitRef":"<short hash>","summary":"<2-3 sentence product-level summary of what was done and what users will see>","filesChanged":<number>}
+
+The summary should be written for a product manager — describe the user-facing outcome, not the code changes. Example: "Notifications now respond instantly when tapped — eliminated the 2-3 second freeze by switching to optimistic updates. Also fixed stale data on navigation back."`;
+  }
   }
   if (/^\/orchestrator\s+arrange/.test(command)) {
     return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics. Write the updated state back to .devmanager/state.json.
