@@ -116,7 +116,7 @@ export const api = {
   }>('/api/split-tasks', { text }),
 
   // Git
-  gitStatus: () => get<{ branch: string | null; unpushed: number; error?: string }>('/api/git/status'),
+  gitStatus: () => get<{ branch: string | null; unpushed: number; commits?: Array<{ hash: string; message: string }>; error?: string }>('/api/git/status'),
   gitPush: () => post<{ ok: true; output: string }>('/api/git/push'),
 
   // Browse (folder picker)

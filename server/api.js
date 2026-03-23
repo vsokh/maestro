@@ -356,12 +356,19 @@ export async function handleApi(req, res) {
 
         const branch = await run('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
         let unpushed = 0;
+        let commits = [];
         try {
           const log = await run('git', ['log', '--oneline', `origin/${branch}..HEAD`]);
-          unpushed = log ? log.split('\n').length : 0;
+          if (log) {
+            commits = log.split('\n').map(line => {
+              const [hash, ...rest] = line.split(' ');
+              return { hash, message: rest.join(' ') };
+            });
+            unpushed = commits.length;
+          }
         } catch { /* no remote tracking branch */ }
 
-        jsonResponse(res, 200, { branch, unpushed });
+        jsonResponse(res, 200, { branch, unpushed, commits });
       } catch (err) {
         jsonResponse(res, 200, { branch: null, unpushed: 0, error: err.message });
       }

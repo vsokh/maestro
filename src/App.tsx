@@ -299,7 +299,7 @@ export function App() {
           {showScratchpad && (
             <div style={{
               position: 'fixed', bottom: '84px', right: '24px', zIndex: 50,
-              width: '380px', maxHeight: '50vh',
+              width: '400px', height: '60vh',
               background: 'var(--dm-surface)',
               border: '1px solid var(--dm-border)',
               borderRadius: 'var(--dm-radius)',
