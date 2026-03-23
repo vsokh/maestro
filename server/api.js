@@ -833,7 +833,7 @@ Rules:
       const { broadcast } = await import('./index.js');
       const body = await parseJsonBody(req);
       const { taskId, command, engine } = body;
-      if (!taskId || !command) {
+      if (taskId == null || !command) {
         jsonResponse(res, 400, { error: 'Missing taskId or command' });
         return true;
       }
