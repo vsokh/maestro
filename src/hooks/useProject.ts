@@ -334,14 +334,14 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     setStatus('connecting');
     try {
       await api.switchProject(path);
-      // The server will broadcast 'project-switched' which triggers connectToServer
-      // But also call it directly for immediate feedback
       await connectToServer();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Switch project failed:', err);
-      setStatus('error');
+      onError?.(`Failed to open project: ${err?.message || 'unknown error'}`);
+      // Try reconnecting to the previous project
+      try { await connectToServer(); } catch { setStatus('error'); }
     }
-  }, [connectToServer]);
+  }, [connectToServer, onError]);
 
   const connectWithTemplate = useCallback(async (template: ProjectTemplate | null) => {
     setStatus('connecting');

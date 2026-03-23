@@ -6,6 +6,7 @@ import {
   HEADER_ENGINE_ARIA, HEADER_ENGINE_TITLE,
 } from '../constants/strings.ts';
 import { ENGINES, getEngine } from '../constants/engines.ts';
+import { FolderPicker } from './FolderPicker.tsx';
 
 interface ProjectInfo {
   path: string;
@@ -26,6 +27,7 @@ interface HeaderProps {
 export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills, defaultEngine, onSetDefaultEngine }: HeaderProps) {
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   const [showPicker, setShowPicker] = useState(false);
+  const [showBrowser, setShowBrowser] = useState(false);
 
   const toggleTheme = useCallback(() => {
     const next = !dark;
@@ -39,7 +41,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
     }
   }, [dark]);
 
-  const hasMultipleProjects = projects && projects.length > 1;
+  const hasProjects = projects && projects.length > 0;
   const currentEngine = getEngine(defaultEngine);
 
   return (
@@ -52,7 +54,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
       zIndex: 10,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
-        {hasMultipleProjects && (
+        {onSwitchProject && (
           <button
             onClick={() => setShowPicker(!showPicker)}
             className="btn-ghost"
@@ -65,20 +67,18 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
         <span className="text-light" style={{ fontSize: '14px' }}>/</span>
         <span className="text-muted" style={{ fontWeight: 500, fontSize: '16px' }}>{APP_NAME}</span>
 
-        {showPicker && hasMultipleProjects && (
+        {showPicker && onSwitchProject && (
           <div style={{
             position: 'absolute', top: '100%', left: 0, marginTop: '8px',
             background: 'var(--dm-surface)', border: '1px solid var(--dm-border)',
-            borderRadius: 'var(--dm-radius)', boxShadow: 'var(--dm-shadow-sm)',
-            padding: '4px 0', minWidth: '200px', zIndex: 100,
+            borderRadius: 'var(--dm-radius)', boxShadow: 'var(--dm-shadow-md)',
+            padding: '4px 0', minWidth: '280px', zIndex: 100,
           }}>
-            {projects!.map(p => (
+            {hasProjects && projects!.map(p => (
               <button
                 key={p.path}
                 onClick={() => {
-                  if (!p.active && onSwitchProject) {
-                    onSwitchProject(p.path);
-                  }
+                  if (!p.active) onSwitchProject(p.path);
                   setShowPicker(false);
                 }}
                 className="btn-ghost"
@@ -90,8 +90,23 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
                 }}
               >
                 {p.name}
+                {p.active && <span style={{ fontSize: '11px', marginLeft: '8px', opacity: 0.5 }}>current</span>}
               </button>
             ))}
+            <div style={{
+              borderTop: '1px solid var(--dm-border)',
+              padding: '8px 12px',
+            }}>
+              <button
+                onClick={() => { setShowPicker(false); setShowBrowser(true); }}
+                className="btn-ghost"
+                style={{
+                  width: '100%', fontSize: '13px', padding: '6px 12px',
+                  fontWeight: 600, color: 'var(--dm-accent)',
+                  border: '1px solid var(--dm-accent)', borderRadius: '4px',
+                }}
+              >Browse...</button>
+            </div>
           </div>
         )}
       </div>
@@ -155,6 +170,15 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
           style={{ fontSize: '16px', padding: '4px', lineHeight: 1 }}
         >{dark ? '☀' : '☽'}</button>
       </div>
+      {showBrowser && (
+        <FolderPicker
+          onSelect={(path) => {
+            setShowBrowser(false);
+            if (onSwitchProject) onSwitchProject(path);
+          }}
+          onClose={() => setShowBrowser(false)}
+        />
+      )}
     </header>
   );
 }

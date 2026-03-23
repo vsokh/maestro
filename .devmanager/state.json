@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-03-22T23:18:38.823Z",
+  "savedAt": "2026-03-23T12:00:00.000Z",
   "project": "dev-manager",
   "tasks": [
     {
@@ -76,22 +76,11 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-03-14T20:52:10.955Z",
       "completedAt": "2026-03-14",
       "commitRef": "86c4a6e",
-      "group": "Task Board",
-      "progress": "Reviewing results...",
-      "history": [
-        {
-          "status": "done",
-          "at": "2026-03-14T22:31:39.513Z"
-        },
-        {
-          "status": "done",
-          "at": "2026-03-14T22:32:42.361Z"
-        }
-      ]
+      "group": "Task Board"
     },
     {
       "id": 9,
@@ -101,22 +90,11 @@
       "skills": [
         "senior-frontend"
       ],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-03-14T20:52:10.955Z",
       "completedAt": "2026-03-14",
       "commitRef": "ad1ac73",
-      "group": "Infrastructure",
-      "progress": "Reviewing results...",
-      "history": [
-        {
-          "status": "done",
-          "at": "2026-03-14T22:30:35.816Z"
-        },
-        {
-          "status": "done",
-          "at": "2026-03-14T22:36:00.434Z"
-        }
-      ]
+      "group": "Infrastructure"
     },
     {
       "id": 11,
@@ -173,9 +151,11 @@
       "name": "Split TaskDetail",
       "fullName": "Split TaskDetail into Timeline, Attachments, Dependencies, EpicField",
       "description": "Extract src/components/detail/Timeline.jsx, Attachments.jsx, Dependencies.jsx, EpicField.jsx. TaskDetail from 608 to ~250 lines.",
-      "status": "pending",
+      "status": "done",
       "group": "Refactoring",
       "createdAt": "2026-03-14T21:57:36.032Z",
+      "completedAt": "2026-03-23",
+      "commitRef": "774ede2",
       "dependsOn": [
         16
       ]
@@ -185,9 +165,10 @@
       "name": "Split TaskBoard",
       "fullName": "Split TaskBoard into TaskCard, EpicGroup, DoneSection, StatusFilter",
       "description": "Extract src/components/board/TaskCard.jsx, EpicGroup.jsx, DoneSection.jsx, StatusFilter.jsx. TaskBoard from 505 to ~200 lines.",
-      "status": "pending",
+      "status": "done",
       "group": "Refactoring",
       "createdAt": "2026-03-14T21:57:36.032Z",
+      "completedAt": "2026-03-23",
       "dependsOn": [
         16
       ]
@@ -197,9 +178,10 @@
       "name": "Split CommandQueue",
       "fullName": "Split CommandQueue into QueueItem, PhaseView subcomponents",
       "description": "Extract src/components/queue/QueueItem.jsx, PhaseView.jsx. CommandQueue from 413 to ~200 lines.",
-      "status": "pending",
+      "status": "done",
       "group": "Refactoring",
       "createdAt": "2026-03-14T21:57:36.032Z",
+      "completedAt": "2026-03-23",
       "dependsOn": [
         16
       ]
@@ -261,10 +243,11 @@
       "name": "Output panel UI",
       "fullName": "Show live AI output in the board — render streamed process output",
       "description": "The bridge server already captures stdout/stderr from AI processes and streams it via WebSocket. Build a UI panel that shows this output live — so the manager can see what the AI is doing without opening a terminal. Expandable per-task output viewer in the queue or detail panel.",
-      "status": "in-progress",
+      "status": "done",
       "group": "Product Vision",
       "createdAt": "2026-03-23T12:00:00.000Z",
-      "progress": "Reading queue...",
+      "completedAt": "2026-03-23",
+      "commitRef": "57f2f32",
       "startedAt": "2026-03-22T23:16:56.577Z"
     },
     {
@@ -272,18 +255,24 @@
       "name": "Project templates",
       "fullName": "Starter kits for game, web, and mobile projects with pre-configured skills and agents",
       "description": "Bundles per project type: game (game-designer, gameplay-programmer, qa-tester), web (senior-frontend, backend, databases, ui-ux), mobile (mobile-dev, ui-ux, backend). Each includes .claude/skills/, .claude/agents/, default epic-to-skill mappings, and optional scaffold command. Template picker on first project setup.",
-      "status": "pending",
+      "status": "done",
       "group": "Product Vision",
-      "createdAt": "2026-03-23T12:00:00.000Z"
+      "createdAt": "2026-03-23T12:00:00.000Z",
+      "completedAt": "2026-03-23",
+      "commitRef": "40dcace",
+      "startedAt": "2026-03-22T23:20:39.424Z"
     },
     {
       "id": 60,
       "name": "Engine selector UI",
       "fullName": "Let users pick their preferred AI engine per project — Claude, Codex, or Cursor",
       "description": "The bridge server already supports claude, codex, and cursor engine adapters. Add a UI setting (per project) to choose the default engine. Show engine icon on launch buttons. Allow per-task engine override in the detail panel.",
-      "status": "pending",
+      "status": "done",
       "group": "Product Vision",
-      "createdAt": "2026-03-23T12:00:00.000Z"
+      "createdAt": "2026-03-23T12:00:00.000Z",
+      "completedAt": "2026-03-23",
+      "commitRef": "9bf8b0c",
+      "startedAt": "2026-03-22T23:23:56.812Z"
     },
     {
       "id": 61,
@@ -309,9 +298,48 @@
   "taskNotes": {},
   "activity": [
     {
-      "id": "act_1774221257759",
-      "time": 1774221257759,
-      "label": "5 Product Vision tasks queued"
+      "id": "act_58_done",
+      "time": 1774531200000,
+      "label": "Output panel UI completed",
+      "commitRef": "57f2f32"
+    },
+    {
+      "id": "act_59_done",
+      "time": 1774531200000,
+      "label": "Project templates completed",
+      "commitRef": "40dcace"
+    },
+    {
+      "id": "act_60_done",
+      "time": 1774531200000,
+      "label": "Engine selector UI completed",
+      "commitRef": "9bf8b0c"
+    },
+    {
+      "id": "act_17_done",
+      "time": 1774531200000,
+      "label": "Split TaskDetail completed",
+      "commitRef": "774ede2"
+    },
+    {
+      "id": "act_18_done",
+      "time": 1774531200000,
+      "label": "Split TaskBoard completed"
+    },
+    {
+      "id": "act_19_done",
+      "time": 1774531200000,
+      "label": "Split CommandQueue completed"
+    },
+    {
+      "id": "act_1774221583751_arrange",
+      "time": 1774221583751,
+      "label": "Tasks arranged into epics"
+    },
+    {
+      "id": "act_1774221581625_arrange",
+      "time": 1774221581625,
+      "label": "Tasks arranged into epics"
     },
     {
       "id": "act_1774220068266_arrange",

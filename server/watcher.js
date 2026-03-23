@@ -15,7 +15,8 @@ function createDebouncedWatcher(filePath, type, broadcast) {
       if (content === lastContent) return;
       lastContent = content;
       const data = JSON.parse(content);
-      broadcast({ type, data });
+      const fileStat = await stat(filePath);
+      broadcast({ type, data, lastModified: fileStat.mtimeMs });
     } catch (err) {
       // File may be mid-write or deleted; ignore transient errors
       if (err.code !== 'ENOENT') {

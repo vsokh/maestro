@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir, readdir, stat, unlink, copyFile, rm } from 'node:fs/promises';
-import { join, basename, extname } from 'node:path';
+import { join, basename, extname, dirname, resolve, sep } from 'node:path';
+import { homedir } from 'node:os';
 
 // --- Helpers ---
 
@@ -142,6 +143,59 @@ export async function handleApi(req, res) {
     // GET /api/projects — list all registered projects
     if (method === 'GET' && pathname === '/api/projects') {
       jsonResponse(res, 200, getProjects());
+      return true;
+    }
+
+    // GET /api/browse?path=... — list directories for folder picker
+    if (method === 'GET' && pathname === '/api/browse') {
+      const url = new URL(req.url, 'http://localhost');
+      let browsePath = url.searchParams.get('path') || '';
+
+      // Default to home directory
+      if (!browsePath) {
+        browsePath = homedir();
+      }
+
+      const resolved = resolve(browsePath);
+
+      try {
+        const s = await stat(resolved);
+        if (!s.isDirectory()) {
+          jsonResponse(res, 400, { error: 'Not a directory' });
+          return true;
+        }
+
+        const entries = await readdir(resolved, { withFileTypes: true });
+        const dirs = [];
+        for (const entry of entries) {
+          if (!entry.isDirectory()) continue;
+          // Skip hidden dirs and node_modules
+          if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+          // Check if it's a project (has .devmanager/ or .git/ or package.json)
+          let isProject = false;
+          try {
+            const subPath = join(resolved, entry.name);
+            const subEntries = await readdir(subPath);
+            isProject = subEntries.includes('.devmanager') || subEntries.includes('.git') || subEntries.includes('package.json');
+          } catch { /* can't read = skip */ }
+          dirs.push({ name: entry.name, path: join(resolved, entry.name), isProject });
+        }
+
+        // Sort: projects first, then alphabetical
+        dirs.sort((a, b) => {
+          if (a.isProject !== b.isProject) return a.isProject ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        const parent = dirname(resolved);
+        jsonResponse(res, 200, {
+          current: resolved,
+          parent: parent !== resolved ? parent : null,
+          dirs,
+        });
+      } catch (err) {
+        jsonResponse(res, 400, { error: `Cannot read: ${err.message}` });
+      }
       return true;
     }
 

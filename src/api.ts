@@ -106,4 +106,11 @@ export const api = {
   // Projects (multi-project)
   listProjects: () => get<Array<{ path: string; name: string; active: boolean }>>('/api/projects'),
   switchProject: (path: string) => put<{ ok: true; projectPath: string; projectName: string }>('/api/project', { path }),
+
+  // Browse (folder picker)
+  browse: (path?: string) => get<{
+    current: string;
+    parent: string | null;
+    dirs: Array<{ name: string; path: string; isProject: boolean }>;
+  }>(`/api/browse${path ? '?path=' + encodeURIComponent(path) : ''}`),
 };
