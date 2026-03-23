@@ -5,13 +5,12 @@ import { useAttachments } from '../hooks/useAttachments.ts';
 import { AttachmentsList } from './detail/Attachments.tsx';
 import { Dependencies } from './detail/Dependencies.tsx';
 import { EpicField } from './detail/EpicField.tsx';
+import { ActionButtons } from './detail/ActionButtons.tsx';
+import { TaskFlags } from './detail/TaskFlags.tsx';
 import {
   DETAIL_EMPTY, DETAIL_STATUS_ARIA, DETAIL_PASTED, DETAIL_BLOCKED_PLACEHOLDER,
-  DETAIL_EDIT_TITLE, DETAIL_NEEDS_REVIEW, DETAIL_REVIEW_HELP, DETAIL_AUTO_APPROVE,
-  DETAIL_AUTO_APPROVE_HELP, DETAIL_NOTES_MANUAL, DETAIL_NOTES_CLAUDE,
+  DETAIL_EDIT_TITLE, DETAIL_NOTES_MANUAL, DETAIL_NOTES_CLAUDE,
   DETAIL_NOTES_MANUAL_PLACEHOLDER, DETAIL_NOTES_CLAUDE_PLACEHOLDER,
-  DETAIL_ACTIVATE_TOOLTIP, DETAIL_ACTIVATE, DETAIL_MARK_DONE, DETAIL_MOVE_BACKLOG,
-  DETAIL_BACKLOG, DETAIL_QUEUE, DETAIL_CONFIRM_DELETE, DETAIL_DELETE,
 } from '../constants/strings.ts';
 import type { Task, TaskStatus, Epic } from '../types';
 
@@ -40,7 +39,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   const [localDesc, setLocalDesc] = useState('');
   const [localNote, setLocalNote] = useState('');
   const [localBlockedReason, setLocalBlockedReason] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, dirHandle, onAddAttachment);
 
@@ -53,7 +51,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     setLocalDesc(task?.description || '');
     setEditing(false);
     setEditingDesc(false);
-    setConfirmDelete(false);
   }
 
   if (!task) return (
@@ -207,35 +204,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
       <EpicField task={task} epics={epics} onUpdateTask={onUpdateTask} />
 
-      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.supervision ? 'var(--dm-amber)' : 'var(--dm-text-light)' }}>
-          <input
-            type="checkbox"
-            checked={!!task.supervision}
-            onChange={e => onUpdateTask(task.id, { supervision: e.target.checked || undefined })}
-            style={{ accentColor: 'var(--dm-amber)', cursor: 'pointer' }}
-          />
-          <span style={{ fontWeight: 600 }}>{DETAIL_NEEDS_REVIEW}</span>
-        </label>
-        {task.supervision ? (
-          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{DETAIL_REVIEW_HELP}</span>
-        ) : null}
-      </div>
-
-      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.autoApprove ? 'var(--dm-success)' : 'var(--dm-text-light)' }}>
-          <input
-            type="checkbox"
-            checked={!!task.autoApprove}
-            onChange={e => onUpdateTask(task.id, { autoApprove: e.target.checked || undefined })}
-            style={{ accentColor: 'var(--dm-success)', cursor: 'pointer' }}
-          />
-          <span style={{ fontWeight: 600 }}>{DETAIL_AUTO_APPROVE}</span>
-        </label>
-        {task.autoApprove ? (
-          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{DETAIL_AUTO_APPROVE_HELP}</span>
-        ) : null}
-      </div>
+      <TaskFlags task={task} onUpdateTask={onUpdateTask} />
 
       <div style={{ marginBottom: '16px' }}>
         <div className="label" style={{ marginBottom: '6px' }}>
@@ -256,75 +225,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
       <Dependencies task={task} tasks={tasks} onUpdateTask={onUpdateTask} />
 
-      {task.status === STATUS.BACKLOG ? (
-        <button
-          onClick={() => onUpdateTask(task.id, { status: STATUS.PENDING })}
-          title={DETAIL_ACTIVATE_TOOLTIP}
-          className="btn btn-primary"
-          style={{
-            width: '100%', padding: '8px 16px', fontSize: '13px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          }}
-        >
-          {DETAIL_ACTIVATE}
-        </button>
-      ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && task.manual ? (
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => onUpdateTask(task.id, { status: STATUS.DONE })}
-            className="btn btn-success"
-            style={{
-              flex: 1, padding: '8px 16px', fontSize: '13px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-            }}
-          >
-            {DETAIL_MARK_DONE}
-          </button>
-          <button
-            onClick={() => onUpdateTask(task.id, { status: STATUS.BACKLOG })}
-            title={DETAIL_MOVE_BACKLOG}
-            className="btn btn-secondary"
-            style={{ padding: '8px 12px', fontSize: '12px' }}
-          >{DETAIL_BACKLOG}</button>
-        </div>
-      ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && !task.manual ? (
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => onQueue(task)}
-            className="btn btn-primary"
-            style={{
-              flex: 1, padding: '8px 16px', fontSize: '13px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-            }}
-          >
-            {DETAIL_QUEUE}
-          </button>
-          <button
-            onClick={() => onUpdateTask(task.id, { status: STATUS.BACKLOG })}
-            title={DETAIL_MOVE_BACKLOG}
-            className="btn btn-secondary"
-            style={{ padding: '8px 12px', fontSize: '12px' }}
-          >{DETAIL_BACKLOG}</button>
-        </div>
-      ) : null}
-
-      <button
-        onClick={() => {
-          if (confirmDelete) { onDeleteTask(task.id); setConfirmDelete(false); }
-          else { setConfirmDelete(true); }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') setConfirmDelete(false);
-        }}
-        onBlur={() => setConfirmDelete(false)}
-        className={`btn ${confirmDelete ? 'btn-primary' : 'btn-danger-outline'}`}
-        style={{
-          width: '100%', padding: '6px 16px', marginTop: '8px', fontSize: '12px',
-          background: confirmDelete ? 'var(--dm-danger)' : undefined,
-          border: confirmDelete ? '1px solid var(--dm-danger)' : undefined,
-          color: confirmDelete ? 'white' : undefined,
-        }}
-      >{confirmDelete ? DETAIL_CONFIRM_DELETE : DETAIL_DELETE}</button>
+      <ActionButtons task={task} onQueue={onQueue} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />
     </div>
   );
 }
