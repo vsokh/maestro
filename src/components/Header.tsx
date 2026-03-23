@@ -3,7 +3,9 @@ import {
   APP_NAME, HEADER_SYNCED,
   HEADER_SYNC_ERROR, HEADER_CONNECTED, HEADER_TOGGLE_THEME_ARIA,
   HEADER_LIGHT_MODE, HEADER_DARK_MODE,
+  HEADER_ENGINE_ARIA, HEADER_ENGINE_TITLE,
 } from '../constants/strings.ts';
+import { ENGINES, getEngine } from '../constants/engines.ts';
 
 interface ProjectInfo {
   path: string;
@@ -17,9 +19,11 @@ interface HeaderProps {
   projects?: ProjectInfo[];
   onSwitchProject?: (path: string) => void;
   onOpenSkills?: () => void;
+  defaultEngine?: string;
+  onSetDefaultEngine?: (engineId: string) => void;
 }
 
-export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills }: HeaderProps) {
+export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills, defaultEngine, onSetDefaultEngine }: HeaderProps) {
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   const [showPicker, setShowPicker] = useState(false);
 
@@ -36,6 +40,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
   }, [dark]);
 
   const hasMultipleProjects = projects && projects.length > 1;
+  const currentEngine = getEngine(defaultEngine);
 
   return (
     <header className="dm-header header" style={{
@@ -107,6 +112,41 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
             style={{ fontSize: '14px', padding: '4px 6px' }}
           >&#9881;</button>
         )}
+        {onSetDefaultEngine ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span
+              style={{
+                fontSize: '14px',
+                lineHeight: 1,
+                color: currentEngine.color,
+              }}
+              title={HEADER_ENGINE_TITLE}
+            >{currentEngine.icon}</span>
+            <select
+              aria-label={HEADER_ENGINE_ARIA}
+              title={HEADER_ENGINE_TITLE}
+              value={currentEngine.id}
+              onChange={(e) => onSetDefaultEngine(e.target.value)}
+              className="select-field"
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '2px 18px 2px 4px',
+                borderRadius: '4px',
+                background: 'transparent',
+                color: currentEngine.color,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {ENGINES.map(eng => (
+                <option key={eng.id} value={eng.id} style={{ background: 'var(--dm-surface)' }}>
+                  {eng.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <button
           onClick={toggleTheme}
           aria-label={HEADER_TOGGLE_THEME_ARIA}

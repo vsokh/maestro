@@ -34,6 +34,8 @@ export const HEADER_CONNECTED = 'Connected';
 export const HEADER_TOGGLE_THEME_ARIA = 'Toggle theme';
 export const HEADER_LIGHT_MODE = 'Light mode';
 export const HEADER_DARK_MODE = 'Dark mode';
+export const HEADER_ENGINE_ARIA = 'Default engine';
+export const HEADER_ENGINE_TITLE = 'Default engine for new tasks';
 
 // -- Tab Bar (App.tsx) --
 export const TAB_BOARD = 'Board';
@@ -74,6 +76,8 @@ export const SECTION_DONE = 'Done';
 // -- Task Detail --
 export const DETAIL_EMPTY = 'Click a task to see details';
 export const DETAIL_STATUS_ARIA = 'Task status';
+export const DETAIL_ENGINE_LABEL = 'Engine';
+export const DETAIL_ENGINE_DEFAULT = 'Default';
 export const DETAIL_PASTED = 'Pasted!';
 export const DETAIL_BLOCKED_PLACEHOLDER = 'Why is this blocked?';
 export const DETAIL_EDIT_TITLE = 'Click to edit';

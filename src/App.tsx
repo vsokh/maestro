@@ -107,7 +107,7 @@ export function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} />
+      <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} defaultEngine={data.defaultEngine} onSetDefaultEngine={(engineId: string) => save({ ...data, defaultEngine: engineId })} />
 
       <div className="dm-container">
 
@@ -189,6 +189,7 @@ export function App() {
                   onAddAttachment={taskActions.handleAddAttachment}
                   onDeleteAttachment={taskActions.handleDeleteAttachment}
                   availableSkills={availableSkills}
+                  defaultEngine={data.defaultEngine}
                 />
               </div>
             </div>
@@ -196,7 +197,7 @@ export function App() {
             <div className="dm-grid-bottom">
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} />
+                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} defaultEngine={data.defaultEngine} />
               </div>
 
               <div className="panel">

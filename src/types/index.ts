@@ -49,6 +49,7 @@ export interface Task {
   completedAt?: string;
   commitRef?: string;
   history?: HistoryEntry[];
+  engine?: string;
 }
 
 export interface QueueItem {
@@ -90,6 +91,7 @@ export interface StateData {
   activity: Activity[];
   epics?: Epic[];
   features?: Feature[];
+  defaultEngine?: string;
 }
 
 export interface Feature {

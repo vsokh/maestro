@@ -11,7 +11,9 @@ import {
   DETAIL_EMPTY, DETAIL_STATUS_ARIA, DETAIL_PASTED, DETAIL_BLOCKED_PLACEHOLDER,
   DETAIL_EDIT_TITLE, DETAIL_NOTES_MANUAL, DETAIL_NOTES_CLAUDE,
   DETAIL_NOTES_MANUAL_PLACEHOLDER, DETAIL_NOTES_CLAUDE_PLACEHOLDER,
+  DETAIL_ENGINE_LABEL, DETAIL_ENGINE_DEFAULT,
 } from '../constants/strings.ts';
+import { ENGINES, getEngine } from '../constants/engines.ts';
 import type { Task, TaskStatus, Epic } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -29,9 +31,10 @@ interface TaskDetailProps {
   onUpdateNotes: (id: number, note: string) => void;
   onAddAttachment: (taskId: number, file: File) => void;
   onDeleteAttachment: (taskId: number, attachmentId: string) => void;
+  defaultEngine?: string;
 }
 
-export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, onAddAttachment, onDeleteAttachment }: TaskDetailProps) {
+export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, onAddAttachment, onDeleteAttachment, defaultEngine }: TaskDetailProps) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
@@ -204,6 +207,43 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       <EpicField task={task} epics={epics} onUpdateTask={onUpdateTask} />
 
       <TaskFlags task={task} onUpdateTask={onUpdateTask} />
+
+      {!task.manual ? (
+        <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="label" style={{ fontSize: '11px', margin: 0 }}>{DETAIL_ENGINE_LABEL}</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[{ id: '', label: DETAIL_ENGINE_DEFAULT + ' (' + getEngine(defaultEngine).label + ')', icon: getEngine(defaultEngine).icon, color: 'var(--dm-text-light)' }, ...ENGINES].map(eng => {
+              const isSelected = eng.id === '' ? !task.engine : task.engine === eng.id;
+              const displayColor = eng.id === '' ? (isSelected ? getEngine(defaultEngine).color : 'var(--dm-text-light)') : (eng as any).color;
+              return (
+                <button
+                  key={eng.id}
+                  onClick={() => onUpdateTask(task.id, { engine: eng.id || undefined })}
+                  title={eng.label}
+                  className="btn"
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '12px',
+                    border: isSelected ? `1.5px solid ${displayColor}` : '1px solid var(--dm-border)',
+                    background: isSelected ? undefined : 'transparent',
+                    color: isSelected ? displayColor : 'var(--dm-text-light)',
+                    opacity: isSelected ? 1 : 0.7,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '11px' }}>{eng.icon}</span>
+                  {eng.id !== '' ? eng.label : DETAIL_ENGINE_DEFAULT}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div style={{ marginBottom: '16px' }}>
         <div className="label" style={{ marginBottom: '6px' }}>

@@ -7,6 +7,7 @@ import {
   QUEUE_PAUSED_DEFAULT, QUEUE_PAUSE_ARIA, QUEUE_PAUSE_TITLE, QUEUE_REMOVE_ARIA,
   QUEUE_REMOVE_TITLE,
 } from '../../constants/strings.ts';
+import { getEngine } from '../../constants/engines.ts';
 
 interface QueueItemContentProps {
   item: QueueItem;
@@ -18,9 +19,10 @@ interface QueueItemContentProps {
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
   taskMap: Map<number, Task>;
   variant?: 'flat' | 'phase';
+  defaultEngine?: string;
 }
 
-export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat' }: QueueItemContentProps) {
+export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat', defaultEngine }: QueueItemContentProps) {
   const key = itemKey(item);
   const isLaunched = launchedId === key;
   const status: ItemStatus = getItemStatus(item, taskMap);
@@ -28,6 +30,7 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
   const isManual = task?.manual;
   const isActive = status === 'waiting' || status === 'working';
   const isPaused = status === 'paused';
+  const engine = getEngine(task?.engine || defaultEngine);
 
   return (
     <>
@@ -45,13 +48,21 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
         <button
           onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
           aria-label={QUEUE_LAUNCH_ARIA}
-          title={isPaused ? QUEUE_LAUNCH_RESUME : QUEUE_LAUNCH_TERMINAL}
+          title={isPaused ? QUEUE_LAUNCH_RESUME : `${QUEUE_LAUNCH_TERMINAL} (${engine.label})`}
           className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
           style={{
             padding: '4px 8px', background: btn.bg,
             fontSize: '12px', flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: '3px',
           }}
-        >{btn.icon}</button>
+        >
+          {btn.icon}
+          <span style={{
+            fontSize: '9px',
+            lineHeight: 1,
+            opacity: 0.9,
+          }}>{engine.icon}</span>
+        </button>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>

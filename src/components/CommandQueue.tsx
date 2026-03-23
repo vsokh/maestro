@@ -21,9 +21,10 @@ interface CommandQueueProps {
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   launchedId: number | null;
+  defaultEngine?: string;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId, defaultEngine }: CommandQueueProps) {
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
@@ -43,6 +44,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             onRemove={onRemove}
             onUpdateTask={onUpdateTask}
             taskMap={taskMap}
+            defaultEngine={defaultEngine}
           />
         </div>
       ))}
@@ -96,6 +98,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           onUpdateTask={onUpdateTask}
           onBatchUpdateTasks={onBatchUpdateTasks}
           onClear={onClear}
+          defaultEngine={defaultEngine}
         />
       ) : renderFlatList()}
     </div>

@@ -20,9 +20,10 @@ interface PhaseViewProps {
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   onClear: () => void;
+  defaultEngine?: string;
 }
 
-export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear }: PhaseViewProps) {
+export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine }: PhaseViewProps) {
   return (
     <div>
       {phases.map((phaseItems, idx) => (
@@ -116,6 +117,7 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
                     onUpdateTask={onUpdateTask}
                     taskMap={taskMap}
                     variant="phase"
+                    defaultEngine={defaultEngine}
                   />
                 </div>
               </div>
