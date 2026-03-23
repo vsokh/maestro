@@ -5,13 +5,14 @@ import { join } from 'node:path';
 const MAX_OUTPUT_LINES = 500;
 
 function buildClaudePrompt(command) {
-  // In -p mode, slash commands don't work. Convert to plain prompt.
-  const orchestratorMatch = command.match(/^\/orchestrator\s+task\s+(\d+)/);
-  if (orchestratorMatch) {
-    const taskId = orchestratorMatch[1];
-    return `Read .devmanager/state.json, find task #${taskId}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.`;
+  // In -p mode, slash commands don't work. Convert to plain prompts.
+  const taskMatch = command.match(/^\/orchestrator\s+task\s+(\d+)/);
+  if (taskMatch) {
+    return `Read .devmanager/state.json, find task #${taskMatch[1]}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.`;
   }
-  // For other commands, pass as-is with auto-approve note
+  if (/^\/orchestrator\s+arrange/.test(command)) {
+    return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics. Write the updated state back to .devmanager/state.json. Also write a progress file to .devmanager/progress/arrange.json with {"status":"done","label":"Tasks arranged into dependency graph"} when complete.`;
+  }
   return command + '\n\nThis is a headless execution. Skip plan approval and execute immediately. Do not wait for user input at any point.';
 }
 
