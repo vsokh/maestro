@@ -92,6 +92,7 @@ export interface StateData {
   epics?: Epic[];
   features?: Feature[];
   defaultEngine?: string;
+  scratchpad?: string;
 }
 
 export interface Feature {

@@ -110,6 +110,11 @@ export const api = {
   listProjects: () => get<Array<{ path: string; name: string; active: boolean }>>('/api/projects'),
   switchProject: (path: string) => put<{ ok: true; projectPath: string; projectName: string }>('/api/project', { path }),
 
+  // Split scratchpad into tasks
+  splitTasks: (text: string) => post<{
+    tasks: Array<{ name: string; fullName: string; description: string; group?: string }>;
+  }>('/api/split-tasks', { text }),
+
   // Git
   gitStatus: () => get<{ branch: string | null; unpushed: number; error?: string }>('/api/git/status'),
   gitPush: () => post<{ ok: true; output: string }>('/api/git/push'),

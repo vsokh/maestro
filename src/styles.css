@@ -106,7 +106,7 @@ input, textarea { color: var(--dm-text); }
 
 .dm-grid-bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
 }
 

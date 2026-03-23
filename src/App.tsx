@@ -17,6 +17,8 @@ import { QualityPanel } from './components/QualityPanel.tsx';
 import { SkillsConfigPanel } from './components/SkillsConfigPanel.tsx';
 import { useQuality } from './hooks/useQuality.ts';
 import { useProcessOutput } from './hooks/useProcessOutput.ts';
+import { Scratchpad } from './components/Scratchpad.tsx';
+import { api } from './api.ts';
 import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
 
 export function App() {
@@ -41,6 +43,45 @@ export function App() {
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
+  const [splitting, setSplitting] = useState(false);
+
+  const handleSplitTasks = useCallback(async (text: string) => {
+    if (!data) return;
+    setSplitting(true);
+    try {
+      const result = await api.splitTasks(text);
+      if (result.tasks && result.tasks.length > 0) {
+        const maxId = Math.max(0, ...data.tasks.map(t => t.id));
+        const newTasks = result.tasks.map((t, i) => ({
+          id: maxId + i + 1,
+          name: t.name,
+          fullName: t.fullName || t.name,
+          description: t.description || '',
+          status: 'pending' as const,
+          group: t.group || undefined,
+          createdAt: new Date().toISOString(),
+        }));
+        // Add new epics if needed
+        const existingEpics = new Set((data.epics || []).map(e => e.name));
+        const newEpics = [...(data.epics || [])];
+        for (const t of newTasks) {
+          if (t.group && !existingEpics.has(t.group)) {
+            newEpics.push({ name: t.group, color: newEpics.length });
+            existingEpics.add(t.group);
+          }
+        }
+        const activity = [
+          { id: 'act_split_' + Date.now(), time: Date.now(), label: `${newTasks.length} tasks created from scratchpad` },
+          ...(data.activity || []),
+        ];
+        save({ ...data, tasks: [...data.tasks, ...newTasks], epics: newEpics, activity, scratchpad: '' });
+      }
+    } catch (err: any) {
+      showError('Failed to split tasks: ' + (err?.message || 'unknown'));
+    } finally {
+      setSplitting(false);
+    }
+  }, [data, save, showError]);
   const glowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const detailPanelRef = useFocusTrap(selectedTask != null);
@@ -200,6 +241,16 @@ export function App() {
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
                 <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchTerminal={queueActions.handleLaunchTerminal} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedIds={queueActions.launchedIds} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
+              </div>
+
+              <div className="panel">
+                <SectionHeader title="Scratchpad" />
+                <Scratchpad
+                  value={data.scratchpad || ''}
+                  onChange={(text) => save({ ...data, scratchpad: text })}
+                  onSplit={handleSplitTasks}
+                  splitting={splitting}
+                />
               </div>
 
               <div className="panel">
