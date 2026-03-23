@@ -83,17 +83,21 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     updateData({ queue: [] });
   };
 
-  const markLaunched = (id: number) => {
-    setLaunchedIds(prev => new Set(prev).add(id));
-    setTimeout(() => setLaunchedIds(prev => { const next = new Set(prev); next.delete(id); return next; }), 3000);
+  const setTaskProgress = (taskId: number, progress: string, status: string = 'in-progress') => {
+    if (!data) return;
+    const tasks = (data.tasks || []).map(t =>
+      t.id === taskId ? { ...t, status, progress, startedAt: t.startedAt || new Date().toISOString() } : t
+    );
+    save({ ...data, tasks });
   };
 
   const handleLaunchTask = async (itemKey: number, cmd: string, _taskName: string) => {
     try {
-      markLaunched(itemKey);
+      setTaskProgress(itemKey, 'Launching...');
       await api.launch(itemKey, cmd);
     } catch (err) {
       console.error('Failed to launch task:', err);
+      setTaskProgress(itemKey, undefined as any, 'pending');
       onError('Failed to launch task');
     }
   };
@@ -101,7 +105,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
   const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
     try {
       for (const item of items) {
-        markLaunched(item.key);
+        setTaskProgress(item.key, 'Launching...');
         await api.launch(item.key, item.cmd);
       }
     } catch (err) {
