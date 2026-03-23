@@ -12,6 +12,19 @@ export const PROJECT_PICKER_SUBTITLE = 'Connecting to bridge server...';
 export const PROJECT_PICKER_CONNECT = 'Retry connection';
 export const PROJECT_PICKER_ERROR = 'Could not connect to bridge server at localhost:4545. Make sure the server is running.';
 
+// -- Template Picker --
+export const TEMPLATE_PICKER_TITLE = 'Choose a template';
+export const TEMPLATE_PICKER_SUBTITLE = 'Start with pre-configured skills and agents, or begin with a blank project';
+export const TEMPLATE_PICKER_BLANK = 'Blank Project';
+export const TEMPLATE_PICKER_BLANK_DESC = 'Start from scratch with just the orchestrator skill';
+export const TEMPLATE_PICKER_BACK = 'Back';
+export const TEMPLATE_PICKER_DETAILS = 'Details';
+export const TEMPLATE_PICKER_LESS = 'Less';
+export const TEMPLATE_PICKER_EPICS_LABEL = 'Starter epics';
+export const TEMPLATE_PICKER_AGENTS_LABEL = 'Agents';
+export const TEMPLATE_PICKER_TASKS_LABEL = 'Default tasks';
+export const TEMPLATE_PICKER_SCAFFOLD_LABEL = 'Scaffold';
+
 // -- Header --
 export const HEADER_DISCONNECT_ARIA = 'Disconnect project';
 export const HEADER_SWITCH_PROJECT = 'Switch project';

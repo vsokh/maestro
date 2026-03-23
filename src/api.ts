@@ -65,6 +65,8 @@ export const api = {
   discoverSkills: () => get<SkillInfo[]>('/api/skills'),
   deploySkill: (skillName: string, filename: string, content: string) =>
     post<{ ok: true; deployed: boolean }>('/api/skills/deploy', { skillName, filename, content }),
+  deployAgent: (agentName: string, filename: string, content: string) =>
+    post<{ ok: true; deployed: boolean }>('/api/agents/deploy', { agentName, filename, content }),
   readSkillsConfig: () => get<SkillsConfig | null>('/api/skills-config'),
   writeSkillsConfig: (config: SkillsConfig) => put<{ ok: true }>('/api/skills-config', config),
 

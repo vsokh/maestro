@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { StateData, Activity, Task, SkillsConfig, SkillInfo } from '../types';
+import type { ProjectTemplate } from '../templates.ts';
 import { api } from '../api.ts';
 import { connectWebSocket } from '../api.ts';
 import {
@@ -12,9 +13,10 @@ import {
   discoverSkillsAndAgents,
   readSkillsConfig,
   writeSkillsConfig,
+  applyTemplate,
 } from '../fs.ts';
 
-type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error';
+type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error' | 'template-picker';
 
 export interface MergeResult {
   data: StateData;
@@ -116,6 +118,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   const [skillsConfig, setSkillsConfig] = useState<SkillsConfig | null>(null);
   const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([]);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWriteTime = useRef(0);
@@ -138,9 +141,10 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         stateData = existing.data;
         lastWriteTime.current = existing.lastModified;
       } else {
-        stateData = createDefaultState(info.projectName);
-        await writeState(stateData);
-        lastWriteTime.current = Date.now();
+        // New project — show template picker
+        setShowTemplatePicker(true);
+        setStatus('template-picker');
+        return;
       }
 
       const resolvedName = stateData.project || info.projectName;
@@ -339,5 +343,44 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     }
   }, [connectToServer]);
 
-  return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject };
+  const connectWithTemplate = useCallback(async (template: ProjectTemplate | null) => {
+    setStatus('connecting');
+    setShowTemplatePicker(false);
+    try {
+      const info = await api.getInfo();
+      let stateData: StateData;
+      if (template) {
+        stateData = await applyTemplate(info.projectName, template);
+      } else {
+        stateData = createDefaultState(info.projectName);
+      }
+      await writeState(stateData);
+      lastWriteTime.current = Date.now();
+
+      setProjectName(stateData.project || info.projectName);
+      await syncSkills();
+      const discovered = await discoverSkillsAndAgents();
+      setAvailableSkills(discovered);
+      const sc = await readSkillsConfig();
+      setSkillsConfig(sc);
+      try {
+        const proj = await api.listProjects();
+        setProjects(proj);
+      } catch { /* ignore */ }
+
+      setData(stateData);
+      setConnected(true);
+      setStatus('connected');
+    } catch (err) {
+      console.error('Template setup failed:', err);
+      setStatus('error');
+    }
+  }, []);
+
+  const cancelTemplatePicker = useCallback(() => {
+    setShowTemplatePicker(false);
+    setStatus('disconnected');
+  }, []);
+
+  return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject, showTemplatePicker, connectWithTemplate, cancelTemplatePicker };
 }

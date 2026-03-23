@@ -3,6 +3,7 @@ import { CODEHEALTH_SKILL_TEMPLATE } from './codehealth.ts';
 import { AUTOFIX_SKILL_TEMPLATE } from './autofix.ts';
 import { api } from './api.ts';
 import type { StateData, ProgressEntry, SkillInfo, SkillsConfig } from './types';
+import type { ProjectTemplate } from './templates.ts';
 
 export function simpleHash(str: string): string {
   let hash = 0;
@@ -159,4 +160,57 @@ export async function listBackups(): Promise<Array<{ name: string; lastModified:
     console.error('listBackups failed:', err);
     return [];
   }
+}
+
+export async function applyTemplate(
+  projectName: string,
+  template: ProjectTemplate,
+): Promise<StateData> {
+  // Deploy template skills via bridge server
+  for (const skill of template.skills) {
+    try {
+      await api.deploySkill(skill.name, skill.filename, skill.content);
+    } catch (err) {
+      console.error(`Failed to deploy skill ${skill.name}:`, err);
+    }
+  }
+
+  // Deploy template agents via bridge server
+  for (const agent of template.agents) {
+    try {
+      await api.deployAgent(agent.name, agent.filename, agent.content);
+    } catch (err) {
+      console.error(`Failed to deploy agent ${agent.name}:`, err);
+    }
+  }
+
+  // Build initial state with epics and starter tasks
+  const epics = template.epics.map((e, i) => ({ name: e.name, color: i }));
+  const tasks: StateData['tasks'] = [];
+  let taskId = 1;
+  for (const epic of template.epics) {
+    for (const taskName of (epic.defaultTasks || [])) {
+      tasks.push({
+        id: taskId++,
+        name: taskName,
+        fullName: taskName,
+        status: 'pending' as const,
+        group: epic.name,
+        skills: template.skills.map(s => s.name),
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  return {
+    savedAt: new Date().toISOString(),
+    project: projectName,
+    tasks,
+    queue: [],
+    taskNotes: {},
+    activity: [
+      { id: 'act_template', time: Date.now(), label: `Project initialized with ${template.name} template` },
+    ],
+    epics,
+  };
 }

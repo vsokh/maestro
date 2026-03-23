@@ -28,7 +28,7 @@ export function App() {
   }, []);
 
   const project = useProject({ onError: showError });
-  const { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject } = project;
+  const { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject, showTemplatePicker, connectWithTemplate, cancelTemplatePicker } = project;
 
   useEffect(() => {
     document.title = projectName || APP_NAME;
@@ -56,6 +56,9 @@ export function App() {
       <ProjectPicker
         onConnect={connect}
         status={status}
+        showTemplatePicker={showTemplatePicker}
+        onSelectTemplate={connectWithTemplate}
+        onCancelTemplate={cancelTemplatePicker}
       />
     );
   }

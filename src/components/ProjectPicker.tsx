@@ -3,10 +3,15 @@ import {
   PROJECT_PICKER_TITLE, PROJECT_PICKER_SUBTITLE, PROJECT_PICKER_CONNECT,
   PROJECT_PICKER_ERROR,
 } from '../constants/strings.ts';
+import { TemplatePicker } from './TemplatePicker.tsx';
+import type { ProjectTemplate } from '../templates.ts';
 
 interface ProjectPickerProps {
   onConnect: () => void;
   status: string;
+  showTemplatePicker?: boolean;
+  onSelectTemplate?: (template: ProjectTemplate | null) => void;
+  onCancelTemplate?: () => void;
 }
 
 function LoadingSkeleton() {
@@ -67,9 +72,19 @@ function LoadingSkeleton() {
   );
 }
 
-export function ProjectPicker({ onConnect, status }: ProjectPickerProps) {
+export function ProjectPicker({ onConnect, status, showTemplatePicker, onSelectTemplate, onCancelTemplate }: ProjectPickerProps) {
   if (status === 'connecting') {
     return <LoadingSkeleton />;
+  }
+
+  // Show template picker for new projects
+  if (showTemplatePicker && onSelectTemplate && onCancelTemplate) {
+    return (
+      <TemplatePicker
+        onSelect={onSelectTemplate}
+        onBack={onCancelTemplate}
+      />
+    );
   }
 
   const showRetry = status === 'error' || status === 'disconnected';

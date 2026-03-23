@@ -329,6 +329,24 @@ export async function handleApi(req, res) {
       return true;
     }
 
+    // POST /api/agents/deploy
+    if (method === 'POST' && pathname === '/api/agents/deploy') {
+      const body = await parseJsonBody(req);
+      const { agentName, filename, content } = body;
+      if (!agentName || !filename || !content) {
+        jsonResponse(res, 400, { error: 'Missing agentName, filename, or content' });
+        return true;
+      }
+      const agentsDir = join(projectPath, '.claude', 'agents');
+      await ensureDir(agentsDir);
+
+      const agentDir = join(agentsDir, agentName);
+      await ensureDir(agentDir);
+      await writeFile(join(agentDir, filename), content, 'utf-8');
+      jsonResponse(res, 200, { ok: true, deployed: true });
+      return true;
+    }
+
     // GET /api/skills-config
     if (method === 'GET' && pathname === '/api/skills-config') {
       const configPath = join(projectPath, '.devmanager', 'skills.json');
