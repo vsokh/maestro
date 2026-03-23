@@ -104,8 +104,15 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
 
   const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
     try {
+      // Batch-set all tasks to 'Launching...' in one save
+      if (data) {
+        const launchingIds = new Set(items.map(i => i.key));
+        const tasks = (data.tasks || []).map(t =>
+          launchingIds.has(t.id) ? { ...t, status: 'in-progress' as const, progress: 'Launching...', startedAt: t.startedAt || new Date().toISOString() } : t
+        );
+        save({ ...data, tasks });
+      }
       for (const item of items) {
-        setTaskProgress(item.key, 'Launching...');
         await api.launch(item.key, item.cmd);
       }
     } catch (err) {
