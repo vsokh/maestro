@@ -75,6 +75,11 @@ export function App() {
           ...(data.activity || []),
         ];
         save({ ...data, tasks: [...data.tasks, ...newTasks], epics: newEpics, activity, scratchpad: '' });
+
+        // Auto-arrange after split
+        try {
+          await api.launch(0, '/orchestrator arrange');
+        } catch { /* arrange is best-effort */ }
       }
     } catch (err: any) {
       showError('Failed to split tasks: ' + (err?.message || 'unknown'));
