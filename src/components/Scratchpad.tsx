@@ -35,7 +35,7 @@ export function Scratchpad({ value, onChange, onSplit, splitting }: ScratchpadPr
         ref={textareaRef}
         value={localValue}
         onChange={e => handleChange(e.target.value)}
-        placeholder="Jot down bugs, ideas, observations as you test...&#10;&#10;Example:&#10;- toast has a black border on mobile&#10;- notification click freezes for 2s&#10;- would be nice to have dark mode&#10;&#10;Then hit 'Split into tasks' to create individual tasks."
+        placeholder={"Write what you found while testing:\n\n- login button doesn't work on Safari\n- profile page loads slow (3+ seconds)\n- need a way to export data as CSV\n- typo on settings page: 'Notifcations'\n\nClick 'Split into tasks' when ready."}
         style={{
           flex: 1,
           width: '100%',
