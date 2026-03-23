@@ -108,6 +108,7 @@ export const api = {
   switchProject: (path: string) => put<{ ok: true; projectPath: string; projectName: string }>('/api/project', { path }),
 
   // Browse (folder picker)
+  browseNative: () => post<{ path: string | null; cancelled?: boolean }>('/api/browse/native'),
   browse: (path?: string) => get<{
     current: string;
     parent: string | null;

@@ -1,6 +1,47 @@
 import { readFile, writeFile, mkdir, readdir, stat, unlink, copyFile, rm } from 'node:fs/promises';
 import { join, basename, extname, dirname, resolve, sep } from 'node:path';
-import { homedir } from 'node:os';
+import { homedir, platform } from 'node:os';
+import { execFile } from 'node:child_process';
+
+// --- Native folder dialog ---
+
+function openNativeFolderDialog() {
+  return new Promise((resolve, reject) => {
+    const os = platform();
+    if (os === 'win32') {
+      const script = `
+Add-Type -AssemblyName System.Windows.Forms
+$d = New-Object System.Windows.Forms.FolderBrowserDialog
+$d.Description = "Select a project folder"
+$d.ShowNewFolderButton = $true
+if ($d.ShowDialog() -eq 'OK') { Write-Output $d.SelectedPath } else { Write-Output '' }
+`;
+      execFile('powershell', ['-NoProfile', '-Command', script], { timeout: 60000 }, (err, stdout) => {
+        if (err) return reject(err);
+        const path = stdout.trim();
+        resolve(path || null);
+      });
+    } else if (os === 'darwin') {
+      const script = 'osascript -e \'tell application "Finder" to set f to POSIX path of (choose folder with prompt "Select a project folder")\' 2>/dev/null';
+      execFile('bash', ['-c', script], { timeout: 60000 }, (err, stdout) => {
+        if (err) return resolve(null); // user cancelled
+        resolve(stdout.trim() || null);
+      });
+    } else {
+      // Linux — try zenity, then kdialog
+      execFile('zenity', ['--file-selection', '--directory', '--title=Select a project folder'], { timeout: 60000 }, (err, stdout) => {
+        if (err) {
+          execFile('kdialog', ['--getexistingdirectory', homedir(), '--title', 'Select a project folder'], { timeout: 60000 }, (err2, stdout2) => {
+            if (err2) return resolve(null);
+            resolve(stdout2.trim() || null);
+          });
+          return;
+        }
+        resolve(stdout.trim() || null);
+      });
+    }
+  });
+}
 
 // --- Helpers ---
 
@@ -143,6 +184,21 @@ export async function handleApi(req, res) {
     // GET /api/projects — list all registered projects
     if (method === 'GET' && pathname === '/api/projects') {
       jsonResponse(res, 200, getProjects());
+      return true;
+    }
+
+    // POST /api/browse/native — open native OS folder dialog
+    if (method === 'POST' && pathname === '/api/browse/native') {
+      try {
+        const selectedPath = await openNativeFolderDialog();
+        if (selectedPath) {
+          jsonResponse(res, 200, { path: selectedPath });
+        } else {
+          jsonResponse(res, 200, { path: null, cancelled: true });
+        }
+      } catch (err) {
+        jsonResponse(res, 500, { error: err.message });
+      }
       return true;
     }
 

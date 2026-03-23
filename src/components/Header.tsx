@@ -7,6 +7,7 @@ import {
 } from '../constants/strings.ts';
 import { ENGINES, getEngine } from '../constants/engines.ts';
 import { FolderPicker } from './FolderPicker.tsx';
+import { api } from '../api.ts';
 
 interface ProjectInfo {
   path: string;
@@ -96,16 +97,31 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
             <div style={{
               borderTop: '1px solid var(--dm-border)',
               padding: '8px 12px',
+              display: 'flex', gap: '6px',
             }}>
+              <button
+                onClick={async () => {
+                  setShowPicker(false);
+                  try {
+                    const result = await api.browseNative();
+                    if (result.path && onSwitchProject) onSwitchProject(result.path);
+                  } catch { /* user cancelled or error */ }
+                }}
+                className="btn-ghost"
+                style={{
+                  flex: 1, fontSize: '13px', padding: '6px 12px',
+                  fontWeight: 600, color: 'var(--dm-accent)',
+                  border: '1px solid var(--dm-accent)', borderRadius: '4px',
+                }}
+              >Open folder...</button>
               <button
                 onClick={() => { setShowPicker(false); setShowBrowser(true); }}
                 className="btn-ghost"
                 style={{
-                  width: '100%', fontSize: '13px', padding: '6px 12px',
-                  fontWeight: 600, color: 'var(--dm-accent)',
-                  border: '1px solid var(--dm-accent)', borderRadius: '4px',
+                  fontSize: '13px', padding: '6px 12px',
+                  color: 'var(--dm-text-muted)',
                 }}
-              >Browse...</button>
+              >Browse</button>
             </div>
           </div>
         )}
