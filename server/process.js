@@ -109,16 +109,24 @@ class ProcessManager {
       this.finished.set(taskId, { ...entry, exitCode: code, finishedAt: Date.now() });
       this.processes.delete(pid);
 
-      // Write progress file so the watcher can pick up completion
+      // Write progress file only if the orchestrator didn't already write one
       if (taskId && taskId !== 0) {
         try {
           const progressDir = join(projectPath, '.devmanager', 'progress');
           await mkdir(progressDir, { recursive: true });
           const progressFile = join(progressDir, `${taskId}.json`);
-          const progressData = code === 0
-            ? { status: 'done', progress: 'Completed', completedAt: new Date().toISOString() }
-            : { status: 'in-progress', progress: `Process exited with code ${code}` };
-          await writeFile(progressFile, JSON.stringify(progressData, null, 2), 'utf-8');
+          // Check if orchestrator already wrote a progress file
+          let alreadyWritten = false;
+          try {
+            const { stat: fsStat } = await import('node:fs/promises');
+            const s = await fsStat(progressFile);
+            // If file was modified in the last 60s, orchestrator handled it
+            alreadyWritten = (Date.now() - s.mtimeMs) < 60000;
+          } catch { /* file doesn't exist */ }
+          if (!alreadyWritten && code !== 0) {
+            // Only write on failure — success should be handled by the orchestrator
+            await writeFile(progressFile, JSON.stringify({ status: 'in-progress', progress: `Process exited with code ${code}` }, null, 2), 'utf-8');
+          }
         } catch (writeErr) {
           console.error(`Failed to write progress for task ${taskId}:`, writeErr.message);
         }
