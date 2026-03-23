@@ -102,7 +102,7 @@ export function App() {
   // Reset arranging flag when arrange completes (activity entry appears)
   useEffect(() => {
     if (!queueActions.arranging || !data?.activity) return;
-    const hasArrangeActivity = data.activity.some(a => a.label?.includes('arranged') && Date.now() - a.time < 30000);
+    const hasArrangeActivity = data.activity.some(a => a.id?.includes('_arrange') && Date.now() - a.time < 60000);
     if (hasArrangeActivity) queueActions.setArranging(false);
   }, [data?.activity, queueActions.arranging]);
 
