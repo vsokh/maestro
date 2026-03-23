@@ -788,6 +788,14 @@ export async function handleApi(req, res) {
       return true;
     }
 
+    // GET /api/launch/output — get all buffered output (for reconnecting clients)
+    if (method === 'GET' && pathname === '/api/launch/output') {
+      const { getProcessManager } = await import('./process.js');
+      const pm = getProcessManager();
+      jsonResponse(res, 200, pm.getAllOutput());
+      return true;
+    }
+
     // DELETE /api/launch/:pid
     params = matchRoute(method, pathname, 'DELETE', '/api/launch/:pid');
     if (params) {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { connectWebSocket } from '../api.ts';
+import { connectWebSocket, api } from '../api.ts';
 
 export interface OutputLine {
   text: string;
@@ -111,6 +111,33 @@ export function useProcessOutput() {
     }
 
     connect();
+
+    // Load buffered output from server (for processes that started before we connected)
+    api.getBufferedOutput().then(buffered => {
+      if (!mounted || !buffered) return;
+      setOutputs(prev => {
+        const merged = { ...prev };
+        for (const [taskIdStr, data] of Object.entries(buffered)) {
+          const taskId = Number(taskIdStr);
+          if (merged[taskId]?.lines.length) continue; // already have live data
+          const lines: OutputLine[] = (data.output || []).map(o => ({
+            text: stripAnsi(o.text || ''),
+            stream: (o.stream === 'stderr' ? 'stderr' : 'stdout') as 'stdout' | 'stderr',
+            timestamp: o.time || Date.now(),
+          })).filter(l => l.text);
+          if (lines.length || data.running) {
+            merged[taskId] = {
+              lines,
+              pid: null,
+              running: data.running,
+              exitCode: data.exitCode ?? null,
+              error: null,
+            };
+          }
+        }
+        return merged;
+      });
+    }).catch(() => { /* server might not support this endpoint yet */ });
 
     return () => {
       mounted = false;

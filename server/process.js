@@ -1,4 +1,8 @@
 import { spawn } from 'node:child_process';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+
+const MAX_OUTPUT_LINES = 500;
 
 function buildClaudePrompt(command) {
   // In -p mode, slash commands don't work. Convert to plain prompt.
@@ -29,6 +33,7 @@ const ENGINE_COMMANDS = {
 class ProcessManager {
   constructor() {
     this.processes = new Map();
+    this.finished = new Map(); // taskId → { output, exitCode, ... } — kept for reconnecting clients
   }
 
   launchProcess(projectPath, taskId, command, engine = 'claude', broadcast) {
@@ -46,18 +51,29 @@ class ProcessManager {
     });
 
     const pid = proc.pid;
+    const output = [];
     const entry = {
       taskId,
       engine,
       process: proc,
+      projectPath,
       startedAt: new Date().toISOString(),
+      output,
     };
     this.processes.set(pid, entry);
+
+    // Also keep finished output for reconnecting clients
+    const addOutput = (text, stream) => {
+      const line = { text, stream, time: Date.now() };
+      output.push(line);
+      if (output.length > MAX_OUTPUT_LINES) output.shift();
+    };
 
     // Stream stdout
     if (proc.stdout) {
       proc.stdout.on('data', (data) => {
         const text = data.toString('utf-8');
+        addOutput(text, 'stdout');
         try {
           broadcast({ type: 'output', taskId, pid, text });
         } catch (err) {
@@ -70,6 +86,7 @@ class ProcessManager {
     if (proc.stderr) {
       proc.stderr.on('data', (data) => {
         const text = data.toString('utf-8');
+        addOutput(text, 'stderr');
         try {
           broadcast({ type: 'output', taskId, pid, text, stream: 'stderr' });
         } catch (err) {
@@ -78,9 +95,27 @@ class ProcessManager {
       });
     }
 
-    // Handle exit
-    proc.on('close', (code) => {
+    // Handle exit — write progress file so task status updates even if client disconnected
+    proc.on('close', async (code) => {
+      // Move to finished map before deleting from active
+      this.finished.set(taskId, { ...entry, exitCode: code, finishedAt: Date.now() });
       this.processes.delete(pid);
+
+      // Write progress file so the watcher can pick up completion
+      if (taskId && taskId !== 0) {
+        try {
+          const progressDir = join(projectPath, '.devmanager', 'progress');
+          await mkdir(progressDir, { recursive: true });
+          const progressFile = join(progressDir, `${taskId}.json`);
+          const progressData = code === 0
+            ? { status: 'done', progress: 'Completed', completedAt: new Date().toISOString() }
+            : { status: 'in-progress', progress: `Process exited with code ${code}` };
+          await writeFile(progressFile, JSON.stringify(progressData, null, 2), 'utf-8');
+        } catch (writeErr) {
+          console.error(`Failed to write progress for task ${taskId}:`, writeErr.message);
+        }
+      }
+
       try {
         broadcast({ type: 'exit', taskId, pid, code });
       } catch (err) {
@@ -90,6 +125,7 @@ class ProcessManager {
 
     proc.on('error', (err) => {
       console.error(`Process error (pid=${pid}, engine=${engine}):`, err.message);
+      this.finished.set(taskId, { ...entry, exitCode: -1, error: err.message, finishedAt: Date.now() });
       this.processes.delete(pid);
       try {
         broadcast({ type: 'exit', taskId, pid, code: -1, error: err.message });
@@ -124,6 +160,30 @@ class ProcessManager {
     }
     this.processes.delete(pid);
     return true;
+  }
+
+  getOutput(taskId) {
+    // Check active processes first
+    for (const [, entry] of this.processes) {
+      if (entry.taskId === taskId) return { output: entry.output, running: true };
+    }
+    // Check finished
+    const fin = this.finished.get(taskId);
+    if (fin) return { output: fin.output, running: false, exitCode: fin.exitCode };
+    return null;
+  }
+
+  getAllOutput() {
+    const result = {};
+    for (const [, entry] of this.processes) {
+      result[entry.taskId] = { output: entry.output, running: true };
+    }
+    for (const [taskId, entry] of this.finished) {
+      if (!result[taskId]) {
+        result[taskId] = { output: entry.output, running: false, exitCode: entry.exitCode };
+      }
+    }
+    return result;
   }
 
   killAll() {

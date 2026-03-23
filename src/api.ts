@@ -100,6 +100,7 @@ export const api = {
   launchTerminal: (taskId: number, command: string, engine?: string, title?: string) =>
     post<{ ok: true }>('/api/launch/terminal', { taskId, command, engine, title }),
   listProcesses: () => get<Array<{ pid: number; taskId: number; engine: string; startedAt: string }>>('/api/launch'),
+  getBufferedOutput: () => get<Record<string, { output: Array<{ text: string; stream: string; time: number }>; running: boolean; exitCode?: number }>>('/api/launch/output'),
   killProcess: (pid: number) => del<{ ok: true }>(`/api/launch/${pid}`),
 
   // Info
