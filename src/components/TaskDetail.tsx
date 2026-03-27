@@ -56,12 +56,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   }
 
   if (!task) return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      height: '100%', padding: '40px 20px', gap: '8px',
-    }}>
+    <div className="flex-col items-center justify-center h-full gap-8" style={{ padding: '40px 20px' }}>
       <div className="empty-state">
-        <div style={{ fontSize: '24px', opacity: 0.4, marginBottom: '8px' }}>&#9678;</div>
+        <div className="text-24 mb-8" style={{ opacity: 0.4 }}>&#9678;</div>
         {DETAIL_EMPTY}
       </div>
     </div>
@@ -78,8 +75,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
   return (
     <div
+      className="p-20 overflow-auto h-full"
       style={{
-        padding: '20px', overflow: 'auto', height: '100%',
         border: dragging ? '2px dashed var(--dm-accent)' : '2px solid transparent',
         borderRadius: 'var(--dm-radius)',
         transition: 'border-color 0.2s',
@@ -87,7 +84,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       }}
       {...handlers}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+      <div className="flex-center gap-8 mb-12">
         <select
           aria-label={DETAIL_STATUS_ARIA}
           value={task.status}
@@ -108,15 +105,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           })}
         </select>
         {pastedFeedback && (
-          <span className="text-accent" style={{ fontSize: '11px', fontWeight: 600, animation: 'fadeIn 0.2s' }}>
+          <span className="text-accent text-11 font-600" style={{ animation: 'fadeIn 0.2s' }}>
             {DETAIL_PASTED}
           </span>
         )}
       </div>
 
       {task.status === STATUS.IN_PROGRESS && task.progress ? (
-        <div className="progress-text-shimmer progress-banner" style={{
-          fontSize: '12px', marginBottom: '12px',
+        <div className="progress-text-shimmer progress-banner text-12 mb-12" style={{
           padding: '8px 12px', lineHeight: 1.4,
         }}>
           {task.progress}
@@ -124,15 +120,15 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       ) : null}
 
       {task.status === STATUS.BLOCKED ? (
-        <div style={{ marginBottom: '12px' }}>
+        <div className="mb-12">
           <input
             value={localBlockedReason}
             onInput={(e: React.FormEvent<HTMLInputElement>) => setLocalBlockedReason((e.target as HTMLInputElement).value)}
             onBlur={() => onUpdateTask(task.id, { blockedReason: localBlockedReason })}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
             placeholder={DETAIL_BLOCKED_PLACEHOLDER}
-            className="input-blocked"
-            style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+            className="input-blocked w-full text-12"
+            style={{ padding: '6px 8px' }}
           />
         </div>
       ) : null}
@@ -144,11 +140,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onBlur={() => { onUpdateTask(task.id, { fullName: editName, name: editName.length > 20 ? editName.slice(0,20) : editName }); setEditing(false); }}
           onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
           autoFocus
-          className="input-detail-title"
-          style={{
-            width: '100%', fontSize: '14px', lineHeight: 1.4,
-            padding: '4px 8px', marginBottom: '8px',
-          }}
+          className="input-detail-title w-full text-14 mb-8"
+          style={{ lineHeight: 1.4, padding: '4px 8px' }}
         />
       ) : (
         <h3
@@ -156,8 +149,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           tabIndex={0}
           onClick={() => { setEditName(task.fullName || task.name); setEditing(true); }}
           onKeyDown={handleKeyActivate(() => { setEditName(task.fullName || task.name); setEditing(true); })}
-          className="detail-title"
-          style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', lineHeight: 1.4, padding: '4px 8px' }}
+          className="detail-title text-14 font-600 mb-8"
+          style={{ lineHeight: 1.4, padding: '4px 8px' }}
           title={DETAIL_EDIT_TITLE}
         >
           {task.fullName || task.name}
@@ -172,8 +165,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === 'Escape') setEditingDesc(false); }}
           autoFocus
           rows={3}
-          className="textarea-field"
-          style={{ width: '100%', fontSize: '12px', padding: '6px 8px', marginBottom: '16px' }}
+          className="textarea-field w-full text-12 mb-16"
+          style={{ padding: '6px 8px' }}
         />
       ) : (
         <div
@@ -182,8 +175,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onClick={() => { setLocalDesc(task.description || ''); setEditingDesc(true); }}
           onKeyDown={handleKeyActivate(() => { setLocalDesc(task.description || ''); setEditingDesc(true); })}
           title="Click to edit description"
+          className="text-12 leading-normal mb-16"
           style={{
-            fontSize: '12px', lineHeight: 1.5, padding: '4px 8px', marginBottom: '16px',
+            padding: '4px 8px',
             color: task.description ? 'var(--dm-text)' : 'var(--dm-text-light)',
             opacity: task.description ? 0.8 : 0.5,
             cursor: 'text',
@@ -194,9 +188,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       )}
 
       {task.skills && task.skills.length > 0 ? (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
+        <div className="flex-wrap gap-4 mb-12">
           {task.skills.map(s => (
-            <span key={s} className="badge badge-accent" style={{ fontSize: '10px' }}>{s}</span>
+            <span key={s} className="badge badge-accent text-10">{s}</span>
           ))}
         </div>
       ) : null}
@@ -205,13 +199,13 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       <Timeline task={task} />
 
       {task.summary && (
-        <div style={{
-          marginBottom: '12px', padding: '10px 12px',
+        <div className="mb-12" style={{
+          padding: '10px 12px',
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)',
           borderLeft: '3px solid var(--dm-success)',
         }}>
-          <div className="label" style={{ fontSize: '10px', margin: '0 0 4px', color: 'var(--dm-success)' }}>What shipped</div>
-          <div style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--dm-text)' }}>{task.summary}</div>
+          <div className="label text-10" style={{ margin: '0 0 4px', color: 'var(--dm-success)' }}>What shipped</div>
+          <div className="text-12 leading-normal" style={{ color: 'var(--dm-text)' }}>{task.summary}</div>
         </div>
       )}
 
@@ -220,9 +214,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       <TaskFlags task={task} onUpdateTask={onUpdateTask} />
 
       {!task.manual ? (
-        <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="label" style={{ fontSize: '11px', margin: 0 }}>{DETAIL_ENGINE_LABEL}</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
+        <div className="mb-12 flex-center gap-8">
+          <span className="label text-11" style={{ margin: 0 }}>{DETAIL_ENGINE_LABEL}</span>
+          <div className="flex gap-4">
             {[{ id: '', label: DETAIL_ENGINE_DEFAULT + ' (' + getEngine(defaultEngine).label + ')', icon: getEngine(defaultEngine).icon, color: 'var(--dm-text-light)' }, ...ENGINES].map(eng => {
               const isSelected = eng.id === '' ? !task.engine : task.engine === eng.id;
               const displayColor = eng.id === '' ? (isSelected ? getEngine(defaultEngine).color : 'var(--dm-text-light)') : (eng as any).color;
@@ -247,7 +241,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
                     cursor: 'pointer',
                   }}
                 >
-                  <span style={{ fontSize: '11px' }}>{eng.icon}</span>
+                  <span className="text-11">{eng.icon}</span>
                   {eng.id !== '' ? eng.label : DETAIL_ENGINE_DEFAULT}
                 </button>
               );
@@ -256,8 +250,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         </div>
       ) : null}
 
-      <div style={{ marginBottom: '16px' }}>
-        <div className="label" style={{ marginBottom: '6px' }}>
+      <div className="mb-16">
+        <div className="label mb-6">
           {task.manual ? DETAIL_NOTES_MANUAL : DETAIL_NOTES_CLAUDE}
         </div>
         <textarea
@@ -266,8 +260,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onBlur={() => onUpdateNotes(task.id, localNote)}
           placeholder={task.manual ? DETAIL_NOTES_MANUAL_PLACEHOLDER : DETAIL_NOTES_CLAUDE_PLACEHOLDER}
           rows={4}
-          className="textarea-field"
-          style={{ width: '100%', fontSize: '12px', padding: '8px' }}
+          className="textarea-field w-full text-12 p-8"
         />
       </div>
 

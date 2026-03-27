@@ -45,11 +45,11 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
             }}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingGroup(null); }}
             autoFocus
-            className="input-epic-rename"
-            style={{ marginBottom: '6px', padding: '2px 6px' }}
+            className="input-epic-rename mb-6"
+            style={{ padding: '2px 6px' }}
           />
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+          <div className="flex-center gap-6 mb-6">
             <div
               role="button"
               tabIndex={0}
@@ -68,7 +68,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
               {(() => {
                 const { total, done } = getGroupStats(tasks, groupName);
                 return (
-                  <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--dm-text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
+                  <span className="text-9 font-500" style={{ color: "var(--dm-text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
                     {done}/{total}
                   </span>
                 );
@@ -111,7 +111,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
           </div>
         )
       ) : null}
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div className="flex-wrap gap-10">
         {groupTasks.map(task => (
           <TaskCard
             key={task.id}

@@ -63,8 +63,8 @@ export function Timeline({ task }: TimelineProps) {
   if (history.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
-      <div className="label" style={{ marginBottom: '8px' }}>
+    <div className="mb-12" style={{ paddingLeft: '4px' }}>
+      <div className="label mb-8">
         {TIMELINE_TITLE}
       </div>
       {history.map((entry, i) => {
@@ -73,22 +73,22 @@ export function Timeline({ task }: TimelineProps) {
         const isLast = i === history.length - 1;
         return (
           <div key={i}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                <div className="timeline-dot" style={{ background: dotColor[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
-                {!isLast && <div className="timeline-connector" style={{ flex: 1, minHeight: '12px' }} />}
+            <div className="flex items-start gap-10">
+              <div className="flex-col items-center shrink-0" style={{ width: '12px' }}>
+                <div className="timeline-dot shrink-0" style={{ background: dotColor[entry.status] || 'var(--dm-text-light)' }} />
+                {!isLast && <div className="timeline-connector flex-1" style={{ minHeight: '12px' }} />}
               </div>
-              <div style={{ paddingBottom: '4px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)' }}>{label[entry.status] || entry.status}</div>
-                <div style={{ fontSize: '12px', color: 'var(--dm-text)' }}>{formatDate(entry.at)}</div>
+              <div className="pb-4">
+                <div className="text-11 font-600" style={{ color: 'var(--dm-text-muted)' }}>{label[entry.status] || entry.status}</div>
+                <div className="text-12" style={{ color: 'var(--dm-text)' }}>{formatDate(entry.at)}</div>
               </div>
             </div>
             {duration && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+              <div className="flex-center gap-10">
+                <div className="flex justify-center shrink-0" style={{ width: '12px' }}>
                   <div className="timeline-connector-v" style={{ width: '1px', height: '16px' }} />
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{duration}</div>
+                <div className="text-10" style={{ color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{duration}</div>
               </div>
             )}
           </div>

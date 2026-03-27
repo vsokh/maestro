@@ -11,8 +11,7 @@ export function ErrorToast({ message, onDismiss }: ErrorToastProps) {
   if (!message && !visible) return null;
 
   return (
-    <div className="error-toast" style={{
-      position: 'fixed',
+    <div className="error-toast fixed flex-center gap-12 text-13" style={{
       bottom: '64px',
       left: '50%',
       transform: visible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(20px)',
@@ -20,17 +19,13 @@ export function ErrorToast({ message, onDismiss }: ErrorToastProps) {
       transition: 'transform 0.2s ease, opacity 0.2s ease',
       zIndex: 1001,
       padding: '10px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      fontSize: '13px',
       pointerEvents: visible ? 'auto' : 'none',
     }}>
-      <span className="text-danger" style={{ fontWeight: 600 }}>{message}</span>
+      <span className="text-danger font-600">{message}</span>
       <button
         onClick={onDismiss}
-        className="btn-icon"
-        style={{ padding: '2px 4px', fontSize: '16px' }}
+        className="btn-icon text-16"
+        style={{ padding: '2px 4px' }}
       >
         &#215;
       </button>

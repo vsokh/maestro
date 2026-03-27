@@ -32,28 +32,25 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
             aria-expanded={showBacklog}
             onClick={() => setShowBacklog(p => !p)}
             onKeyDown={handleKeyActivate(() => setShowBacklog(p => !p))}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-              padding: '8px 0', userSelect: 'none',
-            }}
+            className="flex-center gap-8 cursor-pointer py-8"
+            style={{ userSelect: 'none' }}
           >
             <span className="label">{SECTION_BACKLOG}</span>
             <span className="section-toggle-count">{backlogTasks.length}</span>
             <span className="section-toggle-arrow" style={{ transform: showBacklog ? 'rotate(180deg)' : 'none' }}>&#9660;</span>
           </div>
           {showBacklog ? (
-            <div style={{ paddingTop: '4px' }}>
+            <div className="pt-4">
               {[...backlogGroups.entries()].map(([groupName, groupTasks]) => (
-                <div key={groupName} style={{ marginBottom: '8px' }}>
-                  <div className="epic-label-static" style={{
-                    marginBottom: '4px',
+                <div key={groupName} className="mb-8">
+                  <div className="epic-label-static mb-4" style={{
                     color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)', opacity: 0.6,
                     padding: '1px 5px',
                     background: (epicColors[groupName] || {}).bg || 'transparent',
                   }}>
                     {groupName}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <div className="flex-wrap gap-6">
                     {groupTasks.map(t => (
                       <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
                         className={`task-card--backlog-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}`}
@@ -78,28 +75,25 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
             aria-expanded={showCompleted}
             onClick={() => setShowCompleted(p => !p)}
             onKeyDown={handleKeyActivate(() => setShowCompleted(p => !p))}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-              padding: '8px 0', userSelect: 'none',
-            }}
+            className="flex-center gap-8 cursor-pointer py-8"
+            style={{ userSelect: 'none' }}
           >
             <span className="label">{SECTION_DONE}</span>
             <span className="section-toggle-count">{doneTasks.length}</span>
             <span className="section-toggle-arrow" style={{ transform: showCompleted ? 'rotate(180deg)' : 'none' }}>&#9660;</span>
           </div>
           {showCompleted ? (
-            <div style={{ paddingTop: '4px' }}>
+            <div className="pt-4">
               {[...doneGroups.entries()].map(([groupName, groupTasks]) => (
-                <div key={groupName} style={{ marginBottom: '8px' }}>
-                  <div className="epic-label-static" style={{
-                    marginBottom: '4px',
+                <div key={groupName} className="mb-8">
+                  <div className="epic-label-static mb-4" style={{
                     color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)', opacity: 0.6,
                     padding: '1px 5px',
                     background: (epicColors[groupName] || {}).bg || 'transparent',
                   }}>
                     {groupName}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <div className="flex-wrap gap-6">
                     {groupTasks.map(t => (
                       <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
                         className={`task-card--done-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}`}
@@ -107,7 +101,7 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                       >
                         <span className="text-backlog-name">{t.name}</span>
                         {t.commitRef ? (
-                          <span className="commit-ref" style={{ padding: '0 4px', marginLeft: '5px' }}>{t.commitRef}</span>
+                          <span className="commit-ref px-4" style={{ marginLeft: '5px' }}>{t.commitRef}</span>
                         ) : null}
                       </div>
                     ))}

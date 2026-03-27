@@ -17,8 +17,8 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }: Attachm
   const attachments = task.attachments || [];
 
   return (
-    <div style={{ marginBottom: '16px' }}>
-      <div className="label" style={{ marginBottom: '6px' }}>
+    <div className="mb-16">
+      <div className="label mb-6">
         {ATTACHMENTS_TITLE}
       </div>
       {attachments.length === 0 ? (
@@ -26,39 +26,39 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }: Attachm
           {ATTACHMENTS_PLACEHOLDER}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="flex-col gap-8">
           {attachments.map(att => (
             <div
               key={att.id}
-              style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--dm-border)' }}
-              className="attachment-thumb"
+              className="attachment-thumb relative overflow-hidden"
+              style={{ borderRadius: '6px', border: '1px solid var(--dm-border)' }}
             >
               {thumbUrls[att.id] ? (
                 <img
                   src={thumbUrls[att.id]}
                   alt={att.filename}
-                  style={{ display: 'block', maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', background: 'var(--dm-bg)' }}
+                  className="block"
+                  style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', background: 'var(--dm-bg)' }}
                 />
               ) : (
-                <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dm-bg)', fontSize: '11px', color: 'var(--dm-text-light)' }}>
+                <div className="flex-center justify-center text-11" style={{ height: '40px', background: 'var(--dm-bg)', color: 'var(--dm-text-light)' }}>
                   {ATTACHMENTS_LOADING}
                 </div>
               )}
-              <div style={{
-                fontSize: '10px', color: 'var(--dm-text-muted)', padding: '3px 6px',
-                background: 'var(--dm-bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              <div className="text-10 truncate" style={{
+                color: 'var(--dm-text-muted)', padding: '3px 6px',
+                background: 'var(--dm-bg)',
               }}>
                 {att.filename}
               </div>
               <button
                 onClick={() => onDeleteAttachment(task.id, att.id)}
                 aria-label={ATTACHMENTS_DELETE_ARIA}
-                className="attachment-delete-btn attachment-delete"
+                className="attachment-delete-btn attachment-delete absolute flex-center justify-center text-12"
                 style={{
-                  position: 'absolute', top: '4px', right: '4px',
+                  top: '4px', right: '4px',
                   width: '20px', height: '20px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: 0, fontSize: '12px', lineHeight: 1, padding: 0,
+                  opacity: 0, lineHeight: 1, padding: 0,
                 }}
                 title={ATTACHMENTS_DELETE_TITLE}
               >

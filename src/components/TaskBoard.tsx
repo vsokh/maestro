@@ -120,9 +120,9 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
 
   return (
     <div onClick={handleBoardClick}>
-      <div style={{ marginBottom: '16px' }}>
+      <div className="mb-16">
         {epicStats.length > 0 ? (
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          <div className="flex-wrap gap-6" style={{ marginBottom: "14px" }}>
             {epicStats.map(ep => {
               const colors = epicColors[ep.name!] || {};
               const pct = ep.total > 0 ? (ep.done / ep.total) * 100 : 0;
@@ -134,14 +134,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   tabIndex={0}
                   onClick={() => handleToggleEpicVisibility(ep.name!)}
                   onKeyDown={handleKeyActivate(() => handleToggleEpicVisibility(ep.name!))}
-                  className="epic-progress"
+                  className="epic-progress relative overflow-hidden cursor-pointer"
                   title={isHidden ? 'Show ' + ep.name : 'Hide ' + ep.name}
                   style={{
                     padding: "4px 10px",
                     background: colors.bg || "var(--dm-bg)", color: colors.text || "var(--dm-text-light)",
-                    position: "relative", overflow: "hidden",
                     opacity: isHidden ? 0.45 : 1,
-                    cursor: 'pointer',
                     transition: 'opacity 0.2s',
                     userSelect: 'none',
                   }}
@@ -200,8 +198,8 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           />
         ))}
         {hiddenEpicNames.size > 0 ? (
-          <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', color: 'var(--dm-text-light)', opacity: 0.6 }}>Hidden:</span>
+          <div className="mt-8 flex-wrap gap-6 items-center">
+            <span className="text-11" style={{ color: 'var(--dm-text-light)', opacity: 0.6 }}>Hidden:</span>
             {(epics || []).filter(e => e.hidden).map(e => {
               const colors = epicColors[e.name] || {};
               const hiddenCount = getActiveCountForGroup(tasks, e.name);
@@ -212,14 +210,13 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   tabIndex={0}
                   onClick={() => handleToggleEpicVisibility(e.name)}
                   onKeyDown={handleKeyActivate(() => handleToggleEpicVisibility(e.name))}
-                  className="epic-label"
+                  className="epic-label cursor-pointer"
                   title={'Show ' + e.name}
                   style={{
                     color: colors.text || 'var(--dm-text-light)',
                     padding: '2px 6px',
                     background: colors.bg || 'transparent',
                     opacity: 0.5,
-                    cursor: 'pointer',
                   }}
                 >
                   {e.name} ({hiddenCount})
@@ -229,12 +226,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           </div>
         ) : null}
         {pendingTasks.length === 0 && !showNewForm ? (
-          <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
+          <div className="empty-state p-20 w-full">
             {BOARD_NO_TASKS}
           </div>
         ) : null}
         {pendingTasks.length > 0 && filteredPendingTasks.length === 0 && !showNewForm ? (
-          <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
+          <div className="empty-state p-20 w-full">
             {BOARD_NO_MATCHING}
           </div>
         ) : null}
@@ -244,16 +241,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             tabIndex={0}
             onClick={() => setShowNewForm(true)}
             onKeyDown={handleKeyActivate(() => setShowNewForm(true))}
-            className="add-task-card"
-            style={{
-              padding: '12px 16px',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              marginTop: '8px',
-            }}
+            className="add-task-card inline-flex items-center justify-center mt-8"
+            style={{ padding: '12px 16px' }}
           >{BOARD_ADD_TASK}</div>
         ) : null}
         {showNewForm ? (
-          <div style={{ marginTop: '12px', maxWidth: '380px' }}>
+          <div className="mt-12" style={{ maxWidth: '380px' }}>
             <CardForm
               card={null}
               groups={epicNames}
@@ -263,12 +256,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           </div>
         ) : null}
         {pendingTasks.length >= 1 ? (
-          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="mt-8 flex-wrap gap-8">
             <button
               onClick={onArrange}
               disabled={arranging}
-              className="btn btn-amber-outline"
-              style={{ padding: '5px 14px', fontSize: '12px', opacity: arranging ? 0.6 : 1 }}
+              className="btn btn-amber-outline text-12"
+              style={{ padding: '5px 14px', opacity: arranging ? 0.6 : 1 }}
             >
               {arranging ? 'Arranging...' : BOARD_ARRANGE}
             </button>
@@ -278,8 +271,8 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               return (
                 <button
                   onClick={onQueueAll}
-                  className="btn btn-accent-outline"
-                  style={{ padding: '5px 14px', fontSize: '12px' }}
+                  className="btn btn-accent-outline text-12"
+                  style={{ padding: '5px 14px' }}
                 >
                   Queue all ({pendingNotQueued.length})
                 </button>

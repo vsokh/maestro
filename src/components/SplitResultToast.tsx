@@ -11,8 +11,7 @@ export function SplitResultToast({ tasks, onDismiss }: SplitResultToastProps) {
   if (!tasks && !visible) return null;
 
   return (
-    <div className="split-result-toast" style={{
-      position: 'fixed',
+    <div className="split-result-toast fixed flex-col gap-8 text-13" style={{
       bottom: '24px',
       left: '50%',
       transform: visible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(20px)',
@@ -20,22 +19,18 @@ export function SplitResultToast({ tasks, onDismiss }: SplitResultToastProps) {
       transition: 'transform 0.2s ease, opacity 0.2s ease',
       zIndex: 1000,
       padding: '12px 16px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      fontSize: '13px',
       pointerEvents: visible ? 'auto' : 'none',
       minWidth: '240px',
       maxWidth: '360px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-        <span style={{ fontWeight: 600 }}>
+      <div className="flex-between gap-12">
+        <span className="font-600">
           {'\u2713'} {tasks?.length} task{tasks && tasks.length !== 1 ? 's' : ''} created
         </span>
         <button
           onClick={onDismiss}
-          className="btn-icon"
-          style={{ padding: '2px 4px', fontSize: '16px', flexShrink: 0 }}
+          className="btn-icon text-16 shrink-0"
+          style={{ padding: '2px 4px' }}
         >
           &#215;
         </button>

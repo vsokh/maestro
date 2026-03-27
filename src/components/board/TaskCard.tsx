@@ -67,20 +67,20 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
       onClick={() => onSelectTask(task.id)}
       onKeyDown={handleKeyActivate(() => onSelectTask(task.id))}
       className={className}
-      style={{ padding: '12px 16px', minWidth: '160px', flex: '1 1 160px', maxWidth: '260px' }}
+      style={{ minWidth: '160px', flex: '1 1 160px', maxWidth: '260px', padding: '12px 16px' }}
     >
-      <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-        <span style={{ opacity: 0.4, fontSize: '11px', fontWeight: 500 }}>#{task.id}</span>
+      <div className="flex-center font-600 text-13" style={{ gap: '5px' }}>
+        <span className="text-11 font-500" style={{ opacity: 0.4 }}>#{task.id}</span>
         {task.manual ? <span className="manual-badge" title={CARD_MANUAL_TITLE} style={{ padding: '1px 5px' }}>YOU</span> : null}
         {task.name}
       </div>
       {task.description ? (
-        <div className="card-description" style={{ marginTop: '2px', fontSize: '11px', opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="card-description mt-2 text-11 truncate" style={{ opacity: 0.7 }}>
           {task.description}
         </div>
       ) : null}
       {task.dependsOn && task.dependsOn.length > 0 ? (
-        <div className="card-deps-info" style={{ marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="card-deps-info mt-2 truncate">
           after: {task.dependsOn.map(depId => {
             const dep = tasks.find(t => t.id === depId);
             return dep ? dep.name : '?';
@@ -88,36 +88,36 @@ export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask,
         </div>
       ) : null}
       {task.status === STATUS.BLOCKED && task.blockedReason ? (
-        <div className="card-blocked-reason" style={{ marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="card-blocked-reason mt-4 truncate">
           Blocked: {task.blockedReason.length > 50 ? task.blockedReason.slice(0, 50) + '...' : task.blockedReason}
         </div>
       ) : null}
       {task.status === STATUS.IN_PROGRESS && task.progress ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-          <div className={`progress-text-shimmer card-progress-text${isWaiting(task) ? ' text-amber' : ' text-accent'}`} style={{ flex: 1 }}>
+        <div className="flex-center gap-4 mt-4">
+          <div className={`progress-text-shimmer card-progress-text flex-1${isWaiting(task) ? ' text-amber' : ' text-accent'}`}>
             {task.progress}
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); onPauseTask(task.id); }}
             aria-label={CARD_PAUSE_ARIA}
             title={CARD_PAUSE_TITLE}
-            className="btn-card-action btn-card-action--pause"
-            style={{ padding: '1px 6px', flexShrink: 0 }}
+            className="btn-card-action btn-card-action--pause shrink-0"
+            style={{ padding: '1px 6px' }}
           >&#9646;&#9646;</button>
           <button
             onClick={(e) => { e.stopPropagation(); onCancelTask(task.id); }}
             aria-label={CARD_CANCEL_ARIA}
             title={CARD_CANCEL_TITLE}
-            className="btn-card-action btn-card-action--cancel"
-            style={{ padding: '1px 6px', flexShrink: 0 }}
+            className="btn-card-action btn-card-action--cancel shrink-0"
+            style={{ padding: '1px 6px' }}
           >&#10005;</button>
         </div>
       ) : null}
       {task.status === STATUS.PAUSED ? (
-        <div className="card-paused-text" style={{ marginTop: '4px' }}>
+        <div className="card-paused-text mt-4">
           {task.lastProgress || 'Paused'}
           {task.branch ? (
-            <div className="paused-branch" style={{ marginTop: '2px' }}>{task.branch}</div>
+            <div className="paused-branch mt-2">{task.branch}</div>
           ) : null}
         </div>
       ) : null}

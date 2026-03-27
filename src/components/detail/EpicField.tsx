@@ -13,7 +13,7 @@ export function EpicField({ task, epics, onUpdateTask }: EpicFieldProps) {
   const epicColorMap = useMemo(() => getEpicColorMap(epics), [epics]);
 
   return (
-    <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <div className="mb-12 flex-center gap-6">
       <span className="label">{EPIC_LABEL}</span>
       {task.group && epicColorMap[task.group] ? (
         <span style={{
@@ -27,8 +27,8 @@ export function EpicField({ task, epics, onUpdateTask }: EpicFieldProps) {
         onInput={(e: React.FormEvent<HTMLInputElement>) => onUpdateTask(task.id, { group: (e.target as HTMLInputElement).value || undefined })}
         placeholder={EPIC_PLACEHOLDER}
         list="epic-list"
-        className="input-epic"
-        style={{ flex: 1, padding: '3px 8px', fontSize: '12px' }}
+        className="input-epic flex-1 text-12"
+        style={{ padding: '3px 8px' }}
       />
       <datalist id="epic-list">
         {(epics || []).map(e => (

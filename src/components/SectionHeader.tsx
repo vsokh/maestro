@@ -8,16 +8,13 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, count, extra }: SectionHeaderProps) {
   return (
-    <div className="panel-header" style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '10px 16px',
-    }}>
+    <div className="panel-header flex-between" style={{ padding: '10px 16px' }}>
       <span className="section-label">
         {title}
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="flex-center gap-8">
         {count != null ? (
-          <span className="text-light" style={{ fontSize: '11px' }}>{count}</span>
+          <span className="text-light text-11">{count}</span>
         ) : null}
         {extra || null}
       </div>

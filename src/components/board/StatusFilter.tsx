@@ -29,8 +29,8 @@ export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, sear
     statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
   }
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+    <div className="flex-between gap-8" style={{ marginBottom: '10px' }}>
+      <div className="flex-wrap gap-4">
         {statusFilters.filter(f => f.value === 'all' || statusCounts[f.value]).map(f => {
           const isActive = activeFilter === f.value;
           const count = f.value === 'all' ? pendingTasks.length : (statusCounts[f.value] || 0);

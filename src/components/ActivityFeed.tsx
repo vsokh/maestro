@@ -60,11 +60,10 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: Ac
       {entries.map(e => (
         <div key={e.key}>
           <div
-            className={'activity-row' + (e.clickableTaskId != null ? ' activity-clickable' : '')}
+            className={'activity-row flex-center gap-8' + (e.clickableTaskId != null ? ' activity-clickable' : '')}
             role={e.clickableTaskId != null || e.changes ? 'button' : undefined}
             tabIndex={e.clickableTaskId != null || e.changes ? 0 : undefined}
             style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
               padding: '5px 14px',
               opacity: e.isToday ? 1 : 0.6,
               cursor: e.changes ? 'pointer' : undefined,
@@ -73,53 +72,51 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: Ac
             onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => onNavigateToTask(e.clickableTaskId!)) : e.changes ? handleKeyActivate(() => setExpandedId(expandedId === e.key ? null : e.key)) : undefined}
           >
             {/* Colored dot */}
-            <span className={`activity-dot ${e.completed ? 'activity-dot--completed' : 'activity-dot--default'}`} style={{
-              width: 6, height: 6, flexShrink: 0,
+            <span className={`activity-dot shrink-0 ${e.completed ? 'activity-dot--completed' : 'activity-dot--default'}`} style={{
+              width: 6, height: 6,
             }} />
 
             {/* Label */}
-            <span className="activity-label" style={{
-              flex: 1, fontSize: '12px',
+            <span className="activity-label flex-1 text-12 truncate" style={{
               color: e.clickableTaskId != null ? 'var(--dm-accent)' : 'var(--dm-text)',
               fontWeight: e.isToday ? 500 : 400,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               {e.changes ? (expandedId === e.key ? '▾ ' : '▸ ') : ''}{e.label}
             </span>
 
             {/* Metadata */}
             {e.commitRef ? (
-              <span className="commit-ref" style={{
-                padding: '0 5px', flexShrink: 0, fontSize: '10px',
+              <span className="commit-ref shrink-0 text-10" style={{
+                padding: '0 5px',
               }}>{e.commitRef}</span>
             ) : null}
 
             {/* Timestamp */}
-            <span className="activity-timestamp" style={{
-              flexShrink: 0, minWidth: '36px', textAlign: 'right',
+            <span className="activity-timestamp shrink-0 text-right" style={{
+              minWidth: '36px',
             }}>{e.date}</span>
 
             {/* Remove */}
             <button
               onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
               aria-label={ACTIVITY_REMOVE_ARIA}
-              className="activity-remove activity-remove-btn"
+              className="activity-remove activity-remove-btn text-11"
               style={{
-                fontSize: '11px', padding: '0 2px',
+                padding: '0 2px',
                 lineHeight: 1, opacity: 0,
               }}
               title={ACTIVITY_REMOVE_TITLE}
             >×</button>
           </div>
           {e.changes && expandedId === e.key && (
-            <div style={{
+            <div className="text-11" style={{
               padding: '4px 14px 8px 28px',
-              fontSize: '11px', color: 'var(--dm-text-muted)',
+              color: 'var(--dm-text-muted)',
               lineHeight: 1.6,
             }}>
               {e.changes.map((c, i) => (
-                <div key={i} style={{ display: 'flex', gap: '6px' }}>
-                  <span style={{ color: 'var(--dm-amber)', flexShrink: 0 }}>-</span>
+                <div key={i} className="flex gap-6">
+                  <span className="shrink-0" style={{ color: 'var(--dm-amber)' }}>-</span>
                   <span>{c}</span>
                 </div>
               ))}

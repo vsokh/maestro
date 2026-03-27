@@ -23,12 +23,12 @@ export function Dependencies({ task, tasks, onUpdateTask }: DependenciesProps) {
   };
 
   return (
-    <div style={{ marginBottom: '16px' }}>
-      <div className="label" style={{ marginBottom: '6px' }}>
+    <div className="mb-16">
+      <div className="label mb-6">
         {DEPS_TITLE} {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
       </div>
       {selected.length > 0 ? (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
+        <div className="flex-wrap gap-4 mb-6">
           {selected.map(t => (
             <button
               key={t.id}
@@ -43,7 +43,7 @@ export function Dependencies({ task, tasks, onUpdateTask }: DependenciesProps) {
         </div>
       ) : null}
       {available.length > 0 ? (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+        <div className="flex-wrap gap-4">
           {available.map(t => (
             <button
               key={t.id}
