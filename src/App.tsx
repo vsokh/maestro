@@ -4,6 +4,8 @@ import { useTaskActions } from './hooks/useTaskActions.ts';
 import { useQueueActions } from './hooks/useQueueActions.ts';
 import { useFocusTrap } from './hooks/useFocusTrap.ts';
 import { useUndo } from './hooks/useUndo.ts';
+import { useScratchpad } from './hooks/useScratchpad.ts';
+import { useTabRouting } from './hooks/useTabRouting.ts';
 import { ProjectPicker } from './components/ProjectPicker.tsx';
 import { Header } from './components/Header.tsx';
 import { SectionHeader } from './components/SectionHeader.tsx';
@@ -16,10 +18,9 @@ import { ErrorToast } from './components/ErrorToast.tsx';
 import { SplitResultToast } from './components/SplitResultToast.tsx';
 import { QualityPanel } from './components/QualityPanel.tsx';
 import { SkillsConfigPanel } from './components/SkillsConfigPanel.tsx';
+import { FloatingScratchpad } from './components/FloatingScratchpad.tsx';
 import { useQuality } from './hooks/useQuality.ts';
 import { useProcessOutput } from './hooks/useProcessOutput.ts';
-import { Scratchpad } from './components/Scratchpad.tsx';
-import { api } from './api.ts';
 import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
 
 export function App() {
@@ -40,61 +41,11 @@ export function App() {
 
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
 
-  const [productTab, setProductTab] = useState<'board' | 'quality'>('board');
+  const { productTab, setProductTab } = useTabRouting();
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
-  const [splitting, setSplitting] = useState(false);
-  const [splitResult, setSplitResult] = useState<{ name: string }[] | null>(null);
-  const splitResultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showScratchpad, setShowScratchpad] = useState(false);
-
-  const handleSplitTasks = useCallback(async (text: string) => {
-    if (!data) return;
-    setSplitting(true);
-    try {
-      const result = await api.splitTasks(text);
-      if (result.tasks && result.tasks.length > 0) {
-        const maxId = Math.max(0, ...data.tasks.map(t => t.id));
-        const newTasks = result.tasks.map((t, i) => ({
-          id: maxId + i + 1,
-          name: t.name,
-          fullName: t.fullName || t.name,
-          description: t.description || '',
-          status: 'pending' as const,
-          group: t.group || undefined,
-          createdAt: new Date().toISOString(),
-        }));
-        // Add new epics if needed
-        const existingEpics = new Set((data.epics || []).map(e => e.name));
-        const newEpics = [...(data.epics || [])];
-        for (const t of newTasks) {
-          if (t.group && !existingEpics.has(t.group)) {
-            newEpics.push({ name: t.group, color: newEpics.length });
-            existingEpics.add(t.group);
-          }
-        }
-        const activity = [
-          { id: 'act_split_' + Date.now(), time: Date.now(), label: `${newTasks.length} tasks created from scratchpad` },
-          ...(data.activity || []),
-        ];
-        save({ ...data, tasks: [...data.tasks, ...newTasks], epics: newEpics, activity, scratchpad: '' });
-
-        setSplitResult(newTasks.map(t => ({ name: t.name })));
-        if (splitResultTimer.current) clearTimeout(splitResultTimer.current);
-        splitResultTimer.current = setTimeout(() => setSplitResult(null), 8000);
-
-        // Auto-arrange after split
-        try {
-          await api.launch(0, '/orchestrator arrange');
-        } catch { /* arrange is best-effort */ }
-      }
-    } catch (err: any) {
-      showError('Failed to split tasks: ' + (err?.message || 'unknown'));
-    } finally {
-      setSplitting(false);
-    }
-  }, [data, save, showError]);
+  const { showScratchpad, setShowScratchpad, splitting, splitResult, setSplitResult, splitResultTimer, handleSplitTasks } = useScratchpad({ data, save, showError });
   const glowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const detailPanelRef = useFocusTrap(selectedTask != null);
@@ -286,55 +237,15 @@ export function App() {
       <ErrorToast message={errorMessage} onDismiss={() => { if (errorTimer.current) clearTimeout(errorTimer.current); setErrorMessage(null); }} />
       <SplitResultToast tasks={splitResult} onDismiss={() => { if (splitResultTimer.current) clearTimeout(splitResultTimer.current); setSplitResult(null); }} />
 
-      {/* Floating scratchpad */}
       {connected && data && (
-        <>
-          <button
-            onClick={() => setShowScratchpad(!showScratchpad)}
-            title="Scratchpad"
-            style={{
-              position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
-              width: '48px', height: '48px', borderRadius: '50%',
-              background: data.scratchpad ? 'var(--dm-amber)' : 'var(--dm-accent)',
-              color: '#fff', border: 'none', cursor: 'pointer',
-              fontSize: '20px', lineHeight: 1,
-              boxShadow: 'var(--dm-shadow-md)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'transform 0.2s',
-              transform: showScratchpad ? 'rotate(45deg)' : 'none',
-            }}
-          >{showScratchpad ? '+' : '\u270E'}</button>
-
-          {showScratchpad && (
-            <div style={{
-              position: 'fixed', bottom: '84px', right: '24px', zIndex: 50,
-              width: '400px', height: '60vh',
-              background: 'var(--dm-surface)',
-              border: '1px solid var(--dm-border)',
-              borderRadius: 'var(--dm-radius)',
-              boxShadow: 'var(--dm-shadow-md)',
-              display: 'flex', flexDirection: 'column',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                padding: '10px 14px',
-                borderBottom: '1px solid var(--dm-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--dm-text)' }}>Scratchpad</span>
-                <button onClick={() => setShowScratchpad(false)} className="btn-ghost" style={{ fontSize: '16px', padding: '2px 6px' }}>×</button>
-              </div>
-              <div style={{ padding: '12px 14px', flex: 1, overflow: 'auto' }}>
-                <Scratchpad
-                  value={data.scratchpad || ''}
-                  onChange={(text) => save({ ...data, scratchpad: text })}
-                  onSplit={(text) => { handleSplitTasks(text); setShowScratchpad(false); }}
-                  splitting={splitting}
-                />
-              </div>
-            </div>
-          )}
-        </>
+        <FloatingScratchpad
+          show={showScratchpad}
+          onToggle={() => setShowScratchpad(!showScratchpad)}
+          scratchpadValue={data.scratchpad || ''}
+          onScratchpadChange={(text) => save({ ...data, scratchpad: text })}
+          onSplit={(text) => { handleSplitTasks(text); setShowScratchpad(false); }}
+          splitting={splitting}
+        />
       )}
     </div>
   );
