@@ -8,20 +8,44 @@ function buildClaudePrompt(command) {
   // In -p mode, slash commands don't work. Convert to plain prompts.
   const taskMatch = command.match(/^\/orchestrator\s+task\s+(\d+)/);
   if (taskMatch) {
-    return `Read .devmanager/state.json, find task #${taskMatch[1]}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.
+    return `Read .devmanager/state.json, find task #${taskMatch[1]}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately. Do not wait for user input at any point.
 
-IMPORTANT: When the task is complete, write the progress file to .devmanager/progress/${taskMatch[1]}.json with this format:
+CRITICAL — DO NOT WRITE TO .devmanager/state.json DIRECTLY. Other agents and the UI write to state.json concurrently. If you overwrite it, you will destroy other agents' work. Instead:
+
+1. Write progress updates ONLY to .devmanager/progress/${taskMatch[1]}.json (the UI merges these automatically)
+2. For progress during execution, write to .devmanager/progress/${taskMatch[1]}.json with:
+   {"status":"in-progress","progress":"<current step>"}
+3. When done, use the helper script: node .devmanager/bin/task-done.cjs ${taskMatch[1]} --commit <short-hash>
+   This writes the final done status to the progress file (the UI handles queue removal and activity logging)
+
+When the task is complete, write the progress file to .devmanager/progress/${taskMatch[1]}.json with this format:
 {"status":"done","completedAt":"<ISO date>","commitRef":"<short hash>","summary":"<2-3 sentence product-level summary of what was done and what users will see>","filesChanged":<number>}
 
-The summary should be written for a product manager — describe the user-facing outcome, not the code changes. Example: "Notifications now respond instantly when tapped — eliminated the 2-3 second freeze by switching to optimistic updates. Also fixed stale data on navigation back."`;
+The summary should be written for a product manager — describe the user-facing outcome, not the code changes.`;
+  }
+  if (/^\/codehealth/.test(command)) {
+    return `Execute the codehealth skill defined in .claude/skills/codehealth/SKILL.md. Scan the entire codebase, score all 11 dimensions, and write the results to .devmanager/quality/latest.json.
+
+This is a headless execution — do not wait for user input at any point.`;
+  }
+  if (/^\/autofix/.test(command)) {
+    return `Execute the autofix skill defined in .claude/skills/autofix/SKILL.md. Read the codehealth backlog from .devmanager/quality/backlog.json, pick the highest-priority fixable issues, and fix them.
+
+Write progress updates to .devmanager/progress/autofix.json as you work.
+
+This is a headless execution — do not wait for user input at any point.`;
   }
   if (/^\/orchestrator\s+arrange/.test(command)) {
-    return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics. Write the updated state back to .devmanager/state.json.
+    return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics.
 
-When complete, write a progress file to .devmanager/progress/arrange.json summarizing what you changed. Use this exact JSON format:
-{"status":"done","label":"<short summary of changes>","changes":[<list of change descriptions>]}
+CRITICAL — DO NOT WRITE TO .devmanager/state.json DIRECTLY. Other agents and the UI write to state.json concurrently. If you overwrite it, you will destroy other agents' work.
 
-Example: {"status":"done","label":"Arranged 8 tasks into 3 phases","changes":["Set task #5 depends on #3","Grouped #6,#7,#8 under 'Polish' epic","Created new epic 'Infrastructure'"]}
+Instead, write ALL your changes to .devmanager/progress/arrange.json. The UI merges this automatically. Use this exact JSON format:
+{"status":"done","label":"<short summary of changes>","changes":[<list of change descriptions>],"taskUpdates":{"<taskId>":{"dependsOn":[<ids>],"group":"<epic name>"}}}
+
+The taskUpdates object maps task IDs to the fields you want to change. Only include dependsOn and group fields.
+
+Example: {"status":"done","label":"Arranged 8 tasks into 3 phases","changes":["Set task #5 depends on #3","Grouped #6,#7,#8 under 'Polish' epic"],"taskUpdates":{"5":{"dependsOn":[3],"group":"Core"},"6":{"group":"Polish"},"7":{"group":"Polish"},"8":{"group":"Polish"}}}
 
 Be specific about what dependencies you set and what groupings you made.`;
   }
@@ -50,6 +74,15 @@ class ProcessManager {
   }
 
   launchProcess(projectPath, taskId, command, engine = 'claude', broadcast) {
+    // Prevent duplicate launches — reject if this task is already running
+    if (taskId && taskId > 0) {
+      for (const [, entry] of this.processes) {
+        if (entry.taskId === taskId) {
+          throw new Error(`Task ${taskId} is already running (pid ${entry.process.pid}). Kill it first or wait for it to finish.`);
+        }
+      }
+    }
+
     const adapter = ENGINE_COMMANDS[engine];
     if (!adapter) {
       throw new Error(`Unknown engine: ${engine}. Supported: ${Object.keys(ENGINE_COMMANDS).join(', ')}`);
@@ -115,7 +148,7 @@ class ProcessManager {
       this.processes.delete(pid);
 
       // Write progress file only if the orchestrator didn't already write one
-      if (taskId && taskId !== 0) {
+      if (taskId && taskId > 0) {
         try {
           const progressDir = join(projectPath, '.devmanager', 'progress');
           await mkdir(progressDir, { recursive: true });

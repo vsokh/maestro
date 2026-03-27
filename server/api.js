@@ -486,8 +486,35 @@ Rules:
       const stateDir = join(projectPath, '.devmanager');
       await ensureDir(stateDir);
       const statePath = join(stateDir, 'state.json');
-      await writeFile(statePath, JSON.stringify(body, null, 2), 'utf-8');
-      jsonResponse(res, 200, { ok: true });
+
+      // Optimistic concurrency: if client sends lastModified, reject if file is newer
+      if (body._lastModified) {
+        const clientLastModified = body._lastModified;
+        try {
+          const fileStat = await stat(statePath);
+          if (fileStat.mtimeMs > clientLastModified + 1000) {
+            // File on disk is newer — return 409 with current state
+            const content = await readFile(statePath, 'utf-8');
+            const currentData = JSON.parse(content);
+            jsonResponse(res, 409, {
+              error: 'Conflict: file on disk is newer',
+              data: currentData,
+              lastModified: fileStat.mtimeMs,
+            });
+            return true;
+          }
+        } catch (err) {
+          // File doesn't exist yet, safe to write
+          if (err.code !== 'ENOENT') throw err;
+        }
+      }
+
+      // Strip internal field and increment version counter before writing
+      const { _lastModified, ...stateData } = body;
+      stateData._v = (stateData._v || 0) + 1;
+      await writeFile(statePath, JSON.stringify(stateData, null, 2), 'utf-8');
+      const newStat = await stat(statePath);
+      jsonResponse(res, 200, { ok: true, lastModified: newStat.mtimeMs });
       return true;
     }
 

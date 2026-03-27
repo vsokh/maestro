@@ -42,6 +42,15 @@ export function mergeProgressIntoState(
       };
       if (prog.changes) arrangeActivity.changes = prog.changes;
       activity.unshift(arrangeActivity);
+      // Apply task updates from arrange (dependsOn, group changes)
+      if (prog.taskUpdates) {
+        for (const [tid, updates] of Object.entries(prog.taskUpdates)) {
+          const tIdx = tasks.findIndex(t => t.id === Number(tid));
+          if (tIdx !== -1) {
+            tasks[tIdx] = { ...tasks[tIdx], ...updates } as Task;
+          }
+        }
+      }
       arrangeCompleted = true;
       needsWrite = true;
       hasChanges = true;
@@ -85,9 +94,16 @@ export function mergeProgressIntoState(
         status: prog.status || tasks[idx].status,
         progress: prog.progress || tasks[idx].progress,
       };
-      if (prog.status === 'in-progress' && !tasks[idx].startedAt) {
-        enriched.startedAt = new Date().toISOString();
-        needsWrite = true;
+      if (prog.status === 'in-progress') {
+        if (!tasks[idx].startedAt) {
+          enriched.startedAt = new Date().toISOString();
+        }
+        // Remove from queue when task starts (replaces task-start.cjs queue removal)
+        const queueBefore = queue.length;
+        queue = queue.filter(q => q.task !== id);
+        if (queue.length !== queueBefore) {
+          needsWrite = true;
+        }
       }
       tasks[idx] = { ...tasks[idx], ...enriched } as Task;
       hasChanges = true;
@@ -126,11 +142,23 @@ export function useSync({ setStatus }: UseSyncOptions) {
     saveTimer.current = setTimeout(async () => {
       const result = await writeState(updated, lastWriteTime.current);
       if (result.conflict && result.data) {
-        // File on disk is newer — adopt the server's version
-        setData(result.data);
-        lastWriteTime.current = result.lastModified!;
-        setStatus('synced');
-        setTimeout(() => setStatus('connected'), 2000);
+        // File on disk is newer — but only adopt if version isn't stale
+        const currentV = dataRef.current?._v || 0;
+        const conflictV = result.data._v || 0;
+        if (currentV > 0 && conflictV < currentV) {
+          // Conflict state is stale (rogue write) — retry our write
+          console.warn(`[sync] Conflict state is stale: _v=${conflictV} < current _v=${currentV}, retrying`);
+          const retryResult = await writeState(updated);
+          if (retryResult.ok && retryResult.lastModified) {
+            lastWriteTime.current = retryResult.lastModified;
+          }
+          setStatus('connected');
+        } else {
+          setData(result.data);
+          lastWriteTime.current = result.lastModified!;
+          setStatus('synced');
+          setTimeout(() => setStatus('connected'), 2000);
+        }
       } else if (result.ok) {
         if (result.lastModified) lastWriteTime.current = result.lastModified;
         setStatus('connected');
@@ -144,6 +172,14 @@ export function useSync({ setStatus }: UseSyncOptions) {
   const handleSyncMessage = useCallback((msg: any): boolean => {
     if (msg.type === 'state') {
       if (msg.lastModified > lastWriteTime.current + 1000) {
+        // Regression guard: reject incoming state with a stale version counter
+        const currentData = dataRef.current;
+        const incomingV = msg.data._v || 0;
+        const currentV = currentData?._v || 0;
+        if (currentV > 0 && incomingV < currentV) {
+          console.warn(`[sync] Rejected stale state: incoming _v=${incomingV} < current _v=${currentV}`);
+          return true;
+        }
         setData(msg.data);
         lastWriteTime.current = msg.lastModified;
         if (msg.data.project) setProjectName(msg.data.project);

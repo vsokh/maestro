@@ -85,10 +85,12 @@ export interface ProgressEntry {
   filesChanged?: number;
   changes?: string[];
   summary?: string;
+  taskUpdates?: Record<string, { dependsOn?: number[]; group?: string }>;
 }
 
 export interface StateData {
   savedAt?: string;
+  _v?: number;
   project: string;
   tasks: Task[];
   queue: QueueItem[];
