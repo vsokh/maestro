@@ -194,7 +194,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
         const mergeResult = mergeProgressIntoState(prev, msg.data);
         // Clean up stale progress files (tasks already done)
         for (const id of mergeResult.staleProgressIds) {
-          deleteProgressFile(id);
+          deleteProgressFile(id).catch((err) => console.error('[sync] Failed to delete progress file:', err));
         }
         if (mergeResult.hasChanges) {
           if (mergeResult.needsWrite) {
@@ -202,14 +202,20 @@ export function useSync({ setStatus }: UseSyncOptions) {
             writeState(mergeResult.data).then((result) => {
               if (result.ok && result.lastModified) {
                 lastWriteTime.current = result.lastModified;
+              } else if (!result.ok) {
+                console.error('[sync] Failed to write merged progress state');
+                setStatus('error');
               }
+            }).catch((err) => {
+              console.error('[sync] writeState error:', err);
+              setStatus('error');
             });
             // Clean up completed tasks' progress files
             for (const id of mergeResult.completedTaskIds) {
-              deleteProgressFile(id);
+              deleteProgressFile(id).catch((err) => console.error('[sync] Failed to delete progress file:', err));
             }
             if (mergeResult.arrangeCompleted) {
-              deleteProgressFile('arrange');
+              deleteProgressFile('arrange').catch((err) => console.error('[sync] Failed to delete progress file:', err));
             }
           }
           return mergeResult.data;
@@ -225,7 +231,11 @@ export function useSync({ setStatus }: UseSyncOptions) {
     const progressEntries = await readProgressFiles();
     const prog = progressEntries[taskId];
 
-    await deleteProgressFile(taskId);
+    try {
+      await deleteProgressFile(taskId);
+    } catch (err) {
+      console.error('[sync] Failed to delete progress file:', err);
+    }
 
     setData(prev => {
       if (!prev) return prev;
@@ -241,14 +251,26 @@ export function useSync({ setStatus }: UseSyncOptions) {
       });
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
       writeState(updated).then((result) => {
-        if (result.ok && result.lastModified) lastWriteTime.current = result.lastModified;
+        if (result.ok && result.lastModified) {
+          lastWriteTime.current = result.lastModified;
+        } else if (!result.ok) {
+          console.error('[sync] Failed to write paused task state');
+          setStatus('error');
+        }
+      }).catch((err) => {
+        console.error('[sync] writeState error:', err);
+        setStatus('error');
       });
       return updated;
     });
-  }, []);
+  }, [setStatus]);
 
   const cancelTask = useCallback(async (taskId: number) => {
-    await deleteProgressFile(taskId);
+    try {
+      await deleteProgressFile(taskId);
+    } catch (err) {
+      console.error('[sync] Failed to delete progress file:', err);
+    }
     setData(prev => {
       if (!prev) return prev;
       const tasks = (prev.tasks || []).map(t =>
@@ -256,11 +278,19 @@ export function useSync({ setStatus }: UseSyncOptions) {
       );
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
       writeState(updated).then((result) => {
-        if (result.ok && result.lastModified) lastWriteTime.current = result.lastModified;
+        if (result.ok && result.lastModified) {
+          lastWriteTime.current = result.lastModified;
+        } else if (!result.ok) {
+          console.error('[sync] Failed to write cancelled task state');
+          setStatus('error');
+        }
+      }).catch((err) => {
+        console.error('[sync] writeState error:', err);
+        setStatus('error');
       });
       return updated;
     });
-  }, []);
+  }, [setStatus]);
 
   const flushPendingSave = useCallback(async () => {
     if (saveTimer.current) {
