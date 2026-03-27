@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { STATUS } from '../../constants/statuses.ts';
 import { TaskCard } from './TaskCard.tsx';
 import { EPIC_RENAME_TITLE, EPIC_DELETE_TITLE, EPIC_CONFIRM_DELETE } from '../../constants/strings.ts';
+import { getGroupStats, getUnqueuedTasks } from '../../utils/taskFilters.ts';
 import type { Task, QueueItem, EpicColor } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -66,8 +66,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
             >
               {groupName}
               {(() => {
-                const total = tasks.filter(t => t.group === groupName).length;
-                const done = tasks.filter(t => t.group === groupName && t.status === STATUS.DONE).length;
+                const { total, done } = getGroupStats(tasks, groupName);
                 return (
                   <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--dm-text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
                     {done}/{total}
@@ -76,7 +75,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
               })()}
             </div>
             {onQueueGroup && (() => {
-              const unqueued = groupTasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !(queue || []).some(q => q.task === t.id));
+              const unqueued = getUnqueuedTasks(groupTasks, queue || []);
               if (unqueued.length === 0) return null;
               return (
                 <button

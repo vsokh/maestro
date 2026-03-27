@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { api } from '../api.ts';
-import { STATUS } from '../constants/statuses.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
 import { createActivityList } from '../utils/activityUtils.ts';
+import { getUnqueuedTasks } from '../utils/taskFilters.ts';
 import type { StateData, Task, QueueItem } from '../types';
 
 interface UseQueueActionsParams {
@@ -45,7 +45,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
   };
 
   const handleQueueAll = () => {
-    const pending = tasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id));
+    const pending = getUnqueuedTasks(tasks, queue);
     if (pending.length === 0) return;
     const unsorted = [...queue, ...pending.map(t => ({
       task: t.id,
@@ -58,7 +58,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
   };
 
   const handleQueueGroup = (groupName: string) => {
-    const pending = tasks.filter(t => t.group === groupName && (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id));
+    const pending = getUnqueuedTasks(tasks.filter(t => t.group === groupName), queue);
     if (pending.length === 0) return;
     const unsorted = [...queue, ...pending.map(t => ({
       task: t.id,

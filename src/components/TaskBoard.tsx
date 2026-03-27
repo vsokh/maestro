@@ -9,6 +9,7 @@ import { DoneSection } from './board/DoneSection.tsx';
 import {
   BOARD_UP_NEXT, BOARD_NO_TASKS, BOARD_NO_MATCHING, BOARD_ADD_TASK, BOARD_ARRANGE,
 } from '../constants/strings.ts';
+import { getActiveTasks, getDoneTasks, getBacklogTasks, getAllGroups, getEpicColors, getEpicStats, groupTasksBy, getUnqueuedTasks, getActiveCountForGroup } from '../utils/taskFilters.ts';
 import type { Task, QueueItem, Epic, EpicColor } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -40,29 +41,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const [searchText, setSearchText] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchFocused, setSearchFocused] = useState(false);
-  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== STATUS.DONE && t.status !== STATUS.BACKLOG), [tasks]);
-  const backlogTasks = useMemo(() => tasks.filter(t => t.status === STATUS.BACKLOG), [tasks]);
-  const doneTasks = useMemo(() => tasks.filter(t => t.status === STATUS.DONE), [tasks]);
-  const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
+  const pendingTasks = useMemo(() => getActiveTasks(tasks), [tasks]);
+  const backlogTasks = useMemo(() => getBacklogTasks(tasks), [tasks]);
+  const doneTasks = useMemo(() => getDoneTasks(tasks), [tasks]);
+  const allGroups = useMemo(() => getAllGroups(tasks), [tasks]);
   // Derive colors from epics registry (stable), fallback to hash for unregistered
-  const epicColors = useMemo(() => {
-    const map: Record<string, EpicColor> = {};
-    const usedIndices = new Set();
-    (epics || []).forEach(e => {
-      const idx = (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length;
-      usedIndices.add(idx);
-      map[e.name] = EPIC_PALETTE[idx];
-    });
-    allGroups.forEach(g => {
-      if (!g || map[g]) return;
-      let idx = hashString(g) % EPIC_PALETTE.length;
-      let attempts = 0;
-      while (usedIndices.has(idx) && attempts < EPIC_PALETTE.length) { idx = (idx + 1) % EPIC_PALETTE.length; attempts++; }
-      usedIndices.add(idx);
-      map[g!] = EPIC_PALETTE[idx];
-    });
-    return map;
-  }, [allGroups, epics]);
+  const epicColors = useMemo(() => getEpicColors(epics || [], allGroups), [allGroups, epics]);
   // Auto-register unregistered groups as epics
   useEffect(() => {
     if (!onUpdateEpics || !epics) return;
@@ -80,7 +64,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     if (newEpics.length > 0) {
       onUpdateEpics([...epics, ...newEpics]);
     }
-  }, [allGroups, epics, onUpdateEpics]);
+  }, [allGroups, epics, onUpdateEpics]);  // NOTE: keeps EPIC_PALETTE + hashString for index computation
   // All epic names for autocomplete (from registry, which includes auto-registered ones)
   const epicNames = useMemo(() => (epics || []).map(e => e.name), [epics]);
   const hiddenEpicNames = useMemo(() => {
@@ -103,37 +87,9 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     }
     return filtered;
   }, [pendingTasks, activeFilter, searchText]);
-  const pendingGroups = useMemo(() => {
-    const grouped = new Map();
-    grouped.set(null, []); // ungrouped
-    for (const t of filteredPendingTasks) {
-      const g = t.group || null;
-      if (g && hiddenEpicNames.has(g)) continue; // skip hidden epics
-      if (!grouped.has(g)) grouped.set(g, []);
-      grouped.get(g).push(t);
-    }
-    // Remove empty null group
-    if (grouped.get(null).length === 0) grouped.delete(null);
-    return grouped;
-  }, [filteredPendingTasks, hiddenEpicNames]);
-  const doneGroups = useMemo(() => {
-    const grouped = new Map();
-    for (const t of doneTasks) {
-      const g = t.group || 'Other';
-      if (!grouped.has(g)) grouped.set(g, []);
-      grouped.get(g).push(t);
-    }
-    return grouped;
-  }, [doneTasks]);
-  const backlogGroups = useMemo(() => {
-    const grouped = new Map();
-    for (const t of backlogTasks) {
-      const g = t.group || 'Other';
-      if (!grouped.has(g)) grouped.set(g, []);
-      grouped.get(g).push(t);
-    }
-    return grouped;
-  }, [backlogTasks]);
+  const pendingGroups = useMemo(() => groupTasksBy(filteredPendingTasks, { hiddenEpics: hiddenEpicNames }), [filteredPendingTasks, hiddenEpicNames]);
+  const doneGroups = useMemo(() => groupTasksBy(doneTasks, { defaultGroup: 'Other' }), [doneTasks]);
+  const backlogGroups = useMemo(() => groupTasksBy(backlogTasks, { defaultGroup: 'Other' }), [backlogTasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showBacklog, setShowBacklog] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -150,15 +106,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   }
 
   // Epic progress stats across ALL tasks (not just pending)
-  const epicStats = useMemo(() => {
-    const stats = [];
-    for (const g of allGroups) {
-      const total = tasks.filter(t => t.group === g).length;
-      const done = tasks.filter(t => t.group === g && t.status === STATUS.DONE).length;
-      if (total > 0) stats.push({ name: g, total, done });
-    }
-    return stats;
-  }, [tasks, allGroups]);
+  const epicStats = useMemo(() => getEpicStats(tasks, allGroups), [tasks, allGroups]);
 
   const handleBoardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Deselect when clicking empty space — ignore if click was inside a card, button, or input
@@ -252,7 +200,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             <span style={{ fontSize: '11px', color: 'var(--dm-text-light)', opacity: 0.6 }}>Hidden:</span>
             {(epics || []).filter(e => e.hidden).map(e => {
               const colors = epicColors[e.name] || {};
-              const hiddenCount = tasks.filter(t => t.group === e.name && t.status !== 'done' && t.status !== 'backlog').length;
+              const hiddenCount = getActiveCountForGroup(tasks, e.name);
               return (
                 <div
                   key={e.name}
@@ -321,7 +269,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               {arranging ? 'Arranging...' : BOARD_ARRANGE}
             </button>
             {(() => {
-              const pendingNotQueued = tasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !(queue || []).some(q => q.task === t.id));
+              const pendingNotQueued = getUnqueuedTasks(tasks, queue || []);
               if (pendingNotQueued.length === 0) return null;
               return (
                 <button
