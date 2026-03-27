@@ -1,35 +1,26 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { StateData, SkillsConfig, SkillInfo } from '../types';
-import type { ProjectTemplate } from '../templates.ts';
 import { api } from '../api.ts';
 import {
   readState,
-  writeState,
-  createDefaultState,
   syncSkills,
   discoverSkillsAndAgents,
   readSkillsConfig,
   writeSkillsConfig,
-  applyTemplate,
 } from '../fs.ts';
 import { useConnection } from './useConnection.ts';
 import { useSync } from './useSync.ts';
+import { useTemplate } from './useTemplate.ts';
+import type { ProjectInfo } from './useTemplate.ts';
 export type { ConnectionStatus } from './useConnection.ts';
 export type { MergeResult } from './useSync.ts';
 export { mergeProgressIntoState } from './useSync.ts';
-
-interface ProjectInfo {
-  path: string;
-  name: string;
-  active: boolean;
-}
 
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;
   const [skillsConfig, setSkillsConfig] = useState<SkillsConfig | null>(null);
   const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([]);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
-  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   const connectToServerRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
@@ -42,6 +33,17 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   });
 
   const { data, setData, projectName, setProjectName, save, handleSyncMessage, pauseTask, cancelTask, flushPendingSave, lastWriteTime } = useSync({ setStatus });
+
+  const { showTemplatePicker, triggerTemplatePicker, connectWithTemplate, cancelTemplatePicker } = useTemplate({
+    setStatus,
+    setConnected,
+    setData,
+    setProjectName,
+    lastWriteTime,
+    setAvailableSkills,
+    setSkillsConfig,
+    setProjects,
+  });
 
   // Now that setStatus is available, define the real handler
   handleWsMessageRef.current = (msg: any) => {
@@ -70,8 +72,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         lastWriteTime.current = existing.lastModified;
       } else {
         // New project — show template picker
-        setShowTemplatePicker(true);
-        setStatus('template-picker');
+        triggerTemplatePicker();
         return;
       }
 
@@ -100,7 +101,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       console.error('Connection failed:', err);
       setStatus('error');
     }
-  }, [setConnected, setStatus, setProjectName, setData, lastWriteTime]);
+  }, [setConnected, setStatus, setProjectName, setData, lastWriteTime, triggerTemplatePicker]);
 
   useEffect(() => { connectToServerRef.current = connectToServer; }, [connectToServer]);
 
@@ -145,46 +146,6 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       try { await connectToServer(); } catch { setStatus('error'); }
     }
   }, [connectToServer, onError, setConnected, setStatus, setData]);
-
-  const connectWithTemplate = useCallback(async (template: ProjectTemplate | null) => {
-    setStatus('connecting');
-    setShowTemplatePicker(false);
-    try {
-      const info = await api.getInfo();
-      let stateData: StateData;
-      if (template) {
-        stateData = await applyTemplate(info.projectName, template);
-      } else {
-        stateData = createDefaultState(info.projectName);
-      }
-      const writeResult = await writeState(stateData);
-      if (writeResult.ok && writeResult.lastModified) lastWriteTime.current = writeResult.lastModified;
-      else lastWriteTime.current = Date.now();
-
-      setProjectName(stateData.project || info.projectName);
-      await syncSkills();
-      const discovered = await discoverSkillsAndAgents();
-      setAvailableSkills(discovered);
-      const sc = await readSkillsConfig();
-      setSkillsConfig(sc);
-      try {
-        const proj = await api.listProjects();
-        setProjects(proj);
-      } catch { /* ignore */ }
-
-      setData(stateData);
-      setConnected(true);
-      setStatus('connected');
-    } catch (err) {
-      console.error('Template setup failed:', err);
-      setStatus('error');
-    }
-  }, [setConnected, setStatus, setProjectName, setData, lastWriteTime]);
-
-  const cancelTemplatePicker = useCallback(() => {
-    setShowTemplatePicker(false);
-    setStatus('disconnected');
-  }, [setStatus]);
 
   return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject, showTemplatePicker, connectWithTemplate, cancelTemplatePicker };
 }
