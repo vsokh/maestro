@@ -783,6 +783,15 @@
   color: var(--dm-text);
 }
 
+/* ── Split result toast ── */
+.split-result-toast {
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-success);
+  border-radius: var(--dm-radius-sm);
+  box-shadow: var(--dm-shadow-md);
+  color: var(--dm-text);
+}
+
 /* ── Activity feed ── */
 .activity-dot {
   border-radius: 50%;

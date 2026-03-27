@@ -13,6 +13,7 @@ import { CommandQueue } from './components/CommandQueue.tsx';
 import { ActivityFeed } from './components/ActivityFeed.tsx';
 import { UndoToast } from './components/UndoToast.tsx';
 import { ErrorToast } from './components/ErrorToast.tsx';
+import { SplitResultToast } from './components/SplitResultToast.tsx';
 import { QualityPanel } from './components/QualityPanel.tsx';
 import { SkillsConfigPanel } from './components/SkillsConfigPanel.tsx';
 import { useQuality } from './hooks/useQuality.ts';
@@ -44,6 +45,8 @@ export function App() {
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
   const [splitting, setSplitting] = useState(false);
+  const [splitResult, setSplitResult] = useState<{ name: string }[] | null>(null);
+  const splitResultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showScratchpad, setShowScratchpad] = useState(false);
 
   const handleSplitTasks = useCallback(async (text: string) => {
@@ -76,6 +79,10 @@ export function App() {
           ...(data.activity || []),
         ];
         save({ ...data, tasks: [...data.tasks, ...newTasks], epics: newEpics, activity, scratchpad: '' });
+
+        setSplitResult(newTasks.map(t => ({ name: t.name })));
+        if (splitResultTimer.current) clearTimeout(splitResultTimer.current);
+        splitResultTimer.current = setTimeout(() => setSplitResult(null), 8000);
 
         // Auto-arrange after split
         try {
@@ -276,6 +283,7 @@ export function App() {
       ) : null}
       <UndoToast entry={undoEntry} onUndo={handleUndo} onDismiss={dismissUndo} />
       <ErrorToast message={errorMessage} onDismiss={() => { if (errorTimer.current) clearTimeout(errorTimer.current); setErrorMessage(null); }} />
+      <SplitResultToast tasks={splitResult} onDismiss={() => { if (splitResultTimer.current) clearTimeout(splitResultTimer.current); setSplitResult(null); }} />
 
       {/* Floating scratchpad */}
       {connected && data && (
