@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { StateData, Activity, Task, SkillsConfig, SkillInfo } from '../types';
 import type { ProjectTemplate } from '../templates.ts';
 import { api } from '../api.ts';
-import { connectWebSocket } from '../api.ts';
 import {
   readState,
   writeState,
@@ -15,8 +14,8 @@ import {
   writeSkillsConfig,
   applyTemplate,
 } from '../fs.ts';
-
-type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error' | 'template-picker';
+import { useConnection } from './useConnection.ts';
+export type { ConnectionStatus } from './useConnection.ts';
 
 export interface MergeResult {
   data: StateData;
@@ -115,8 +114,6 @@ interface ProjectInfo {
 
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;
-  const [connected, setConnected] = useState(false);
-  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [projectName, setProjectName] = useState('');
   const [data, setData] = useState<StateData | null>(null);
   const [skillsConfig, setSkillsConfig] = useState<SkillsConfig | null>(null);
@@ -127,9 +124,60 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWriteTime = useRef(0);
   const dataRef = useRef<StateData | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const connectToServerRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   useEffect(() => { dataRef.current = data; }, [data]);
+
+  // useConnection uses a ref for onMessage, so the handler can safely
+  // close over setStatus even though it's returned by the same hook call.
+  const handleWsMessageRef = useRef<(msg: any) => void>(() => {});
+
+  const { connected, setConnected, status, setStatus, closeWebSocket } = useConnection({
+    onMessage: (msg: any) => handleWsMessageRef.current(msg),
+  });
+
+  // Now that setStatus is available, define the real handler
+  handleWsMessageRef.current = (msg: any) => {
+    if (msg.type === 'state') {
+      if (msg.lastModified > lastWriteTime.current + 1000) {
+        setData(msg.data);
+        lastWriteTime.current = msg.lastModified;
+        if (msg.data.project) setProjectName(msg.data.project);
+        setStatus('synced');
+        setTimeout(() => setStatus('connected'), 2000);
+      }
+    }
+    if (msg.type === 'progress') {
+      setData(prev => {
+        if (!prev) return prev;
+        const mergeResult = mergeProgressIntoState(prev, msg.data);
+        if (mergeResult.hasChanges) {
+          if (mergeResult.needsWrite) {
+            mergeResult.data.savedAt = new Date().toISOString();
+            writeState(mergeResult.data).then(() => {
+              lastWriteTime.current = Date.now();
+            });
+            // Clean up completed tasks' progress files
+            for (const id of mergeResult.completedTaskIds) {
+              deleteProgressFile(id);
+            }
+            if (mergeResult.arrangeCompleted) {
+              deleteProgressFile('arrange');
+            }
+          }
+          return mergeResult.data;
+        }
+        return prev;
+      });
+    }
+    if (msg.type === 'quality') {
+      // Quality updates are handled by useQuality hook
+    }
+    if (msg.type === 'project-switched') {
+      // Server switched to a different project — reconnect
+      connectToServerRef.current?.();
+    }
+  };
 
   const connectToServer = useCallback(async () => {
     setStatus('connecting');
@@ -176,72 +224,9 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       console.error('Connection failed:', err);
       setStatus('error');
     }
-  }, []);
+  }, [setConnected, setStatus]);
 
-  // WebSocket effect for real-time updates
-  useEffect(() => {
-    if (!connected) return;
-
-    const setupWs = () => {
-      const ws = connectWebSocket((msg) => {
-        if (msg.type === 'state') {
-          if (msg.lastModified > lastWriteTime.current + 1000) {
-            setData(msg.data);
-            lastWriteTime.current = msg.lastModified;
-            if (msg.data.project) setProjectName(msg.data.project);
-            setStatus('synced');
-            setTimeout(() => setStatus('connected'), 2000);
-          }
-        }
-        if (msg.type === 'progress') {
-          setData(prev => {
-            if (!prev) return prev;
-            const mergeResult = mergeProgressIntoState(prev, msg.data);
-            if (mergeResult.hasChanges) {
-              if (mergeResult.needsWrite) {
-                mergeResult.data.savedAt = new Date().toISOString();
-                writeState(mergeResult.data).then(() => {
-                  lastWriteTime.current = Date.now();
-                });
-                // Clean up completed tasks' progress files
-                for (const id of mergeResult.completedTaskIds) {
-                  deleteProgressFile(id);
-                }
-                if (mergeResult.arrangeCompleted) {
-                  deleteProgressFile('arrange');
-                }
-              }
-              return mergeResult.data;
-            }
-            return prev;
-          });
-        }
-        if (msg.type === 'quality') {
-          // Quality updates are handled by useQuality hook
-        }
-        if (msg.type === 'project-switched') {
-          // Server switched to a different project — reconnect
-          connectToServer();
-        }
-      }, () => {
-        // On WebSocket close — attempt reconnect after 3 seconds
-        setTimeout(() => {
-          if (wsRef.current === ws) {
-            wsRef.current = setupWs();
-          }
-        }, 3000);
-      });
-      return ws;
-    };
-
-    wsRef.current = setupWs();
-
-    return () => {
-      const ws = wsRef.current;
-      wsRef.current = null;
-      if (ws) ws.close();
-    };
-  }, [connected]);
+  useEffect(() => { connectToServerRef.current = connectToServer; }, [connectToServer]);
 
   // Auto-connect on mount, retry once on failure
   useEffect(() => {
@@ -264,15 +249,12 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         await writeState(dataRef.current);
       }
     }
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    closeWebSocket();
     setConnected(false);
     setData(null);
     setProjectName('');
     setStatus('disconnected');
-  }, []);
+  }, [closeWebSocket, setConnected, setStatus]);
 
   const save = useCallback((newData: StateData) => {
     const updated = { ...newData, savedAt: new Date().toISOString() };
@@ -284,7 +266,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       if (ok) lastWriteTime.current = Date.now();
       setStatus(ok ? 'connected' : 'error');
     }, 500);
-  }, []);
+  }, [setStatus]);
 
   const pauseTask = useCallback(async (taskId: number) => {
     const progressEntries = await readProgressFiles();
@@ -345,7 +327,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       // Try reconnecting to the previous project
       try { await connectToServer(); } catch { setStatus('error'); }
     }
-  }, [connectToServer, onError]);
+  }, [connectToServer, onError, setConnected, setStatus]);
 
   const connectWithTemplate = useCallback(async (template: ProjectTemplate | null) => {
     setStatus('connecting');
@@ -379,12 +361,12 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       console.error('Template setup failed:', err);
       setStatus('error');
     }
-  }, []);
+  }, [setConnected, setStatus]);
 
   const cancelTemplatePicker = useCallback(() => {
     setShowTemplatePicker(false);
     setStatus('disconnected');
-  }, []);
+  }, [setStatus]);
 
   return { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject, showTemplatePicker, connectWithTemplate, cancelTemplatePicker };
 }
