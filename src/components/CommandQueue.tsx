@@ -42,8 +42,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
     <div>
       {queue.map(item => (
         <div key={itemKey(item)}>
-          <div className={getRowClass(getItemStatus(item, taskMap))} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
+          <div className={`${getRowClass(getItemStatus(item, taskMap))} flex-center gap-6`} style={{
             padding: '6px 12px',
           }}>
             <QueueItemContent
@@ -69,7 +68,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
           ) : null}
         </div>
       ))}
-      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+      <div className="flex gap-6" style={{ padding: '6px 12px', justifyContent: 'flex-end' }}>
         {queue.length > 1 && onLaunchPhase ? (
           <button onClick={() => onLaunchPhase(queue.map(item => ({
             key: itemKey(item),
@@ -129,8 +128,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
         </div>
       )}
       {queue.length === 0 ? (
-        <div className="empty-state-sm" style={{
-          padding: '20px 16px', lineHeight: 1.6,
+        <div className="empty-state-sm leading-relaxed" style={{
+          padding: '20px 16px',
         }}>
           {QUEUE_EMPTY}
         </div>

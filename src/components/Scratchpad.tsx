@@ -100,37 +100,31 @@ export function Scratchpad({ value, onChange, onSplit, splitting }: ScratchpadPr
   const lineCount = (localValue || '').split('\n').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="flex-col h-full">
       <textarea
         ref={textareaRef}
         value={scrambledText ?? localValue}
         onChange={e => handleChange(e.target.value)}
         readOnly={scrambledText !== null}
         placeholder={"Write what you found while testing:\n\n- login button doesn't work on Safari\n- profile page loads slow (3+ seconds)\n- need a way to export data as CSV\n- typo on settings page: 'Notifcations'\n\nClick 'Split into tasks' when ready."}
+        className="flex-1 w-full text-13 leading-relaxed outline-none"
         style={{
-          flex: 1,
-          width: '100%',
           background: 'var(--dm-bg)',
           color: 'var(--dm-text)',
           border: '1px solid var(--dm-border)',
           borderRadius: 'var(--dm-radius-sm)',
           padding: '10px 12px',
-          fontSize: '13px',
-          lineHeight: 1.6,
           resize: 'none',
           fontFamily: 'inherit',
-          outline: 'none',
           minHeight: '80px',
         }}
       />
       {/* Progress bar */}
       {progress > 0 && (
-        <div style={{
+        <div className="mt-8 overflow-hidden" style={{
           height: '3px',
-          marginTop: '8px',
           background: 'var(--dm-border)',
           borderRadius: '2px',
-          overflow: 'hidden',
         }}>
           <div style={{
             height: '100%',
@@ -141,28 +135,26 @@ export function Scratchpad({ value, onChange, onSplit, splitting }: ScratchpadPr
           }} />
         </div>
       )}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginTop: progress > 0 ? '4px' : '8px', gap: '8px',
+      <div className="flex-between gap-8" style={{
+        marginTop: progress > 0 ? '4px' : '8px',
       }}>
-        <span className="text-muted" style={{ fontSize: '11px' }}>
+        <span className="text-muted text-11">
           {localValue.trim() ? `${lineCount} line${lineCount > 1 ? 's' : ''}` : 'Empty'}
         </span>
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div className="flex gap-6">
           {localValue.trim() && (
             <button
               onClick={() => { handleChange(''); }}
-              className="btn-ghost"
-              style={{ fontSize: '12px', padding: '4px 10px', color: 'var(--dm-text-muted)' }}
+              className="btn-ghost text-12"
+              style={{ padding: '4px 10px', color: 'var(--dm-text-muted)' }}
             >Clear</button>
           )}
           <button
             onClick={handleSplit}
             disabled={!localValue.trim() || splitting}
-            className="btn-ghost"
+            className="btn-ghost text-12 font-600"
             style={{
-              fontSize: '12px', padding: '4px 12px',
-              fontWeight: 600,
+              padding: '4px 12px',
               color: localValue.trim() && !splitting ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
               border: `1px solid ${localValue.trim() && !splitting ? 'var(--dm-accent)' : 'var(--dm-border)'}`,
               borderRadius: '4px',

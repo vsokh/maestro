@@ -16,39 +16,36 @@ export function FloatingScratchpad({ show, onToggle, scratchpadValue, onScratchp
       <button
         onClick={onToggle}
         title="Scratchpad"
+        className="fixed flex-center justify-center border-none cursor-pointer text-20"
         style={{
-          position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
+          bottom: '24px', right: '24px', zIndex: 50,
           width: '48px', height: '48px', borderRadius: '50%',
           background: scratchpadValue ? 'var(--dm-amber)' : 'var(--dm-accent)',
-          color: '#fff', border: 'none', cursor: 'pointer',
-          fontSize: '20px', lineHeight: 1,
+          color: '#fff',
+          lineHeight: 1,
           boxShadow: 'var(--dm-shadow-md)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'transform 0.2s',
           transform: show ? 'rotate(45deg)' : 'none',
         }}
       >{show ? '+' : '\u270E'}</button>
 
       {show && (
-        <div style={{
-          position: 'fixed', bottom: '84px', right: '24px', zIndex: 50,
+        <div className="fixed flex-col overflow-hidden" style={{
+          bottom: '84px', right: '24px', zIndex: 50,
           width: '400px', height: '60vh',
           background: 'var(--dm-surface)',
           border: '1px solid var(--dm-border)',
           borderRadius: 'var(--dm-radius)',
           boxShadow: 'var(--dm-shadow-md)',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
         }}>
-          <div style={{
+          <div className="flex-between" style={{
             padding: '10px 14px',
             borderBottom: '1px solid var(--dm-border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--dm-text)' }}>Scratchpad</span>
-            <button onClick={onToggle} className="btn-ghost" style={{ fontSize: '16px', padding: '2px 6px' }}>×</button>
+            <span className="font-700 text-13" style={{ color: 'var(--dm-text)' }}>Scratchpad</span>
+            <button onClick={onToggle} className="btn-ghost text-16" style={{ padding: '2px 6px' }}>×</button>
           </div>
-          <div style={{ padding: '12px 14px', flex: 1, overflow: 'auto' }}>
+          <div className="flex-1 overflow-auto" style={{ padding: '12px 14px' }}>
             <Scratchpad
               value={scratchpadValue}
               onChange={onScratchpadChange}
