@@ -44,20 +44,18 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card-form" style={{ padding: '16px', marginBottom: '16px' }}>
+    <form onSubmit={handleSubmit} className="card-form p-16 mb-16">
       <input
         value={title} onInput={(e: React.FormEvent<HTMLInputElement>) => setTitle((e.target as HTMLInputElement).value)}
         placeholder={FORM_TITLE_PLACEHOLDER} autoFocus
-        className="input-card"
-        style={{ width: '100%', padding: '6px 8px', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}
+        className="input-card w-full py-6 px-8 text-13 font-600 mb-8"
       />
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+      <div className="flex gap-8 mb-8">
         <input
           value={group} onInput={(e: React.FormEvent<HTMLInputElement>) => setGroup((e.target as HTMLInputElement).value)}
           placeholder={FORM_EPIC_PLACEHOLDER}
           list="group-list"
-          className="input-card"
-          style={{ flex: 1, padding: '6px 8px', fontSize: '12px' }}
+          className="input-card flex-1 py-6 px-8 text-12"
         />
         {groups && groups.length > 0 ? (
           <datalist id="group-list">
@@ -69,21 +67,21 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
         value={description} onInput={(e: React.FormEvent<HTMLTextAreaElement>) => setDescription((e.target as HTMLTextAreaElement).value)}
         placeholder={FORM_DESC_PLACEHOLDER}
         rows={2}
-        className="input-card"
-        style={{ width: '100%', padding: '6px 8px', fontSize: '13px', marginBottom: '8px', resize: 'vertical' }}
+        className="input-card w-full py-6 px-8 text-13 mb-8"
+        style={{ resize: 'vertical' }}
       />
-      <label style={{
-        display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px',
-        fontSize: '12px', color: 'var(--dm-text-muted)', cursor: 'pointer', userSelect: 'none',
+      <label className="flex-center gap-6 text-12 cursor-pointer" style={{
+        marginBottom: '10px',
+        color: 'var(--dm-text-muted)', userSelect: 'none',
       }}>
         <input type="checkbox" checked={manual} onChange={e => setManual(e.target.checked)} />
-        {FORM_MANUAL_LABEL} <span style={{ fontSize: '10px', opacity: 0.7 }}>{FORM_MANUAL_HELP}</span>
+        {FORM_MANUAL_LABEL} <span className="text-10" style={{ opacity: 0.7 }}>{FORM_MANUAL_HELP}</span>
       </label>
-      {!manual ? <div style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-          <span className="text-muted" style={{ fontSize: '11px', fontWeight: 500 }}>{FORM_SKILLS_LABEL}</span>
+      {!manual ? <div className="mb-12">
+        <div className="flex-center gap-6 mb-4">
+          <span className="text-muted text-11 font-500">{FORM_SKILLS_LABEL}</span>
           {!userEditedSkills && suggested.length > 0 ? (
-            <span className="text-accent" style={{ fontSize: '10px', fontStyle: 'italic' }}>{FORM_SKILLS_AUTO}</span>
+            <span className="text-accent text-10" style={{ fontStyle: 'italic' }}>{FORM_SKILLS_AUTO}</span>
           ) : null}
         </div>
         <input
@@ -91,30 +89,26 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
           onInput={(e: React.FormEvent<HTMLInputElement>) => { setManualSkills((e.target as HTMLInputElement).value); setUserEditedSkills(true); }}
           onFocus={() => { if (!userEditedSkills) { setManualSkills(suggested.join(', ')); setUserEditedSkills(true); } }}
           placeholder={FORM_SKILLS_PLACEHOLDER}
-          className="input-card"
-          style={{ width: '100%', padding: '6px 8px', fontSize: '12px', color: userEditedSkills ? 'var(--dm-text)' : 'var(--dm-accent)' }}
+          className="input-card w-full py-6 px-8 text-12"
+          style={{ color: userEditedSkills ? 'var(--dm-text)' : 'var(--dm-accent)' }}
         />
         {suggested.length > 0 && !userEditedSkills ? (
-          <div style={{ marginTop: '6px' }}>
-            <div className="text-light" style={{ fontSize: '10px', lineHeight: 1.5 }}>
+          <div className="mt-6">
+            <div className="text-light text-10 leading-normal">
               {FORM_SKILLS_MATCHED} {matches.map(m => (
-                <code key={m.word} className="commit-ref" style={{
-                  padding: '0 4px', marginRight: '3px', fontSize: '10px',
+                <code key={m.word} className="commit-ref text-10 mr-4" style={{
+                  padding: '0 4px',
                 }}>"{m.word}"</code>
               ))}
             </div>
           </div>
         ) : null}
       </div> : null}
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div className="flex gap-8">
         {onCancel ? (
-          <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm" style={{
-            padding: '6px 12px',
-          }}>{FORM_CANCEL}</button>
+          <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm py-6 px-12">{FORM_CANCEL}</button>
         ) : null}
-        <button type="submit" className="btn btn-primary btn-sm" style={{
-          flex: 1, padding: '6px 12px',
-        }}>{card ? FORM_SAVE : FORM_ADD_TASK}</button>
+        <button type="submit" className="btn btn-primary btn-sm flex-1 py-6 px-12">{card ? FORM_SAVE : FORM_ADD_TASK}</button>
       </div>
     </form>
   );
