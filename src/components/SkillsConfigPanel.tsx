@@ -72,9 +72,8 @@ function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean
       onClick={onClick}
     >
       <span
-        className={`badge ${isAgent ? 'badge-amber' : 'badge-accent'}`}
+        className={`badge ${isAgent ? 'badge-amber' : 'badge-accent'} text-10`}
         style={{
-          fontSize: '10px',
           cursor: onClick ? 'pointer' : 'default',
           opacity: active ? 1 : 0.45,
           outline: active ? `2px solid ${isAgent ? 'var(--dm-amber)' : 'var(--dm-accent)'}` : 'none',
@@ -154,85 +153,86 @@ export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, 
     <>
       <div
         onClick={onClose}
+        className="fixed w-full h-full"
         style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          top: 0, left: 0,
           background: 'rgba(0,0,0,0.25)', zIndex: 99,
         }}
       />
-      <div style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      <div className="fixed flex-col overflow-hidden" style={{
+        top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         zIndex: 100, width: 'min(560px, 92vw)', maxHeight: '85vh',
         background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)',
         border: '1px solid var(--dm-border)', boxShadow: 'var(--dm-shadow-lg)',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        <div className="flex-between" style={{
           padding: '12px 16px', borderBottom: '1px solid var(--dm-border)',
         }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--dm-text)' }}>
+          <span className="text-13 font-600" style={{ color: 'var(--dm-text)' }}>
             {SKILLS_TITLE}
           </span>
-          <button onClick={onClose} className="btn-ghost" style={{ fontSize: '14px', padding: '2px 8px' }}>&times;</button>
+          <button onClick={onClose} className="btn-ghost text-14" style={{ padding: '2px 8px' }}>&times;</button>
         </div>
 
-        <div style={{ padding: '16px', overflow: 'auto', flex: 1 }}>
+        <div className="p-16 overflow-auto flex-1">
           {/* Epic mappings */}
           {rows.length === 0 ? (
             <div className="empty-state-sm" style={{ padding: '12px 16px' }}>
               Add an epic to map skills and agents to it.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="flex-col gap-8">
               {rows.map((row, idx) => {
                 const isSelected = selectedEpicIdx === idx;
                 return (
                   <div
                     key={row.epic}
                     onClick={() => setSelectedEpicIdx(isSelected ? null : idx)}
+                    className="cursor-pointer"
                     style={{
                       padding: '10px 12px', borderRadius: 'var(--dm-radius-sm)',
                       background: 'var(--dm-bg)',
                       border: isSelected ? '2px solid var(--dm-accent)' : '1px solid var(--dm-border)',
-                      cursor: 'pointer',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? 'var(--dm-accent)' : 'var(--dm-text)' }}>{row.epic}</span>
+                    <div className="flex-between mb-6">
+                      <span className="text-12 font-700" style={{ color: isSelected ? 'var(--dm-accent)' : 'var(--dm-text)' }}>{row.epic}</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRemove(idx); }}
                         title={SKILLS_REMOVE_TITLE}
-                        className="btn-ghost"
-                        style={{ fontSize: '13px', padding: '2px 6px', color: 'var(--dm-text-light)' }}
+                        className="btn-ghost text-13"
+                        style={{ padding: '2px 6px', color: 'var(--dm-text-light)' }}
                       >&times;</button>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div className="flex-col gap-6">
                       <div onClick={(e) => e.stopPropagation()}>
-                        <span className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>Skills</span>
+                        <span className="text-muted text-10 font-600" style={{ textTransform: 'uppercase' }}>Skills</span>
                         <input
                           value={row.skills}
                           onInput={(e: React.FormEvent<HTMLInputElement>) => handleChange(idx, 'skills', (e.target as HTMLInputElement).value)}
                           onBlur={handleBlur}
                           onFocus={() => setSelectedEpicIdx(idx)}
                           placeholder={SKILLS_LIST_PLACEHOLDER}
+                          className="w-full text-11"
                           style={{
-                            width: '100%', padding: '5px 8px', fontSize: '11px', marginTop: '3px',
+                            padding: '5px 8px', marginTop: '3px',
                             border: '1px solid var(--dm-border)', borderRadius: '6px',
                             background: 'var(--dm-surface)', color: 'var(--dm-text)',
                           }}
                         />
                       </div>
                       <div onClick={(e) => e.stopPropagation()}>
-                        <span className="text-muted" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase' }}>Agents</span>
+                        <span className="text-muted text-10 font-600" style={{ textTransform: 'uppercase' }}>Agents</span>
                         <input
                           value={row.agents}
                           onInput={(e: React.FormEvent<HTMLInputElement>) => handleChange(idx, 'agents', (e.target as HTMLInputElement).value)}
                           onBlur={handleBlur}
                           onFocus={() => setSelectedEpicIdx(idx)}
                           placeholder={SKILLS_LIST_PLACEHOLDER}
+                          className="w-full text-11"
                           style={{
-                            width: '100%', padding: '5px 8px', fontSize: '11px', marginTop: '3px',
+                            padding: '5px 8px', marginTop: '3px',
                             border: '1px solid var(--dm-border)', borderRadius: '6px',
                             background: 'var(--dm-surface)', color: 'var(--dm-text)',
                           }}
@@ -247,12 +247,12 @@ export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, 
 
           {/* Add epic dropdown */}
           {unmappedEpics.length > 0 ? (
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="mt-12 flex-center gap-8">
               <select
                 value={addingEpic}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAddingEpic(e.target.value)}
-                className="select-field"
-                style={{ flex: 1, padding: '5px 8px', fontSize: '12px' }}
+                className="select-field flex-1 text-12"
+                style={{ padding: '5px 8px' }}
               >
                 <option value="">Add epic...</option>
                 {unmappedEpics.map(e => <option key={e} value={e}>{e}</option>)}
@@ -260,26 +260,26 @@ export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, 
               <button
                 onClick={() => handleAddEpic(addingEpic)}
                 disabled={!addingEpic}
-                className="btn btn-primary btn-sm"
-                style={{ padding: '5px 12px', fontSize: '12px' }}
+                className="btn btn-primary btn-sm text-12"
+                style={{ padding: '5px 12px' }}
               >Add</button>
             </div>
           ) : null}
 
           {/* Available skills & agents — clickable when an epic is selected */}
           {(skills.length > 0 || agents.length > 0) ? (
-            <div style={{ marginTop: '16px', borderTop: '1px solid var(--dm-border)', paddingTop: '12px' }}>
+            <div className="mt-16 pt-12" style={{ borderTop: '1px solid var(--dm-border)' }}>
               {selectedEpicIdx !== null ? (
-                <div className="text-accent" style={{ fontSize: '10px', marginBottom: '8px', fontStyle: 'italic' }}>
+                <div className="text-accent text-10 mb-8" style={{ fontStyle: 'italic' }}>
                   Click to toggle for {rows[selectedEpicIdx]?.epic}
                 </div>
               ) : null}
               {skills.length > 0 ? (
                 <div style={{ marginBottom: agents.length > 0 ? '12px' : 0 }}>
-                  <div className="text-muted" style={{ fontSize: '10px', fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase' }}>
+                  <div className="text-muted text-10 font-600 mb-6" style={{ textTransform: 'uppercase' }}>
                     Skills (from .claude/skills/)
                   </div>
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  <div className="flex gap-4 flex-wrap">
                     {skills.map(s => (
                       <InfoBadge
                         key={s.name}
@@ -293,10 +293,10 @@ export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, 
               ) : null}
               {agents.length > 0 ? (
                 <div>
-                  <div className="text-muted" style={{ fontSize: '10px', fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase' }}>
+                  <div className="text-muted text-10 font-600 mb-6" style={{ textTransform: 'uppercase' }}>
                     Agents (from .claude/agents/)
                   </div>
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  <div className="flex gap-4 flex-wrap">
                     {agents.map(a => (
                       <InfoBadge
                         key={a.name}
@@ -313,8 +313,8 @@ export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, 
         </div>
 
         {/* Footer */}
-        <div style={{
-          display: 'flex', justifyContent: 'flex-end', gap: '8px',
+        <div className="flex gap-8" style={{
+          justifyContent: 'flex-end',
           padding: '12px 16px', borderTop: '1px solid var(--dm-border)',
         }}>
           <button onClick={onClose} className="btn btn-secondary btn-sm" style={{ padding: '6px 14px' }}>{SKILLS_CLOSE}</button>

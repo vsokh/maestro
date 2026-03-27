@@ -122,6 +122,7 @@ input, textarea { color: var(--dm-text); }
 .p-16 { padding: 16px; }
 .p-20 { padding: 20px; }
 .p-24 { padding: 24px; }
+.p-32 { padding: 32px; }
 .px-4 { padding-left: 4px; padding-right: 4px; }
 .px-6 { padding-left: 6px; padding-right: 6px; }
 .px-8 { padding-left: 8px; padding-right: 8px; }
@@ -134,6 +135,7 @@ input, textarea { color: var(--dm-text); }
 .py-12 { padding-top: 12px; padding-bottom: 12px; }
 .pt-4 { padding-top: 4px; }
 .pt-8 { padding-top: 8px; }
+.pt-12 { padding-top: 12px; }
 .pb-4 { padding-bottom: 4px; }
 .pb-8 { padding-bottom: 8px; }
 
@@ -149,6 +151,8 @@ input, textarea { color: var(--dm-text); }
 .mb-8 { margin-bottom: 8px; }
 .mb-12 { margin-bottom: 12px; }
 .mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mb-32 { margin-bottom: 32px; }
 .ml-4 { margin-left: 4px; }
 .ml-8 { margin-left: 8px; }
 .mr-4 { margin-right: 4px; }
