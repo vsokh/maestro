@@ -23,6 +23,7 @@ export interface MergeResult {
   hasChanges: boolean;
   completedTaskIds: number[];
   arrangeCompleted: boolean;
+  staleProgressIds: (string | number)[];
 }
 
 export function mergeProgressIntoState(
@@ -30,7 +31,7 @@ export function mergeProgressIntoState(
   progressEntries: Record<string | number, import('../types').ProgressEntry>,
 ): MergeResult {
   if (Object.keys(progressEntries).length === 0) {
-    return { data: stateData, needsWrite: false, hasChanges: false, completedTaskIds: [], arrangeCompleted: false };
+    return { data: stateData, needsWrite: false, hasChanges: false, completedTaskIds: [], arrangeCompleted: false, staleProgressIds: [] };
   }
 
   const tasks: Task[] = [...(stateData.tasks || [])];
@@ -39,6 +40,7 @@ export function mergeProgressIntoState(
   let needsWrite = false;
   let hasChanges = false;
   const completedTaskIds: number[] = [];
+  const staleProgressIds: (string | number)[] = [];
   let arrangeCompleted = false;
 
   for (const [taskId, prog] of Object.entries(progressEntries)) {
@@ -84,6 +86,11 @@ export function mergeProgressIntoState(
       completedTaskIds.push(id);
       needsWrite = true;
     } else {
+      // Skip stale progress for tasks already marked done
+      if (tasks[idx].status === 'done') {
+        staleProgressIds.push(id);
+        continue;
+      }
       const enriched: Partial<Task> = {
         status: prog.status || tasks[idx].status,
         progress: prog.progress || tasks[idx].progress,
@@ -103,6 +110,7 @@ export function mergeProgressIntoState(
     hasChanges: hasChanges || needsWrite,
     completedTaskIds,
     arrangeCompleted,
+    staleProgressIds,
   };
 }
 
@@ -151,11 +159,17 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       setData(prev => {
         if (!prev) return prev;
         const mergeResult = mergeProgressIntoState(prev, msg.data);
+        // Clean up stale progress files (tasks already done)
+        for (const id of mergeResult.staleProgressIds) {
+          deleteProgressFile(id);
+        }
         if (mergeResult.hasChanges) {
           if (mergeResult.needsWrite) {
             mergeResult.data.savedAt = new Date().toISOString();
-            writeState(mergeResult.data).then(() => {
-              lastWriteTime.current = Date.now();
+            writeState(mergeResult.data).then((result) => {
+              if (result.ok && result.lastModified) {
+                lastWriteTime.current = result.lastModified;
+              }
             });
             // Clean up completed tasks' progress files
             for (const id of mergeResult.completedTaskIds) {
@@ -262,9 +276,19 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      const ok = await writeState(updated);
-      if (ok) lastWriteTime.current = Date.now();
-      setStatus(ok ? 'connected' : 'error');
+      const result = await writeState(updated, lastWriteTime.current);
+      if (result.conflict && result.data) {
+        // File on disk is newer — adopt the server's version
+        setData(result.data);
+        lastWriteTime.current = result.lastModified!;
+        setStatus('synced');
+        setTimeout(() => setStatus('connected'), 2000);
+      } else if (result.ok) {
+        if (result.lastModified) lastWriteTime.current = result.lastModified;
+        setStatus('connected');
+      } else {
+        setStatus('error');
+      }
     }, 500);
   }, [setStatus]);
 
@@ -287,8 +311,8 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         };
       });
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
-      writeState(updated).then(ok => {
-        if (ok) lastWriteTime.current = Date.now();
+      writeState(updated).then((result) => {
+        if (result.ok && result.lastModified) lastWriteTime.current = result.lastModified;
       });
       return updated;
     });
@@ -307,8 +331,8 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         t.id === taskId ? { ...t, status: 'pending' as const, progress: undefined, lastProgress: undefined, branch: undefined } : t
       );
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
-      writeState(updated).then(ok => {
-        if (ok) lastWriteTime.current = Date.now();
+      writeState(updated).then((result) => {
+        if (result.ok && result.lastModified) lastWriteTime.current = result.lastModified;
       });
       return updated;
     });
@@ -340,8 +364,9 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       } else {
         stateData = createDefaultState(info.projectName);
       }
-      await writeState(stateData);
-      lastWriteTime.current = Date.now();
+      const writeResult = await writeState(stateData);
+      if (writeResult.ok && writeResult.lastModified) lastWriteTime.current = writeResult.lastModified;
+      else lastWriteTime.current = Date.now();
 
       setProjectName(stateData.project || info.projectName);
       await syncSkills();
