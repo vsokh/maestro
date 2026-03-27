@@ -217,6 +217,7 @@ export function App() {
                     onPauseTask={pauseTask}
                     onCancelTask={cancelTask}
                     onRenameGroup={taskActions.handleRenameGroup}
+                    onDeleteGroup={taskActions.handleDeleteGroup}
                     epics={epics}
                     onUpdateEpics={taskActions.handleUpdateEpics}
                     queue={queue}

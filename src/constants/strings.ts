@@ -66,6 +66,8 @@ export const CARD_CANCEL_ARIA = 'Cancel task';
 
 // -- Epic Group --
 export const EPIC_RENAME_TITLE = 'Click to rename epic';
+export const EPIC_DELETE_TITLE = 'Delete epic and all tasks';
+export const EPIC_CONFIRM_DELETE = 'Delete epic?';
 // EPIC_QUEUE_TITLE is dynamic: `Queue ${count} task(s) from ${group}`
 // EPIC_QUEUE_LABEL is dynamic: `Queue ${count}`
 

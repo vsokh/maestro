@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { STATUS } from '../../constants/statuses.ts';
 import { TaskCard } from './TaskCard.tsx';
-import { EPIC_RENAME_TITLE } from '../../constants/strings.ts';
+import { EPIC_RENAME_TITLE, EPIC_DELETE_TITLE, EPIC_CONFIRM_DELETE } from '../../constants/strings.ts';
 import type { Task, QueueItem, EpicColor } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -18,6 +18,7 @@ interface EpicGroupProps {
   editGroupName: string;
   setEditGroupName: (name: string) => void;
   onRenameGroup: (oldName: string, newName: string) => void;
+  onDeleteGroup?: (groupName: string) => void;
   onQueueGroup: ((group: string) => void) | null;
   queue: QueueItem[];
   selectedTask: number | null;
@@ -27,7 +28,9 @@ interface EpicGroupProps {
   glowTaskId: number | null;
 }
 
-export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, onRenameGroup, onQueueGroup, queue, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId }: EpicGroupProps) {
+export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, onRenameGroup, onDeleteGroup, onQueueGroup, queue, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId }: EpicGroupProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
     <div style={{ marginBottom: groupName ? '12px' : '0' }}>
       {groupName ? (
@@ -84,6 +87,28 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
                 >Queue {unqueued.length}</button>
               );
             })()}
+            {onDeleteGroup && !confirmDelete && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                title={EPIC_DELETE_TITLE}
+                className="btn-queue-group"
+                style={{ padding: '1px 8px', opacity: 0.5 }}
+              >&#10005;</button>
+            )}
+            {onDeleteGroup && confirmDelete && (
+              <>
+                <button
+                  onClick={() => { onDeleteGroup(groupName); setConfirmDelete(false); }}
+                  className="btn-queue-group"
+                  style={{ padding: '1px 8px', color: 'var(--dm-danger, #c0392b)', fontWeight: 600 }}
+                >{EPIC_CONFIRM_DELETE}</button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="btn-queue-group"
+                  style={{ padding: '1px 8px' }}
+                >Cancel</button>
+              </>
+            )}
           </div>
         )
       ) : null}

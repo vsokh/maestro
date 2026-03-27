@@ -28,12 +28,13 @@ interface TaskBoardProps {
   onPauseTask: (id: number) => void;
   onCancelTask: (id: number) => void;
   onRenameGroup: (oldName: string, newName: string) => void;
+  onDeleteGroup: (groupName: string) => void;
   epics: Epic[];
   onUpdateEpics: (epics: Epic[]) => void;
   glowTaskId: number | null;
 }
 
-export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, arranging, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }: TaskBoardProps) {
+export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, arranging, queue, onPauseTask, onCancelTask, onRenameGroup, onDeleteGroup, epics, onUpdateEpics, glowTaskId }: TaskBoardProps) {
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -236,6 +237,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             editGroupName={editGroupName}
             setEditGroupName={setEditGroupName}
             onRenameGroup={onRenameGroup}
+            onDeleteGroup={onDeleteGroup}
             onQueueGroup={onQueueGroup}
             queue={queue}
             selectedTask={selectedTask}

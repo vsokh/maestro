@@ -67,6 +67,21 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
     updateData({ tasks: newTasks, epics: newEpics });
   };
 
+  const handleDeleteGroup = (groupName: string) => {
+    const groupTasks = tasks.filter(t => t.group === groupName);
+    const deletedIds = new Set(groupTasks.map(t => t.id));
+    snapshotBeforeAction(`Epic '${groupName}' and ${groupTasks.length} tasks deleted`);
+    const newTasks = tasks.filter(t => t.group !== groupName).map(t =>
+      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => !deletedIds.has(d)) } : t
+    );
+    const newQueue = queue.filter(q => !deletedIds.has(q.task));
+    const newTaskNotes = { ...taskNotes };
+    deletedIds.forEach(id => { delete newTaskNotes[id]; });
+    const newEpics = epics.filter(e => e.name !== groupName);
+    const newActivity = addActivity(`Epic '${groupName}' deleted with ${groupTasks.length} tasks`);
+    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, epics: newEpics, activity: newActivity });
+  };
+
   const handleUpdateEpics = (newEpics: Epic[]) => {
     updateData({ epics: newEpics });
   };
@@ -117,6 +132,7 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
     handleUpdateNotes,
     handleAddTask,
     handleRenameGroup,
+    handleDeleteGroup,
     handleUpdateEpics,
     handleDeleteTask,
     handleAddAttachment,
