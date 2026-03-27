@@ -299,31 +299,17 @@ describe('useTaskActions', () => {
       vi.mocked(saveAttachment).mockReset();
     });
 
-    it('returns early when dirHandle is null', async () => {
-      const task = makeTask(1);
-      const { result, save } = setup({ data: { tasks: [task] }, dirHandle: null });
-      const file = new File(['data'], 'screenshot.png', { type: 'image/png' });
-
-      await act(async () => {
-        await result.current.handleAddAttachment(1, file);
-      });
-
-      expect(saveAttachment).not.toHaveBeenCalled();
-      expect(save).not.toHaveBeenCalled();
-    });
-
     it('calls saveAttachment from fs.ts and updates task', async () => {
       vi.mocked(saveAttachment).mockResolvedValue('.devmanager/attachments/1/screenshot.png');
       const task = makeTask(1);
-      const fakeDirHandle = {} as FileSystemDirectoryHandle;
-      const { result, save } = setup({ data: { tasks: [task] }, dirHandle: fakeDirHandle });
+      const { result, save } = setup({ data: { tasks: [task] } });
       const file = new File(['data'], 'screenshot.png', { type: 'image/png' });
 
       await act(async () => {
         await result.current.handleAddAttachment(1, file);
       });
 
-      expect(saveAttachment).toHaveBeenCalledWith(fakeDirHandle, 1, 'screenshot.png', file);
+      expect(saveAttachment).toHaveBeenCalledWith(1, 'screenshot.png', file);
       expect(save).toHaveBeenCalledTimes(1);
       const savedData = save.mock.calls[0][0] as StateData;
       const updatedTask = savedData.tasks[0];
@@ -349,24 +335,6 @@ describe('useTaskActions', () => {
   describe('handleDeleteAttachment', () => {
     beforeEach(() => {
       vi.mocked(deleteAttachment).mockReset();
-    });
-
-    it('returns early when dirHandle is null', async () => {
-      const task = makeTask(1, {
-        attachments: [{ id: 'att_1', filename: 'pic.png' }],
-      });
-      const { result, save, snapshotBeforeAction } = setup({
-        data: { tasks: [task] },
-        dirHandle: null,
-      });
-
-      await act(async () => {
-        await result.current.handleDeleteAttachment(1, 'att_1');
-      });
-
-      expect(deleteAttachment).not.toHaveBeenCalled();
-      expect(snapshotBeforeAction).not.toHaveBeenCalled();
-      expect(save).not.toHaveBeenCalled();
     });
 
     it('calls snapshotBeforeAction', async () => {
@@ -405,7 +373,7 @@ describe('useTaskActions', () => {
         await result.current.handleDeleteAttachment(1, 'att_1');
       });
 
-      expect(deleteAttachment).toHaveBeenCalledWith(fakeDirHandle, 1, 'pic.png', expect.any(Function));
+      expect(deleteAttachment).toHaveBeenCalledWith(1, 'pic.png');
       expect(save).toHaveBeenCalledTimes(1);
       const savedData = save.mock.calls[0][0] as StateData;
       const updatedTask = savedData.tasks[0];

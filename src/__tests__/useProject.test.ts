@@ -1,6 +1,34 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Mock api module to prevent real fetch calls
+vi.mock('../api.ts', () => ({
+  default: {
+    getInfo: vi.fn().mockRejectedValue(new Error('not connected')),
+    launch: vi.fn().mockResolvedValue({ pid: 1 }),
+    launchTerminal: vi.fn().mockResolvedValue({ ok: true }),
+    listProcesses: vi.fn().mockResolvedValue([]),
+    getBufferedOutput: vi.fn().mockResolvedValue({}),
+    killProcess: vi.fn().mockResolvedValue({ ok: true }),
+    saveAttachment: vi.fn().mockResolvedValue('path'),
+    deleteAttachment: vi.fn().mockResolvedValue(undefined),
+    getState: vi.fn().mockResolvedValue(null),
+    saveState: vi.fn().mockResolvedValue({ ok: true }),
+  },
+  api: {
+    getInfo: vi.fn().mockRejectedValue(new Error('not connected')),
+    launch: vi.fn().mockResolvedValue({ pid: 1 }),
+    launchTerminal: vi.fn().mockResolvedValue({ ok: true }),
+    listProcesses: vi.fn().mockResolvedValue([]),
+    getBufferedOutput: vi.fn().mockResolvedValue({}),
+    killProcess: vi.fn().mockResolvedValue({ ok: true }),
+    saveAttachment: vi.fn().mockResolvedValue('path'),
+    deleteAttachment: vi.fn().mockResolvedValue(undefined),
+    getState: vi.fn().mockResolvedValue(null),
+    saveState: vi.fn().mockResolvedValue({ ok: true }),
+  },
+}));
+
 // Mock fs module before importing useProject
 vi.mock('../fs.ts', () => ({
   loadDirHandle: vi.fn().mockResolvedValue(null),

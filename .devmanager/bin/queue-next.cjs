@@ -114,15 +114,16 @@ console.log(`HAS_NOTES=${hasNotes ? 'yes' : 'no'}`);
 let hasBranch = false;
 let branchName = '';
 try {
-  const branchOutput = execSync(`git branch --list "task-${taskId}-*"`, {
+  // Use for-each-ref instead of branch --list to avoid prefix characters
+  // (git branch --list prefixes worktree branches with '+' which is hard to strip reliably)
+  const branchOutput = execSync(`git for-each-ref --format=%(refname:short) "refs/heads/task-${taskId}-*"`, {
     cwd: projectRoot,
     encoding: 'utf-8',
     stdio: ['pipe', 'pipe', 'pipe'],
   }).trim();
 
   if (branchOutput) {
-    // git branch --list prefixes with "  " or "* " — clean it
-    const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*]+/, '').trim()).filter(Boolean);
+    const branches = branchOutput.split('\n').map(b => b.trim()).filter(Boolean);
     if (branches.length > 0) {
       hasBranch = true;
       branchName = branches[0];

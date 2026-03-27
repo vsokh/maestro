@@ -15,14 +15,14 @@ describe('ProjectPicker', () => {
     expect(screen.getByText('Dev Manager')).toBeDefined();
   });
 
-  it('renders "Open project" button when disconnected', () => {
+  it('renders "Retry connection" button when disconnected', () => {
     render(<ProjectPicker {...defaultProps()} />);
-    expect(screen.getByRole('button', { name: 'Open project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry connection' })).toBeDefined();
   });
 
   it('renders connect button when disconnected', () => {
     render(<ProjectPicker {...defaultProps()} />);
-    expect(screen.getByRole('button', { name: 'Open project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry connection' })).toBeDefined();
   });
 
   it('shows error message when status is "error"', () => {
@@ -37,18 +37,18 @@ describe('ProjectPicker', () => {
   });
 
   describe('interactions', () => {
-    it('clicking "Open project" button calls onConnect', () => {
+    it('clicking "Retry connection" button calls onConnect', () => {
       const props = defaultProps();
       render(<ProjectPicker {...props} />);
-      const openBtn = screen.getByRole('button', { name: 'Open project' });
+      const openBtn = screen.getByRole('button', { name: 'Retry connection' });
       fireEvent.click(openBtn);
       expect(props.onConnect).toHaveBeenCalledTimes(1);
     });
 
-    it('clicking "Open project" calls onConnect', () => {
+    it('clicking "Retry connection" calls onConnect', () => {
       const props = defaultProps();
       render(<ProjectPicker {...props} />);
-      const connectBtn = screen.getByRole('button', { name: 'Open project' });
+      const connectBtn = screen.getByRole('button', { name: 'Retry connection' });
       fireEvent.click(connectBtn);
       expect(props.onConnect).toHaveBeenCalledTimes(1);
     });

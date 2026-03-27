@@ -1,5 +1,19 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+
+// Mock api module before importing useQueueActions
+vi.mock('../api.ts', () => ({
+  api: {
+    launch: vi.fn().mockResolvedValue({ pid: 123 }),
+    launchTerminal: vi.fn().mockResolvedValue({ ok: true }),
+    listProcesses: vi.fn().mockResolvedValue([]),
+    getBufferedOutput: vi.fn().mockResolvedValue({}),
+    killProcess: vi.fn().mockResolvedValue({ ok: true }),
+  },
+  connectWebSocket: vi.fn(),
+}));
+
+import { api } from '../api.ts';
 import { useQueueActions } from '../hooks/useQueueActions.ts';
 import type { StateData, Task } from '../types';
 
@@ -186,108 +200,46 @@ describe('useQueueActions', () => {
   });
 
   describe('handleLaunchTask', () => {
-    it('does nothing when no projectPath', () => {
-      const anchors: HTMLAnchorElement[] = [];
-      const origCreate = document.createElement.bind(document);
-      const createSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-        const el = origCreate(tag);
-        if (tag === 'a') anchors.push(el as HTMLAnchorElement);
-        return el;
-      });
-
-      const { result } = setup({ projectPath: '' });
-
-      act(() => {
-        result.current.handleLaunchTask(1, '/orchestrator task 1', 'Fix the login button');
-      });
-
-      // No anchor elements should have been created by launchProtocol
-      const anchorCreations = createSpy.mock.calls.filter(c => c[0] === 'a');
-      expect(anchorCreations).toHaveLength(0);
-      createSpy.mockRestore();
-    });
-
-    it('constructs correct claudecode URL', () => {
-      const anchors: HTMLAnchorElement[] = [];
-      const origCreate = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-        const el = origCreate(tag);
-        if (tag === 'a') anchors.push(el as HTMLAnchorElement);
-        return el;
-      });
-      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node as HTMLElement);
-      vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node as HTMLElement);
-
+    it('calls api.launch with task id and command', async () => {
+      vi.mocked(api.launch).mockResolvedValue({ pid: 123 });
       const { result } = setup({
         projectPath: 'C:\\Users\\test\\project',
         data: { tasks: [], queue: [], taskNotes: {}, activity: [] },
       });
 
-      act(() => {
-        result.current.handleLaunchTask(1, '/orchestrator task 1', 'Fix the login button');
+      await act(async () => {
+        await result.current.handleLaunchTask(1, '/orchestrator task 1', 'Fix the login button');
       });
 
-      expect(anchors).toHaveLength(1);
-      const anchor = anchors[0];
-      // Verify the href was set correctly
-      // shortTitle("Fix the login button") -> "Fix login"
-      // URL components are encoded with encodeURIComponent
-      const href = anchor.getAttribute('href')!;
-      expect(href).toContain('claudecode:');
-      expect(href).toContain(encodeURIComponent('C:/Users/test/project'));
-      expect(href).toContain(encodeURIComponent('/orchestrator task 1'));
-      expect(href).toContain(encodeURIComponent('Fix login'));
+      expect(api.launch).toHaveBeenCalledWith(1, '/orchestrator task 1');
+    });
 
-      vi.restoreAllMocks();
+    it('calls onError on launch failure', async () => {
+      vi.mocked(api.launch).mockRejectedValue(new Error('connection refused'));
+      const { result, onError } = setup({
+        projectPath: 'C:\\Users\\test\\project',
+      });
+
+      await act(async () => {
+        await result.current.handleLaunchTask(1, '/orchestrator task 1', 'Fix login');
+      });
+
+      expect(onError).toHaveBeenCalledWith('Failed to launch task');
     });
   });
 
   describe('handleArrange', () => {
-    it('does nothing when no projectPath', () => {
-      const origCreate = document.createElement.bind(document);
-      const createSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-        return origCreate(tag);
-      });
-
-      const { result } = setup({ projectPath: '' });
-
-      act(() => {
-        result.current.handleArrange();
-      });
-
-      const anchorCreations = createSpy.mock.calls.filter(c => c[0] === 'a');
-      expect(anchorCreations).toHaveLength(0);
-      createSpy.mockRestore();
-    });
-
-    it('constructs correct URL with path normalization', () => {
-      const anchors: HTMLAnchorElement[] = [];
-      const origCreate = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-        const el = origCreate(tag);
-        if (tag === 'a') anchors.push(el as HTMLAnchorElement);
-        return el;
-      });
-      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node as HTMLElement);
-      vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node as HTMLElement);
-
+    it('calls api.launch with arrange command', async () => {
+      vi.mocked(api.launch).mockResolvedValue({ pid: 456 });
       const { result } = setup({
         projectPath: 'C:\\Users\\test\\project',
       });
 
-      act(() => {
-        result.current.handleArrange();
+      await act(async () => {
+        await result.current.handleArrange();
       });
 
-      expect(anchors).toHaveLength(1);
-      const anchor = anchors[0];
-      const href = anchor.getAttribute('href')!;
-      expect(href).toContain('claudecode:');
-      expect(href).toContain(encodeURIComponent('C:/Users/test/project'));
-      expect(href).toContain(encodeURIComponent('/orchestrator arrange'));
-      expect(href).toContain(encodeURIComponent('Arrange tasks'));
-
-      vi.restoreAllMocks();
+      expect(api.launch).toHaveBeenCalledWith(0, '/orchestrator arrange');
     });
   });
 });
