@@ -121,7 +121,7 @@ export function App() {
   const selectedTaskData = tasks.find(t => t.id === selectedTask) || null;
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen flex-col">
       <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} defaultEngine={data.defaultEngine} onSetDefaultEngine={(engineId: string) => save({ ...data, defaultEngine: engineId })} />
 
       <div className="dm-container">
@@ -131,7 +131,7 @@ export function App() {
           marginBottom: productTab === 'quality' ? 0 : undefined,
         }}>
           <SectionHeader title="" extra={
-            <div style={{ display: 'flex', gap: 0, width: '100%' }}>
+            <div className="flex w-full">
               {(['board', 'quality'] as const).map(tab => (
                 <button
                   key={tab}
@@ -146,7 +146,7 @@ export function App() {
           } />
 
           {productTab === 'quality' && (
-            <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
               <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} error={quality.error} onRetry={quality.retry} healthcheckOutput={processOutput.outputs[TASK_ID_CODEHEALTH]} autofixOutput={processOutput.outputs[TASK_ID_AUTOFIX]} onClearOutput={processOutput.clearOutput} />
             </div>
           )}
@@ -156,7 +156,7 @@ export function App() {
           <>
             <div className="dm-grid-top">
               <div className="panel">
-                <div style={{ padding: '16px' }}>
+                <div className="p-16">
                   <TaskBoard
                     tasks={tasks}
                     selectedTask={selectedTask}
