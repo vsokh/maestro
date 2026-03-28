@@ -43,6 +43,32 @@ export const DIM_DESCRIPTIONS: Record<string, string> = {
   devopsBuildHealth: 'Build reliability — zero type errors, zero lint errors, CI/CD pipeline, automated tests, preview deploys. Measures infrastructure confidence.',
 };
 
+/** Maps old/renamed dimension keys to their current equivalents */
+export const DIM_KEY_ALIASES: Record<string, string> = {
+  testing: 'testQuality',
+  componentArchitecture: 'cleanArchitecture',
+};
+
+/** Get dimension score from a history entry, resolving aliases for old key names.
+ *  Returns number or null if the dimension doesn't exist in the entry. */
+export function getDimValue(
+  dims: Record<string, { score: number } | number> | undefined,
+  key: string
+): number | null {
+  if (!dims) return null;
+  // Try current key first
+  let val = dims[key];
+  // Try alias (old key name)
+  if (val === undefined) {
+    const oldKey = Object.entries(DIM_KEY_ALIASES).find(([, v]) => v === key)?.[0];
+    if (oldKey) val = dims[oldKey];
+  }
+  if (val === undefined) return null;
+  if (typeof val === 'number') return val;
+  if (val && typeof val === 'object') return val.score ?? null;
+  return null;
+}
+
 export function scoreColor(s: number) {
   if (s >= 8) return 'var(--dm-success)';
   if (s >= 6) return 'var(--dm-accent)';

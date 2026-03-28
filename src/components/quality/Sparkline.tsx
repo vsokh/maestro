@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import type { QualityHistoryEntry } from '../../types';
+import { getDimValue } from './shared';
 
 export function Sparkline({ dimKey, history, width = 64, height = 20 }: { dimKey: string; history: QualityHistoryEntry[]; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,12 +16,7 @@ export function Sparkline({ dimKey, history, width = 64, height = 20 }: { dimKey
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
 
-    const values = history.map(h => {
-      const dim = h.dimensions?.[dimKey];
-      if (typeof dim === 'number') return dim;
-      if (dim && typeof dim === 'object') return dim.score || 0;
-      return 0;
-    });
+    const values = history.map(h => getDimValue(h.dimensions, dimKey) ?? 0);
     const n = values.length;
     const pad = 2;
     const stepX = (width - pad * 2) / (n - 1);

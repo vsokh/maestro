@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
-import { DIM_KEYS, DIM_SHORT } from './shared';
+import { DIM_KEYS, DIM_SHORT, getDimValue } from './shared';
 import type { QualityHistoryEntry } from '../../types';
 
 export function TimelineChart({ history, width = 360, height = 200 }: { history: QualityHistoryEntry[]; width?: number; height?: number }) {
@@ -178,10 +178,8 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
     if (!cur?.dimensions || !prv?.dimensions) return null;
 
     const diffs = DIM_KEYS.map(key => {
-      const curDim = cur.dimensions![key];
-      const prvDim = prv.dimensions![key];
-      const curVal = typeof curDim === 'number' ? curDim : (curDim?.score ?? null);
-      const prvVal = typeof prvDim === 'number' ? prvDim : (prvDim?.score ?? null);
+      const curVal = getDimValue(cur.dimensions, key);
+      const prvVal = getDimValue(prv.dimensions, key);
       if (curVal == null || prvVal == null) return null;
       const delta = curVal - prvVal;
       if (delta === 0) return null;
