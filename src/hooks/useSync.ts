@@ -102,8 +102,6 @@ export function mergeProgressIntoState(
         if (!tasks[idx].startedAt) {
           enriched.startedAt = new Date().toISOString();
         }
-        queue = queue.filter(q => q.task !== id);
-        needsWrite = true;
       }
       tasks[idx] = { ...tasks[idx], ...enriched } as Task;
       hasChanges = true;

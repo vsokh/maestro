@@ -47,7 +47,7 @@ describe('mergeProgressIntoState', () => {
       expect(result.data.tasks[0].startedAt).toBeDefined();
     });
 
-    it('removes task from queue on in-progress transition', () => {
+    it('keeps task in queue on in-progress transition (for progress visibility)', () => {
       const state = makeState({
         tasks: [makeTask(1), makeTask(2)],
         queue: [
@@ -59,9 +59,8 @@ describe('mergeProgressIntoState', () => {
         '1': { status: 'in-progress', progress: 'Running' },
       };
       const result = mergeProgressIntoState(state, progress);
-      expect(result.data.queue).toHaveLength(1);
-      expect(result.data.queue[0].task).toBe(2);
-      expect(result.needsWrite).toBe(true);
+      expect(result.data.queue).toHaveLength(2);
+      expect(result.data.tasks[0].status).toBe('in-progress');
     });
 
     it('does not remove from queue if task was not queued', () => {
@@ -219,8 +218,9 @@ describe('mergeProgressIntoState', () => {
       expect(result.data.tasks[0].status).toBe('in-progress');
       expect(result.data.tasks[1].status).toBe('done');
       expect(result.data.tasks[2].status).toBe('in-progress');
-      // All three removed from queue (1 and 3 via in-progress, 2 via done)
-      expect(result.data.queue).toHaveLength(0);
+      // Only done task removed from queue; in-progress stay for visibility
+      expect(result.data.queue).toHaveLength(2);
+      expect(result.data.queue.map(q => q.task)).toEqual([1, 3]);
       expect(result.completedTaskIds).toEqual([2]);
     });
   });

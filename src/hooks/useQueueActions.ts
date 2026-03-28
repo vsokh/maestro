@@ -99,6 +99,10 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
 
   const handleLaunchTask = async (itemKey: number, cmd: string, taskName: string) => {
     try {
+      // Skip re-launching tasks that are already running
+      const task = (dataRef.current?.tasks || []).find(t => t.id === itemKey);
+      if (task?.status === 'in-progress') return;
+
       if (launchMode === 'terminal') {
         await api.launchTerminal(itemKey, cmd, undefined, taskName);
       } else {
@@ -143,6 +147,10 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
           verified = items.filter(i => phaseTaskIds.has(i.key));
         }
       }
+      // Skip tasks already running
+      const freshTasks = (dataRef.current?.tasks || []);
+      const runningIds = new Set(freshTasks.filter(t => t.status === 'in-progress').map(t => t.id));
+      verified = verified.filter(i => !runningIds.has(i.key));
       if (verified.length === 0) return;
 
       if (launchMode === 'sequential') {
