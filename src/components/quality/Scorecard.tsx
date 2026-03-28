@@ -12,6 +12,8 @@ interface ScorecardProps {
 }
 
 export function Scorecard({ latest, prev, history }: ScorecardProps) {
+  const latestNote = history.length > 0 ? history[history.length - 1].note : undefined;
+
   return (
     <table className="scorecard-table mb-16">
       <thead>
@@ -42,7 +44,10 @@ export function Scorecard({ latest, prev, history }: ScorecardProps) {
               </td>
               <td style={{ padding: '7px 4px', width: 24 }}>
                 {prevVal != null && d.score !== prevVal ? (
-                  <Tooltip text={`${prevVal} → ${d.score} (${d.score - prevVal > 0 ? '+' : ''}${d.score - prevVal})`} style={{ borderBottom: 'none' }}>
+                  <Tooltip text={<>
+                    <div>{prevVal} &rarr; {d.score} ({d.score - prevVal > 0 ? '+' : ''}{d.score - prevVal})</div>
+                    {latestNote && <div className="text-muted" style={{ marginTop: 4, fontStyle: 'italic' }}>{latestNote}</div>}
+                  </>} style={{ borderBottom: 'none' }}>
                     <TrendArrow trend={trend} />
                   </Tooltip>
                 ) : (

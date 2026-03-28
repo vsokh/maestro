@@ -168,6 +168,7 @@ export interface QualityHistoryEntry {
   overallScore: number;
   grade?: string;
   commitRef?: string;
+  note?: string;
   dimensions?: Record<string, { score: number } | number>;
 }
 

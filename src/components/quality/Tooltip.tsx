@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 
-export function Tooltip({ text, children, style: wrapStyle }: { text: string; children: React.ReactNode; style?: React.CSSProperties }) {
+export function Tooltip({ text, children, style: wrapStyle }: { text: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties }) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const ref = useRef(null);
@@ -26,7 +26,7 @@ export function Tooltip({ text, children, style: wrapStyle }: { text: string; ch
           left: pos.x, top: pos.y,
           transform: 'translateX(-50%)',
           zIndex: 1000,
-          maxWidth: 300, padding: '8px 12px',
+          maxWidth: 360, padding: '8px 12px',
         }}>
           {text}
         </div>
