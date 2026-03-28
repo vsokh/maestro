@@ -197,6 +197,33 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
           console.warn(`[sync] Rejected stale state: incoming _v=${incomingV} < current _v=${currentV}`);
           return true;
         }
+        // Protect done tasks from regression by external state writes
+        // (e.g., orchestrator writing stale state after UI merged "done" from progress files)
+        if (currentData) {
+          const doneTasks = new Map(
+            currentData.tasks.filter(t => t.status === 'done' && t.completedAt).map(t => [t.id, t])
+          );
+          if (doneTasks.size > 0) {
+            let patched = false;
+            for (const task of msg.data.tasks) {
+              if (task.status !== 'done' && doneTasks.has(task.id)) {
+                const doneTask = doneTasks.get(task.id)!;
+                task.status = 'done';
+                task.completedAt = doneTask.completedAt;
+                if (doneTask.commitRef) task.commitRef = doneTask.commitRef;
+                if (doneTask.summary) task.summary = doneTask.summary;
+                task.progress = undefined;
+                patched = true;
+              }
+            }
+            if (patched) {
+              msg.data.queue = (msg.data.queue || []).filter(
+                q => !doneTasks.has(q.task)
+              );
+              console.warn('[sync] Prevented done-task regression from external state write');
+            }
+          }
+        }
         setData(msg.data);
         lastWriteTimeRef.current = msg.lastModified;
         if (msg.data.project) setProjectName(msg.data.project);
@@ -219,23 +246,24 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
             writeState(mergeResult.data).then((result) => {
               if (result.ok && result.lastModified) {
                 lastWriteTimeRef.current = result.lastModified;
+                // Only delete progress files AFTER state write succeeds
+                // (prevents losing "done" status if write fails and file is gone)
+                for (const id of mergeResult.completedTaskIds) {
+                  deleteProgressFile(id).catch((err) => console.error('[sync] Failed to delete progress file:', err));
+                }
+                if (mergeResult.arrangeCompleted) {
+                  deleteProgressFile('arrange').catch((err) => console.error('[sync] Failed to delete progress file:', err));
+                }
               } else if (!result.ok) {
-                console.error('[sync] Failed to write merged progress state');
+                console.error('[sync] Failed to write merged progress state — keeping progress files for retry');
                 onError?.('Failed to sync task progress');
                 setStatus('error');
               }
             }).catch((err) => {
-              console.error('[sync] writeState error:', err);
+              console.error('[sync] writeState error — keeping progress files for retry:', err);
               onError?.('Failed to sync task progress');
               setStatus('error');
             });
-            // Clean up completed tasks' progress files
-            for (const id of mergeResult.completedTaskIds) {
-              deleteProgressFile(id).catch((err) => console.error('[sync] Failed to delete progress file:', err));
-            }
-            if (mergeResult.arrangeCompleted) {
-              deleteProgressFile('arrange').catch((err) => console.error('[sync] Failed to delete progress file:', err));
-            }
           }
           return mergeResult.data;
         }
