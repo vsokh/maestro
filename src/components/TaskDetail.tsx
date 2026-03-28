@@ -34,20 +34,24 @@ export function TaskDetail({ task, tasks, epics, notes }: TaskDetailProps) {
   const [editName, setEditName] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
   const [localDesc, setLocalDesc] = useState('');
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [localSummary, setLocalSummary] = useState('');
   const [localNote, setLocalNote] = useState('');
   const [localBlockedReason, setLocalBlockedReason] = useState('');
 
   const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, onAddAttachment);
 
   const [prevResetKey, setPrevResetKey] = useState('');
-  const resetKey = `${task?.id}|${notes}|${task?.blockedReason || ''}|${task?.description || ''}`;
+  const resetKey = `${task?.id}|${notes}|${task?.blockedReason || ''}|${task?.description || ''}|${task?.summary || ''}`;
   if (resetKey !== prevResetKey) {
     setPrevResetKey(resetKey);
     setLocalNote(notes || '');
     setLocalBlockedReason(task?.blockedReason || '');
     setLocalDesc(task?.description || '');
+    setLocalSummary(task?.summary || '');
     setEditing(false);
     setEditingDesc(false);
+    setEditingSummary(false);
   }
 
   if (!task) return (
@@ -193,14 +197,41 @@ export function TaskDetail({ task, tasks, epics, notes }: TaskDetailProps) {
 
       <Timeline task={task} />
 
-      {task.summary && (
+      {task.status === STATUS.DONE && (
         <div className="mb-12" style={{
           padding: '10px 12px',
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)',
           borderLeft: '3px solid var(--dm-success)',
         }}>
           <div className="label text-10" style={{ margin: '0 0 4px', color: 'var(--dm-success)' }}>What shipped</div>
-          <div className="text-12 leading-normal" style={{ color: 'var(--dm-text)' }}>{task.summary}</div>
+          {editingSummary ? (
+            <textarea
+              value={localSummary}
+              onInput={(e: React.FormEvent<HTMLTextAreaElement>) => setLocalSummary((e.target as HTMLTextAreaElement).value)}
+              onBlur={() => { onUpdateTask(task.id, { summary: localSummary }); setEditingSummary(false); }}
+              onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === 'Escape') setEditingSummary(false); }}
+              autoFocus
+              rows={3}
+              className="textarea-field w-full text-12"
+              style={{ padding: '6px 8px' }}
+            />
+          ) : (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => { setLocalSummary(task.summary || ''); setEditingSummary(true); }}
+              onKeyDown={handleKeyActivate(() => { setLocalSummary(task.summary || ''); setEditingSummary(true); })}
+              title="Click to edit what shipped"
+              className="text-12 leading-normal"
+              style={{
+                color: task.summary ? 'var(--dm-text)' : 'var(--dm-text-light)',
+                opacity: task.summary ? 1 : 0.5,
+                cursor: 'text',
+              }}
+            >
+              {task.summary || 'Add what shipped...'}
+            </div>
+          )}
         </div>
       )}
 
