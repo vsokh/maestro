@@ -130,13 +130,11 @@ function sleep(ms) {
 
 let branchName = '';
 try {
-  // Use for-each-ref instead of branch --list to avoid prefix characters
-  // (git branch --list prefixes worktree branches with '+' which is hard to strip reliably)
-  const branchOutput = git(`git for-each-ref --format=%(refname:short) "refs/heads/task-${taskId}-*"`);
+  const branchOutput = git(`git branch --list "task-${taskId}-*"`);
   if (!branchOutput) {
     fail('no_branch', {});
   }
-  const branches = branchOutput.split('\n').map(b => b.trim()).filter(Boolean);
+  const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*+]+/, '').trim()).filter(Boolean);
   if (branches.length === 0) {
     fail('no_branch', {});
   }
