@@ -24,11 +24,12 @@ function run(script: string, args: string[] = [], cwd?: string): { stdout: strin
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     return { stdout: stdout.trim(), stderr: '', exitCode: 0 };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const e = err as { stdout?: string; stderr?: string; status?: number };
     return {
-      stdout: (err.stdout || '').trim(),
-      stderr: (err.stderr || '').trim(),
-      exitCode: err.status ?? 1,
+      stdout: (e.stdout || '').trim(),
+      stderr: (e.stderr || '').trim(),
+      exitCode: e.status ?? 1,
     };
   }
 }

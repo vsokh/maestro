@@ -52,8 +52,8 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
           await api.launch(0, '/orchestrator arrange');
         } catch { /* arrange is best-effort */ }
       }
-    } catch (err: any) {
-      showError('Failed to split tasks: ' + (err?.message || 'unknown'));
+    } catch (err: unknown) {
+      showError('Failed to split tasks: ' + (err instanceof Error ? err.message : 'unknown'));
     } finally {
       setSplitting(false);
     }

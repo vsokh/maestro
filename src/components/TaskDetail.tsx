@@ -214,7 +214,7 @@ export function TaskDetail({ task, tasks, epics, notes }: TaskDetailProps) {
           <div className="flex gap-4">
             {[{ id: '', label: DETAIL_ENGINE_DEFAULT + ' (' + getEngine(defaultEngine).label + ')', icon: getEngine(defaultEngine).icon, color: 'var(--dm-text-light)' }, ...ENGINES].map(eng => {
               const isSelected = eng.id === '' ? !task.engine : task.engine === eng.id;
-              const displayColor = eng.id === '' ? (isSelected ? getEngine(defaultEngine).color : 'var(--dm-text-light)') : (eng as any).color;
+              const displayColor = eng.id === '' ? (isSelected ? getEngine(defaultEngine).color : 'var(--dm-text-light)') : eng.color;
               return (
                 <button
                   key={eng.id}

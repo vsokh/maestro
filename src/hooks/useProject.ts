@@ -139,9 +139,9 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     try {
       await api.switchProject(path);
       await connectToServer();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Switch project failed:', err);
-      onError?.(`Failed to open project: ${err?.message || 'unknown error'}`);
+      onError?.(`Failed to open project: ${err instanceof Error ? err.message : 'unknown error'}`);
       // Try reconnecting to the previous project
       try { await connectToServer(); } catch { setStatus('error'); }
     }

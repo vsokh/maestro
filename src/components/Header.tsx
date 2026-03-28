@@ -52,7 +52,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
       setCommits([]);
       setPushResult('Pushed!');
       setTimeout(() => setPushResult(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setPushResult('Push failed');
       setTimeout(() => setPushResult(null), 5000);
     } finally {
