@@ -247,23 +247,16 @@ describe('merge-safe.cjs', () => {
     expect(result.stdout).toContain('MERGE_FAILED=no_branch');
   });
 
-  it('uses for-each-ref for clean branch name discovery', () => {
+  it('strips prefix characters from git branch --list output', () => {
     // Initialize git repo with a task branch
     execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
     execSync('git -c user.name=Test -c user.email=test@test.com commit --allow-empty -m "init"', { cwd: tmpDir, stdio: 'pipe' });
     execSync('git branch task-50-test-feature', { cwd: tmpDir, stdio: 'pipe' });
 
-    // Verify for-each-ref gives clean output (no + or * prefixes)
-    const branchOutput = execSync(
-      'git for-each-ref --format=%(refname:short) "refs/heads/task-50-*"',
-      { cwd: tmpDir, encoding: 'utf-8' },
-    ).trim();
-    expect(branchOutput).toBe('task-50-test-feature');
-
-    // merge-safe will fail at worktree check, but the branch should be found
+    // merge-safe will fail at worktree check, but the branch should be found cleanly
     const result = run('merge-safe.cjs', ['50']);
     expect(result.exitCode).toBe(1);
-    // Should fail at worktree check, not branch check
+    // Should fail at worktree check, not branch check — proving branch name was parsed
     expect(result.stdout).toContain('MERGE_FAILED=no_worktree');
     expect(result.stdout).toContain('BRANCH=task-50-test-feature');
   });
