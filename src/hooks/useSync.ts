@@ -132,7 +132,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
   const [projectName, setProjectName] = useState('');
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastWriteTime = useRef(0);
+  const lastWriteTimeRef = useRef(0);
   const dataRef = useRef<StateData | null>(null);
 
   useEffect(() => { dataRef.current = data; }, [data]);
@@ -143,7 +143,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      const result = await writeState(updated, lastWriteTime.current);
+      const result = await writeState(updated, lastWriteTimeRef.current);
       if (result.conflict && result.data) {
         // File on disk is newer — but only adopt if version isn't stale
         const currentV = dataRef.current?._v || 0;
@@ -153,17 +153,17 @@ export function useSync({ setStatus }: UseSyncOptions) {
           console.warn(`[sync] Conflict state is stale: _v=${conflictV} < current _v=${currentV}, retrying`);
           const retryResult = await writeState(updated);
           if (retryResult.ok && retryResult.lastModified) {
-            lastWriteTime.current = retryResult.lastModified;
+            lastWriteTimeRef.current = retryResult.lastModified;
           }
           setStatus('connected');
         } else {
           setData(result.data);
-          lastWriteTime.current = result.lastModified!;
+          lastWriteTimeRef.current = result.lastModified!;
           setStatus('synced');
           setTimeout(() => setStatus('connected'), 2000);
         }
       } else if (result.ok) {
-        if (result.lastModified) lastWriteTime.current = result.lastModified;
+        if (result.lastModified) lastWriteTimeRef.current = result.lastModified;
         setStatus('connected');
       } else {
         setStatus('error');
@@ -174,7 +174,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
   // Returns true if the message was handled as a sync message
   const handleSyncMessage = useCallback((msg: WebSocketMessage): boolean => {
     if (msg.type === 'state') {
-      if (msg.lastModified > lastWriteTime.current + 1000) {
+      if (msg.lastModified > lastWriteTimeRef.current + 1000) {
         // Regression guard: reject incoming state with a stale version counter
         const currentData = dataRef.current;
         const incomingV = msg.data._v || 0;
@@ -184,7 +184,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
           return true;
         }
         setData(msg.data);
-        lastWriteTime.current = msg.lastModified;
+        lastWriteTimeRef.current = msg.lastModified;
         if (msg.data.project) setProjectName(msg.data.project);
         setStatus('synced');
         setTimeout(() => setStatus('connected'), 2000);
@@ -204,7 +204,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
             mergeResult.data.savedAt = new Date().toISOString();
             writeState(mergeResult.data).then((result) => {
               if (result.ok && result.lastModified) {
-                lastWriteTime.current = result.lastModified;
+                lastWriteTimeRef.current = result.lastModified;
               } else if (!result.ok) {
                 console.error('[sync] Failed to write merged progress state');
                 setStatus('error');
@@ -255,7 +255,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
       writeState(updated).then((result) => {
         if (result.ok && result.lastModified) {
-          lastWriteTime.current = result.lastModified;
+          lastWriteTimeRef.current = result.lastModified;
         } else if (!result.ok) {
           console.error('[sync] Failed to write paused task state');
           setStatus('error');
@@ -282,7 +282,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
       writeState(updated).then((result) => {
         if (result.ok && result.lastModified) {
-          lastWriteTime.current = result.lastModified;
+          lastWriteTimeRef.current = result.lastModified;
         } else if (!result.ok) {
           console.error('[sync] Failed to write cancelled task state');
           setStatus('error');
@@ -313,6 +313,6 @@ export function useSync({ setStatus }: UseSyncOptions) {
     pauseTask,
     cancelTask,
     flushPendingSave,
-    lastWriteTime,
+    lastWriteTimeRef,
   };
 }

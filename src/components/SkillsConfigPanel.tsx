@@ -43,31 +43,31 @@ function rowsToConfig(rows: EpicRow[]): SkillsConfig {
 
 function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean; onClick?: () => void }) {
   const [hovered, setHovered] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({ display: 'none' });
   const badgeRef = React.useRef<HTMLSpanElement>(null);
   const isAgent = info.type === 'agent';
-
-  // Compute tooltip position relative to viewport
-  const getTooltipStyle = (): React.CSSProperties => {
-    if (!badgeRef.current) return { display: 'none' };
-    const rect = badgeRef.current.getBoundingClientRect();
-    return {
-      position: 'fixed',
-      left: Math.min(rect.left, window.innerWidth - 530),
-      top: rect.bottom + 6,
-      zIndex: 200, minWidth: '350px', maxWidth: '520px',
-      padding: '6px 10px', fontSize: '11px', lineHeight: 1.4,
-      background: 'var(--dm-surface)', color: 'var(--dm-text)',
-      border: '1px solid var(--dm-border)', borderRadius: '6px',
-      boxShadow: 'var(--dm-shadow-lg)',
-      pointerEvents: 'none' as const,
-    };
-  };
 
   return (
     <span
       ref={badgeRef}
       style={{ display: 'inline-block', cursor: onClick ? 'pointer' : 'default' }}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => {
+        setHovered(true);
+        if (badgeRef.current) {
+          const rect = badgeRef.current.getBoundingClientRect();
+          setTooltipStyle({
+            position: 'fixed',
+            left: Math.min(rect.left, window.innerWidth - 530),
+            top: rect.bottom + 6,
+            zIndex: 200, minWidth: '350px', maxWidth: '520px',
+            padding: '6px 10px', fontSize: '11px', lineHeight: 1.4,
+            background: 'var(--dm-surface)', color: 'var(--dm-text)',
+            border: '1px solid var(--dm-border)', borderRadius: '6px',
+            boxShadow: 'var(--dm-shadow-lg)',
+            pointerEvents: 'none' as const,
+          });
+        }
+      }}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
     >
@@ -81,7 +81,7 @@ function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean
         }}
       >{info.name}</span>
       {hovered && info.description ? ReactDOM.createPortal(
-        <div style={getTooltipStyle()}>{info.description}</div>,
+        <div style={tooltipStyle}>{info.description}</div>,
         document.body,
       ) : null}
     </span>

@@ -32,14 +32,14 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     onMessage: (msg: WebSocketMessage) => handleWsMessageRef.current(msg),
   });
 
-  const { data, setData, projectName, setProjectName, save, handleSyncMessage, pauseTask, cancelTask, flushPendingSave, lastWriteTime } = useSync({ setStatus });
+  const { data, setData, projectName, setProjectName, save, handleSyncMessage, pauseTask, cancelTask, flushPendingSave, lastWriteTimeRef } = useSync({ setStatus });
 
   const { showTemplatePicker, triggerTemplatePicker, connectWithTemplate, cancelTemplatePicker } = useTemplate({
     setStatus,
     setConnected,
     setData,
     setProjectName,
-    lastWriteTime,
+    lastWriteTimeRef,
     setAvailableSkills,
     setSkillsConfig,
     setProjects,
@@ -69,7 +69,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       let stateData: StateData;
       if (existing) {
         stateData = existing.data;
-        lastWriteTime.current = existing.lastModified;
+        lastWriteTimeRef.current = existing.lastModified;
       } else {
         // New project — show template picker
         triggerTemplatePicker();
@@ -101,7 +101,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       console.error('Connection failed:', err);
       setStatus('error');
     }
-  }, [setConnected, setStatus, setProjectName, setData, lastWriteTime, triggerTemplatePicker]);
+  }, [setConnected, setStatus, setProjectName, setData, lastWriteTimeRef, triggerTemplatePicker]);
 
   useEffect(() => { connectToServerRef.current = connectToServer; }, [connectToServer]);
 

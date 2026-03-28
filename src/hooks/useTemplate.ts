@@ -23,7 +23,7 @@ interface UseTemplateOptions {
   setConnected: (v: boolean) => void;
   setData: (d: StateData | null) => void;
   setProjectName: (n: string) => void;
-  lastWriteTime: React.MutableRefObject<number>;
+  lastWriteTimeRef: React.MutableRefObject<number>;
   setAvailableSkills: (s: SkillInfo[]) => void;
   setSkillsConfig: (c: SkillsConfig | null) => void;
   setProjects: (p: ProjectInfo[]) => void;
@@ -34,7 +34,7 @@ export function useTemplate({
   setConnected,
   setData,
   setProjectName,
-  lastWriteTime,
+  lastWriteTimeRef,
   setAvailableSkills,
   setSkillsConfig,
   setProjects,
@@ -58,8 +58,8 @@ export function useTemplate({
         stateData = createDefaultState(info.projectName);
       }
       const writeResult = await writeState(stateData);
-      if (writeResult.ok && writeResult.lastModified) lastWriteTime.current = writeResult.lastModified;
-      else lastWriteTime.current = Date.now();
+      if (writeResult.ok && writeResult.lastModified) lastWriteTimeRef.current = writeResult.lastModified;
+      else lastWriteTimeRef.current = Date.now();
 
       setProjectName(stateData.project || info.projectName);
       await syncSkills();
@@ -79,7 +79,7 @@ export function useTemplate({
       console.error('Template setup failed:', err);
       setStatus('error');
     }
-  }, [setConnected, setStatus, setProjectName, setData, lastWriteTime, setAvailableSkills, setSkillsConfig, setProjects]);
+  }, [setConnected, setStatus, setProjectName, setData, lastWriteTimeRef, setAvailableSkills, setSkillsConfig, setProjects]);
 
   const cancelTemplatePicker = useCallback(() => {
     setShowTemplatePicker(false);

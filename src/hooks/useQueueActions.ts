@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '../api.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
 import { computePhases } from '../utils/computePhases.ts';
@@ -27,7 +27,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
 
   // Keep a ref to latest data so async handlers can re-verify against fresh state
   const dataRef = useRef(data);
-  dataRef.current = data;
+  useEffect(() => { dataRef.current = data; });
 
   const tasks: Task[] = data?.tasks || [];
   const queue: QueueItem[] = data?.queue || [];
