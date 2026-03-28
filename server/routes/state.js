@@ -89,6 +89,8 @@ Rules:
     const result = await readJsonOrNull(statePath);
     if (!result) {
       jsonResponse(res, 404, { error: 'State file not found' });
+    } else if (!validateStateStructure(result.data)) {
+      jsonResponse(res, 500, { error: 'Corrupt state file: invalid structure' });
     } else {
       jsonResponse(res, 200, { data: result.data, lastModified: result.stat.mtimeMs });
     }

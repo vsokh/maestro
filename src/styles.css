@@ -27,7 +27,7 @@ input, textarea { color: var(--dm-text); }
 }
 .badge-done { background: var(--dm-success-light); color: var(--dm-success); }
 .badge-pending { background: var(--dm-amber-light); color: var(--dm-amber); }
-.badge-blocked { background: var(--dm-border); color: var(--dm-text); }
+.badge-blocked { background: var(--dm-amber-light); color: var(--dm-text-muted); }
 .badge-accent { background: var(--dm-accent-light); color: var(--dm-accent); }
 .badge-in-progress { background: var(--dm-accent-light); color: var(--dm-accent); }
 .badge-paused { background: var(--dm-paused-light); color: var(--dm-paused); }
