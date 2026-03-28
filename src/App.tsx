@@ -310,7 +310,7 @@ export function App() {
           onToggle={() => setShowScratchpad(!showScratchpad)}
           scratchpadValue={data.scratchpad || ''}
           onScratchpadChange={(text) => save({ ...data, scratchpad: text })}
-          onSplit={(text) => { handleSplitTasks(text); setShowScratchpad(false); }}
+          onSplit={(text) => { handleSplitTasks(text); }}
           splitting={splitting}
         />
       )}

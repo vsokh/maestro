@@ -47,6 +47,7 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
         setSplitResult(newTasks.map(t => ({ name: t.name })));
         if (splitResultTimer.current) clearTimeout(splitResultTimer.current);
         splitResultTimer.current = setTimeout(() => setSplitResult(null), 8000);
+        setShowScratchpad(false);
 
         try {
           await api.launch(0, '/orchestrator arrange');
