@@ -333,7 +333,7 @@ describe('PUT /api/state', () => {
 
   it('returns 409 conflict when file is newer than client _lastModified', async () => {
     // Write a state file first
-    const existingData = { project: 'existing' };
+    const existingData = { project: 'existing', tasks: [] };
     await writeFile(join(devmanagerDir, 'state.json'), JSON.stringify(existingData));
 
     // Send with a very old _lastModified (but truthy) to trigger conflict
