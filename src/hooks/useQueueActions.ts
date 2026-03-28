@@ -79,7 +79,27 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
   };
 
   const handleRemoveFromQueue = (key: number) => {
-    const newQueue = queue.filter(q => q.task !== key);
+    // Cascade: also remove any queued tasks that transitively depend on the removed task
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+    const queueIds = new Set(queue.map(q => q.task));
+    const removed = new Set<number>();
+    const toRemove = [key];
+
+    while (toRemove.length > 0) {
+      const id = toRemove.pop()!;
+      if (removed.has(id)) continue;
+      removed.add(id);
+      // Find queued tasks that depend on this one
+      for (const qId of queueIds) {
+        if (removed.has(qId)) continue;
+        const task = taskMap.get(qId);
+        if (task?.dependsOn?.includes(id)) {
+          toRemove.push(qId);
+        }
+      }
+    }
+
+    const newQueue = queue.filter(q => !removed.has(q.task));
     updateData({ queue: newQueue });
   };
 

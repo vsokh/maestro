@@ -158,36 +158,47 @@ function acquireLock() {
 
   const startTime = Date.now();
 
-  while (fs.existsSync(lockFile)) {
-    // Check if lock is stale (older than 10 minutes)
+  while (true) {
     try {
-      const lockStat = fs.statSync(lockFile);
-      const lockAge = Date.now() - lockStat.mtimeMs;
-      if (lockAge > LOCK_STALE_MS) {
-        const lockContent = fs.readFileSync(lockFile, 'utf-8').trim();
-        console.error(`Warning: Stale merge lock (${Math.round(lockAge / 1000)}s old, task ${lockContent}). Taking over.`);
-        break; // Take over the stale lock
+      // Atomic create-or-fail (O_CREAT | O_EXCL)
+      const fd = fs.openSync(lockFile, 'wx');
+      fs.writeSync(fd, String(taskId));
+      fs.closeSync(fd);
+      return; // Lock acquired
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+
+      // Lock exists — check if stale
+      try {
+        const lockStat = fs.statSync(lockFile);
+        const lockAge = Date.now() - lockStat.mtimeMs;
+        if (lockAge > LOCK_STALE_MS) {
+          const lockContent = fs.readFileSync(lockFile, 'utf-8').trim();
+          console.error(`Warning: Stale merge lock (${Math.round(lockAge / 1000)}s old, task ${lockContent}). Taking over.`);
+          // Remove stale lock and retry
+          try { fs.unlinkSync(lockFile); } catch { /* gone already */ }
+          continue;
+        }
+      } catch {
+        // Lock disappeared during stat — retry immediately
+        continue;
       }
-    } catch {
-      break; // Lock disappeared during check — proceed
-    }
 
-    // Check if we've waited too long
-    if (Date.now() - startTime > LOCK_TIMEOUT_MS) {
-      const lockContent = fs.readFileSync(lockFile, 'utf-8').trim();
-      console.error(`Error: Merge lock held by task ${lockContent} for over 60s.`);
-      console.log(`MERGE_FAILED=lock_timeout`);
-      console.log(`LOCK_RELEASED=no`);
-      console.log(`WORKTREE=${worktreeRelative}`);
-      console.log(`BRANCH=${branchName}`);
-      process.exit(1);
-    }
+      // Check timeout
+      if (Date.now() - startTime > LOCK_TIMEOUT_MS) {
+        let lockContent = 'unknown';
+        try { lockContent = fs.readFileSync(lockFile, 'utf-8').trim(); } catch {}
+        console.error(`Error: Merge lock held by task ${lockContent} for over 60s.`);
+        console.log(`MERGE_FAILED=lock_timeout`);
+        console.log(`LOCK_RELEASED=no`);
+        console.log(`WORKTREE=${worktreeRelative}`);
+        console.log(`BRANCH=${branchName}`);
+        process.exit(1);
+      }
 
-    sleep(POLL_INTERVAL_MS);
+      sleep(POLL_INTERVAL_MS);
+    }
   }
-
-  // Write our lock
-  fs.writeFileSync(lockFile, String(taskId), 'utf-8');
 }
 
 function releaseLock() {
