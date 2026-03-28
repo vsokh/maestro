@@ -67,7 +67,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
                 );
               })()}
             </div>
-            {onQueueGroup && (() => {
+            {(() => {
               const unqueued = getUnqueuedTasks(groupTasks, queue || []);
               if (unqueued.length === 0) return null;
               return (
@@ -79,7 +79,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
                 >Queue {unqueued.length}</button>
               );
             })()}
-            {onDeleteGroup && !confirmDelete && (
+            {!confirmDelete && (
               <button
                 onClick={() => setConfirmDelete(true)}
                 title={EPIC_DELETE_TITLE}
@@ -87,7 +87,7 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
                 style={{ padding: '1px 8px', opacity: 0.5 }}
               >&#10005;</button>
             )}
-            {onDeleteGroup && confirmDelete && (
+            {confirmDelete && (
               <>
                 <button
                   onClick={() => { onDeleteGroup(groupName); setConfirmDelete(false); }}

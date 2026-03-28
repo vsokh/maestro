@@ -69,8 +69,8 @@ export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
   }, [pendingTasks, activeFilter, searchText]);
   const pendingGroups = useMemo(() => groupTasksBy(filteredPendingTasks, { hiddenEpics: hiddenEpicNames }), [filteredPendingTasks, hiddenEpicNames]);
   const { doneGroups, backlogGroups } = useMemo(() => ({
-    doneGroups: groupTasksBy(doneTasks, { defaultGroup: 'Other' }),
-    backlogGroups: groupTasksBy(backlogTasks, { defaultGroup: 'Other' }),
+    doneGroups: groupTasksBy(doneTasks, { defaultGroup: 'Other' }) as Map<string, Task[]>,
+    backlogGroups: groupTasksBy(backlogTasks, { defaultGroup: 'Other' }) as Map<string, Task[]>,
   }), [doneTasks, backlogTasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showBacklog, setShowBacklog] = useState(false);
