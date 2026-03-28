@@ -45,6 +45,10 @@
   --dm-paused-shadow: rgba(155, 139, 180, 0.2);
   --dm-paused-bg-subtle: rgba(155, 139, 180, 0.06);
 
+  /* Blocked */
+  --dm-blocked: #c5bfb8;
+  --dm-blocked-light: rgba(160, 152, 142, 0.18);
+
   /* Misc */
   --dm-dark-shadow: rgba(0, 0, 0, 0.1);
   --dm-overlay-dark: rgba(0, 0, 0, 0.6);
@@ -140,6 +144,10 @@
   --dm-paused-light: rgba(155, 139, 180, 0.2);
   --dm-paused-shadow: rgba(176, 160, 200, 0.2);
   --dm-paused-bg-subtle: rgba(176, 160, 200, 0.08);
+
+  /* Blocked */
+  --dm-blocked: #524e4a;
+  --dm-blocked-light: rgba(160, 152, 142, 0.20);
 
   /* Misc */
   --dm-dark-shadow: rgba(0, 0, 0, 0.2);

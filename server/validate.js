@@ -26,10 +26,26 @@ export function validateProgressEntry(data) {
 
 /**
  * Validate basic state structure for PUT /api/state.
- * Returns true if the data has required fields.
+ * Returns true if the data has required fields and sound structure.
+ * Individual malformed tasks don't reject the whole state,
+ * but the top-level shape must be correct.
  */
 export function validateStateStructure(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
   if (!Array.isArray(data.tasks)) return false;
+
+  // Every task must have numeric id, string name, string status
+  for (const task of data.tasks) {
+    if (!task || typeof task !== 'object' || Array.isArray(task)) return false;
+    if (typeof task.id !== 'number' || !isFinite(task.id)) return false;
+    if (typeof task.name !== 'string') return false;
+    if (typeof task.status !== 'string') return false;
+  }
+
+  // Optional arrays — if present, must actually be arrays
+  if (data.queue !== undefined && !Array.isArray(data.queue)) return false;
+  if (data.activity !== undefined && !Array.isArray(data.activity)) return false;
+  if (data.epics !== undefined && !Array.isArray(data.epics)) return false;
+
   return true;
 }
