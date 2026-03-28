@@ -1,6 +1,6 @@
 import React from 'react';
 import type { QualityReport, QualityHistoryEntry } from '../../types';
-import { DIM_KEYS, DIM_LABELS, DIM_DESCRIPTIONS, scoreColor, trendFromScores, getDimValue } from './shared';
+import { DIM_KEYS, DIM_LABELS, DIM_DESCRIPTIONS, scoreColor, trendFromScores, getDimValue, getDimEntry } from './shared';
 import { Tooltip, TrendArrow } from './Tooltip';
 import { Sparkline } from './Sparkline';
 import { SCORECARD_HEADERS, SCORECARD_CLEAN } from '../../constants/strings.ts';
@@ -23,7 +23,7 @@ export function Scorecard({ latest, prev, history }: ScorecardProps) {
       </thead>
       <tbody>
         {DIM_KEYS.map(key => {
-          const d = latest.dimensions[key];
+          const d = getDimEntry(latest.dimensions, key);
           if (!d) return null;
           const prevVal = getDimValue(prev?.dimensions, key);
           const trend = trendFromScores(d.score, prevVal);

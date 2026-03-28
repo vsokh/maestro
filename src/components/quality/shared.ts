@@ -36,24 +36,34 @@ export const DIM_KEY_ALIASES: Record<string, string> = {
   componentArchitecture: 'cleanArchitecture',
 };
 
+/** Resolve a canonical dimension key to its value in a dimensions record,
+ *  trying the key itself first, then any known alias (old key name). */
+function resolveDim<T>(dims: Record<string, T> | undefined, key: string): T | undefined {
+  if (!dims) return undefined;
+  let val = dims[key];
+  if (val === undefined) {
+    const oldKey = Object.entries(DIM_KEY_ALIASES).find(([, v]) => v === key)?.[0];
+    if (oldKey) val = dims[oldKey];
+  }
+  return val;
+}
+
 /** Get dimension score from a history entry, resolving aliases for old key names.
  *  Returns number or null if the dimension doesn't exist in the entry. */
 export function getDimValue(
   dims: Record<string, { score: number } | number> | undefined,
   key: string
 ): number | null {
-  if (!dims) return null;
-  // Try current key first
-  let val = dims[key];
-  // Try alias (old key name)
-  if (val === undefined) {
-    const oldKey = Object.entries(DIM_KEY_ALIASES).find(([, v]) => v === key)?.[0];
-    if (oldKey) val = dims[oldKey];
-  }
+  const val = resolveDim(dims, key);
   if (val === undefined) return null;
   if (typeof val === 'number') return val;
   if (val && typeof val === 'object') return val.score ?? null;
   return null;
+}
+
+/** Get the full dimension entry from a QualityReport, resolving aliases. */
+export function getDimEntry<T>(dims: Record<string, T> | undefined, key: string): T | undefined {
+  return resolveDim(dims, key);
 }
 
 export function scoreColor(s: number) {

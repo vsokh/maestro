@@ -98,7 +98,7 @@ export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest
     }
 
     // Current
-    const scores = DIM_KEYS.map(k => latest.dimensions[k]?.score ?? 0);
+    const scores = DIM_KEYS.map(k => getDimValue(latest.dimensions, k) ?? 0);
     drawPoly(ctx, cx, cy, R, n, start, step, scores, accentGlow, accentColor, 2);
 
     // Dots
