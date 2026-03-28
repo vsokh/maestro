@@ -14,6 +14,11 @@ export async function handleState(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'Missing text' });
       return true;
     }
+    const MAX_TEXT_LENGTH = 50000;
+    if (text.length > MAX_TEXT_LENGTH) {
+      jsonResponse(res, 400, { error: `Text too long. Maximum ${MAX_TEXT_LENGTH} characters` });
+      return true;
+    }
 
     try {
       // Read current state to understand existing tasks/epics

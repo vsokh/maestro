@@ -123,11 +123,13 @@ describe('handleProjects', () => {
       expect(subdir.isProject).toBe(true);
     });
 
-    it('returns 400 for invalid path', async () => {
+    it('returns 403 for path outside home directory', async () => {
       const res = mockRes();
       const url = mockUrl('/api/browse?path=/nonexistent_path_12345');
       await handleProjects('GET', '/api/browse', mockReq(), res, url, mockCtx(tmpDir));
-      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      expect(res.writeHead).toHaveBeenCalledWith(403, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Path outside home directory');
     });
   });
 

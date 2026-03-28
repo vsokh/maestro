@@ -53,7 +53,7 @@ vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    homedir: vi.fn(() => '/mock/home'),
+    homedir: vi.fn(() => actual.homedir()),
     platform: vi.fn(() => 'win32'),
   };
 });
@@ -701,16 +701,16 @@ describe('GET /api/quality/history', () => {
 describe('POST /api/attachments/:taskId', () => {
   it('saves uploaded file', async () => {
     const fileContent = Buffer.from('hello world');
-    const req = mockRawReq('POST', '/api/attachments/5', fileContent, '?name=test.txt');
+    const req = mockRawReq('POST', '/api/attachments/5', fileContent, '?name=test.png');
     const res = mockRes();
     await handleApi(req, res);
 
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
     const body = getJsonResponse(res);
     expect(body.ok).toBe(true);
-    expect(body.path).toContain('attachments/5/test.txt');
+    expect(body.path).toContain('attachments/5/test.png');
 
-    const saved = await readFile(join(devmanagerDir, 'attachments', '5', 'test.txt'));
+    const saved = await readFile(join(devmanagerDir, 'attachments', '5', 'test.png'));
     expect(saved.toString()).toBe('hello world');
   });
 

@@ -2,6 +2,9 @@ import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { jsonResponse, parseBody, ensureDir, matchRoute, handleNotFound, safePath } from '../middleware.js';
 
+const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+
 const MIME_TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -31,6 +34,11 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'Missing ?name= query parameter for filename' });
       return true;
     }
+    const ext = '.' + filename.split('.').pop().toLowerCase();
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      jsonResponse(res, 400, { error: 'File type not allowed. Accepted: png, jpg, jpeg, gif, webp, svg' });
+      return true;
+    }
     const attachDir = safePath(projectPath, '.devmanager', 'attachments', taskId);
     if (!attachDir) {
       jsonResponse(res, 400, { error: 'Invalid path' });
@@ -38,6 +46,10 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
     }
     await ensureDir(attachDir);
     const buf = await parseBody(req);
+    if (buf.length > MAX_UPLOAD_SIZE) {
+      jsonResponse(res, 400, { error: 'File too large. Maximum size: 10MB' });
+      return true;
+    }
     const filePath = safePath(attachDir, filename);
     if (!filePath) {
       jsonResponse(res, 400, { error: 'Invalid filename' });

@@ -65,15 +65,15 @@ describe('handleAttachments', () => {
     it('uploads an attachment', async () => {
       const res = mockRes();
       const req = mockReq(['file content here']);
-      const url = mockUrl('/api/attachments/5?name=test.txt');
+      const url = mockUrl('/api/attachments/5?name=test.png');
       const result = await handleAttachments('POST', '/api/attachments/5', req, res, url, mockCtx(tmpDir));
       expect(result).toBe(true);
       const body = JSON.parse(res.end.mock.calls[0][0]);
       expect(body.ok).toBe(true);
-      expect(body.path).toBe('.devmanager/attachments/5/test.txt');
+      expect(body.path).toBe('.devmanager/attachments/5/test.png');
 
       // Verify file was written
-      const content = await readFile(join(tmpDir, '.devmanager', 'attachments', '5', 'test.txt'));
+      const content = await readFile(join(tmpDir, '.devmanager', 'attachments', '5', 'test.png'));
       expect(content.toString()).toBe('file content here');
     });
 
@@ -133,7 +133,7 @@ describe('handleAttachments', () => {
       const req = mockReq(['file content']);
       // Use enough ../ to escape projectPath: .devmanager/attachments/../../../../x
       const traversal = '..%2F..%2F..%2F..%2Fetc';
-      const url = mockUrl(`/api/attachments/${traversal}?name=passwd`);
+      const url = mockUrl(`/api/attachments/${traversal}?name=evil.png`);
       await handleAttachments('POST', `/api/attachments/${traversal}`, req, res, url, mockCtx(tmpDir));
       expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
       const body = JSON.parse(res.end.mock.calls[0][0]);
@@ -144,7 +144,7 @@ describe('handleAttachments', () => {
       const res = mockRes();
       const req = mockReq(['file content']);
       // filename is resolved under attachDir, so ../../../../.. escapes projectPath
-      const url = mockUrl('/api/attachments/5?name=..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd');
+      const url = mockUrl('/api/attachments/5?name=..%2F..%2F..%2F..%2F..%2Fetc%2Fevil.png');
       await handleAttachments('POST', '/api/attachments/5', req, res, url, mockCtx(tmpDir));
       expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
       const body = JSON.parse(res.end.mock.calls[0][0]);

@@ -3,6 +3,20 @@ import { writeFileSync, mkdirSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, matchRoute } from '../middleware.js';
 
+// PowerShell-safe string escaping (mirrors src/utils/queueUtils.ts)
+function escapePS(s) {
+  return s
+    .replace(/`/g, '``')           // backtick (PS escape char) — double it first
+    .replace(/\$/g, '`$')          // variable expansion
+    .replace(/;/g, '`;')           // statement separator
+    .replace(/\|/g, '`|')          // pipeline
+    .replace(/&/g, '`&')           // call operator
+    .replace(/\(/g, '`(')          // subexpression open
+    .replace(/\)/g, '`)')          // subexpression close
+    .replace(/'/g, "''")           // single quote (for single-quoted strings)
+    .replace(/[\r\n]+/g, ' ');     // newlines
+}
+
 // Allowlist pattern for commands passed to terminal launchers
 const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^\/codehealth(\s+(scan|quick|diff))?$|^\/autofix$|^Read \.devmanager\//;
 
@@ -53,7 +67,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
       if (os === 'win32') {
         const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.ps1`);
         // PowerShell single-quote escaping: double any single quotes
-        const safeCmd = command.replace(/'/g, "''");
+        const safeCmd = escapePS(command);
         writeFileSync(scriptPath, `& ${cliName} --dangerously-skip-permissions '${safeCmd}'\n`);
 
         const { spawn: spawnProc } = await import('node:child_process');

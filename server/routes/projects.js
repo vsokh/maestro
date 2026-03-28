@@ -39,6 +39,12 @@ export async function handleProjects(method, pathname, req, res, url, ctx) {
 
     const resolved = resolve(browsePath);
 
+    const home = homedir();
+    if (!resolved.startsWith(home)) {
+      jsonResponse(res, 403, { error: 'Path outside home directory' });
+      return true;
+    }
+
     try {
       const s = await stat(resolved);
       if (!s.isDirectory()) {
