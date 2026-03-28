@@ -138,24 +138,45 @@ describe('queue-next.cjs', () => {
     expect(result.stdout).toContain('QUEUE_EMPTY=true');
   });
 
-  it('outputs task details for first queued item', () => {
+  it('outputs task ID and name for first queued item', () => {
     writeState({
-      tasks: [
-        { id: 10, name: 'Add login', fullName: 'Add Google OAuth login', group: 'Auth' },
-        { id: 11, name: 'Fix bug' },
-      ],
-      queue: [
-        { task: 10, taskName: 'Add login', notes: 'Use OAuth2' },
-        { task: 11, taskName: 'Fix bug' },
-      ],
+      tasks: [{ id: 10, name: 'Add login', fullName: 'Add Google OAuth login', group: 'Auth' }],
+      queue: [{ task: 10, taskName: 'Add login', notes: '' }],
     });
     const result = run('queue-next.cjs');
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('TASK_ID=10');
     expect(result.stdout).toContain('TASK_NAME=Add login');
+  });
+
+  it('outputs full name and group from task record', () => {
+    writeState({
+      tasks: [{ id: 10, name: 'Add login', fullName: 'Add Google OAuth login', group: 'Auth' }],
+      queue: [{ task: 10, taskName: 'Add login', notes: '' }],
+    });
+    const result = run('queue-next.cjs');
     expect(result.stdout).toContain('TASK_FULL=Add Google OAuth login');
     expect(result.stdout).toContain('TASK_GROUP=Auth');
+  });
+
+  it('outputs manager notes for queued item', () => {
+    writeState({
+      tasks: [{ id: 10, name: 'Add login' }],
+      queue: [{ task: 10, taskName: 'Add login', notes: 'Use OAuth2' }],
+    });
+    const result = run('queue-next.cjs');
     expect(result.stdout).toContain('NOTES=Use OAuth2');
+  });
+
+  it('outputs queue remaining count', () => {
+    writeState({
+      tasks: [{ id: 10, name: 'Add login' }, { id: 11, name: 'Fix bug' }],
+      queue: [
+        { task: 10, taskName: 'Add login', notes: '' },
+        { task: 11, taskName: 'Fix bug', notes: '' },
+      ],
+    });
+    const result = run('queue-next.cjs');
     expect(result.stdout).toContain('QUEUE_REMAINING=2');
   });
 

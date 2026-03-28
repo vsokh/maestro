@@ -58,7 +58,7 @@ describe('useTaskActions', () => {
       expect(savedData.tasks[0].name).toBe('Login v2');
     });
 
-    it('adds history entry on status change', () => {
+    it('initializes history with created entry on first status change', () => {
       const task = makeTask(1, { status: 'pending', createdAt: '2026-01-01T00:00:00Z' });
       const { result, save } = setup({ data: { tasks: [task] } });
 
@@ -68,9 +68,20 @@ describe('useTaskActions', () => {
 
       const savedData = save.mock.calls[0][0] as StateData;
       const history = savedData.tasks[0].history!;
-      expect(history.length).toBe(2);
       expect(history[0].status).toBe('created');
-      expect(history[1].status).toBe('in-progress');
+    });
+
+    it('appends new status to history on status change', () => {
+      const task = makeTask(1, { status: 'pending', createdAt: '2026-01-01T00:00:00Z' });
+      const { result, save } = setup({ data: { tasks: [task] } });
+
+      act(() => {
+        result.current.handleUpdateTask(1, { status: 'in-progress' });
+      });
+
+      const savedData = save.mock.calls[0][0] as StateData;
+      const history = savedData.tasks[0].history!;
+      expect(history[history.length - 1].status).toBe('in-progress');
     });
 
     it('generates activity with "marked {status}" on status change', () => {
@@ -260,10 +271,25 @@ describe('useTaskActions', () => {
       expect(savedData.taskNotes['2']).toBe('note for 2');
     });
 
-    it('removes task id from other tasks\' dependsOn arrays', () => {
+    it('removes deleted task id from dependsOn of other tasks', () => {
       const tasks = [
         makeTask(1),
         makeTask(2, { dependsOn: [1, 3] }),
+      ];
+      const { result, save } = setup({ data: { tasks } });
+
+      act(() => {
+        result.current.handleDeleteTask(1);
+      });
+
+      const savedData = save.mock.calls[0][0] as StateData;
+      const task2 = savedData.tasks.find(t => t.id === 2)!;
+      expect(task2.dependsOn).toEqual([3]);
+    });
+
+    it('clears dependsOn array when sole dependency is deleted', () => {
+      const tasks = [
+        makeTask(1),
         makeTask(3, { dependsOn: [1] }),
       ];
       const { result, save } = setup({ data: { tasks } });
@@ -273,10 +299,7 @@ describe('useTaskActions', () => {
       });
 
       const savedData = save.mock.calls[0][0] as StateData;
-      // task 1 removed, task 2 should have dependsOn: [3], task 3 should have dependsOn: []
-      const task2 = savedData.tasks.find(t => t.id === 2)!;
       const task3 = savedData.tasks.find(t => t.id === 3)!;
-      expect(task2.dependsOn).toEqual([3]);
       expect(task3.dependsOn).toEqual([]);
     });
 

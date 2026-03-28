@@ -161,22 +161,32 @@ describe('TaskBoard', () => {
       expect(screen.queryByText('Signup form')).toBeNull();
     });
 
-    it('status filter tabs filter tasks by status', () => {
+    it('status filter shows only matching tasks', () => {
       const tasks = [
         makeTask(1, { name: 'Task A', status: 'pending' }),
         makeTask(2, { name: 'Task B', status: 'blocked', blockedReason: 'Waiting' }),
         makeTask(3, { name: 'Task C', status: 'pending' }),
       ];
       renderWithActions(<TaskBoard tasks={tasks} epics={[]} queue={[]} />);
-      // Click the "Blocked" filter button (it shows "Blocked 1")
       const blockedFilter = screen.getByRole('button', { name: /^Blocked/ });
       fireEvent.click(blockedFilter);
       expect(screen.getByText('Task B')).toBeDefined();
+    });
+
+    it('status filter hides non-matching tasks', () => {
+      const tasks = [
+        makeTask(1, { name: 'Task A', status: 'pending' }),
+        makeTask(2, { name: 'Task B', status: 'blocked', blockedReason: 'Waiting' }),
+        makeTask(3, { name: 'Task C', status: 'pending' }),
+      ];
+      renderWithActions(<TaskBoard tasks={tasks} epics={[]} queue={[]} />);
+      const blockedFilter = screen.getByRole('button', { name: /^Blocked/ });
+      fireEvent.click(blockedFilter);
       expect(screen.queryByText('Task A')).toBeNull();
       expect(screen.queryByText('Task C')).toBeNull();
     });
 
-    it('adding a task through the form calls handleAddTask and hides the form', () => {
+    it('submitting add task form calls handleAddTask with task data', () => {
       const { actions } = renderWithActions(<TaskBoard tasks={[]} epics={[]} queue={[]} />);
       fireEvent.click(screen.getByText('+ Add task'));
       const titleInput = screen.getByPlaceholderText('Task title...');
@@ -184,7 +194,13 @@ describe('TaskBoard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
       expect(actions.handleAddTask).toHaveBeenCalledTimes(1);
       expect((actions.handleAddTask as ReturnType<typeof vi.fn>).mock.calls[0][0].name).toBe('New feature');
-      // Form should be hidden after submission
+    });
+
+    it('add task form hides after submission', () => {
+      renderWithActions(<TaskBoard tasks={[]} epics={[]} queue={[]} />);
+      fireEvent.click(screen.getByText('+ Add task'));
+      fireEvent.input(screen.getByPlaceholderText('Task title...'), { target: { value: 'New feature' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
       expect(screen.queryByPlaceholderText('Task title...')).toBeNull();
     });
 

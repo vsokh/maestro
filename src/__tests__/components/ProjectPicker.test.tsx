@@ -20,11 +20,6 @@ describe('ProjectPicker', () => {
     expect(screen.getByRole('button', { name: 'Retry connection' })).toBeDefined();
   });
 
-  it('renders connect button when disconnected', () => {
-    render(<ProjectPicker {...defaultProps()} />);
-    expect(screen.getByRole('button', { name: 'Retry connection' })).toBeDefined();
-  });
-
   it('shows error message when status is "error"', () => {
     render(<ProjectPicker {...defaultProps()} status="error" />);
     expect(screen.getByText(/Could not connect/)).toBeDefined();
@@ -45,12 +40,5 @@ describe('ProjectPicker', () => {
       expect(props.onConnect).toHaveBeenCalledTimes(1);
     });
 
-    it('clicking "Retry connection" calls onConnect', () => {
-      const props = defaultProps();
-      render(<ProjectPicker {...props} />);
-      const connectBtn = screen.getByRole('button', { name: 'Retry connection' });
-      fireEvent.click(connectBtn);
-      expect(props.onConnect).toHaveBeenCalledTimes(1);
-    });
   });
 });

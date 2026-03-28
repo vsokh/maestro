@@ -142,15 +142,20 @@ describe('TaskDetail', () => {
       expect(actions.handleQueue).toHaveBeenCalledWith(task);
     });
 
-    it('two-click delete: first click shows "Confirm delete?", second click calls handleDeleteTask', () => {
+    it('first delete click shows confirmation prompt', () => {
       const task = makeTask(1);
       const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const deleteBtn = screen.getByText('Delete task');
       fireEvent.click(deleteBtn);
       expect(screen.getByText('Confirm delete?')).toBeDefined();
       expect(actions.handleDeleteTask).not.toHaveBeenCalled();
-      const confirmBtn = screen.getByText('Confirm delete?');
-      fireEvent.click(confirmBtn);
+    });
+
+    it('confirming delete calls handleDeleteTask', () => {
+      const task = makeTask(1);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
+      fireEvent.click(screen.getByText('Delete task'));
+      fireEvent.click(screen.getByText('Confirm delete?'));
       expect(actions.handleDeleteTask).toHaveBeenCalledWith(1);
     });
 
