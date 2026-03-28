@@ -3,6 +3,7 @@ import { handleGit } from './routes/git.js';
 import { handleState } from './routes/state.js';
 import { handleSkills } from './routes/skills.js';
 import { handleQuality } from './routes/quality.js';
+import { handleRelease } from './routes/release.js';
 import { handleAttachments } from './routes/attachments.js';
 import { handleBackups } from './routes/backups.js';
 import { handleLaunch } from './routes/launch.js';
@@ -14,6 +15,7 @@ const handlers = [
   handleState,
   handleSkills,
   handleQuality,
+  handleRelease,
   handleAttachments,
   handleBackups,
   handleLaunch,

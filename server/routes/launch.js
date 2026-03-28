@@ -18,7 +18,7 @@ function escapePS(s) {
 }
 
 // Allowlist pattern for commands passed to terminal launchers
-const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^\/codehealth(\s+(scan|quick|diff))?$|^\/autofix$|^Read \.devmanager\//;
+const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^\/codehealth(\s+(scan|quick|diff))?$|^\/autofix$|^\/release(\s+(status|changelog|cut|retroactive|gate)(\s+(major|minor|patch))?)?$|^Read \.devmanager\//;
 
 export async function handleLaunch(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;

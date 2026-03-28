@@ -220,3 +220,44 @@ export interface ExitMessage {
 }
 
 export type WebSocketMessage = StateMessage | ProgressMessage | QualityMessage | ProjectSwitchedMessage | OutputMessage | ExitMessage;
+
+// Release types
+export interface ReleaseEntry {
+  version: string;
+  date: string;
+  commitRef: string;
+  stabilityScore: number;
+  commitCount: number;
+  description?: string;
+  breakdown?: Record<string, number>;
+  gateResults?: Record<string, 'pass' | 'warn' | 'fail'>;
+}
+
+export interface ChangelogGroup {
+  name: string;
+  items: string[];
+}
+
+export interface ChangelogSection {
+  version: string;
+  date: string;
+  groups: ChangelogGroup[];
+}
+
+export interface StabilityAssessment {
+  score: number;
+  level: 'Stable' | 'Release Candidate' | 'Stabilizing' | 'Active Development';
+  components?: {
+    buildTest: number;
+    codehealth: number;
+    fixRatio: number;
+    backlog: number;
+    regression: number;
+    fixDecay: number;
+  };
+  gateResults?: Record<string, 'pass' | 'warn' | 'fail'>;
+  assessedAt: string;
+  commitRef?: string;
+  currentVersion?: string;
+  commitsSinceRelease?: number;
+}

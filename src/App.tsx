@@ -17,12 +17,15 @@ import { UndoToast } from './components/UndoToast.tsx';
 import { ErrorToast } from './components/ErrorToast.tsx';
 import { SplitResultToast } from './components/SplitResultToast.tsx';
 import { QualityPanel } from './components/QualityPanel.tsx';
+import { ReleasePanel } from './components/ReleasePanel.tsx';
 import { SkillsConfigPanel } from './components/SkillsConfigPanel.tsx';
 import { FloatingScratchpad } from './components/FloatingScratchpad.tsx';
 import { useQuality } from './hooks/useQuality.ts';
+import { useRelease } from './hooks/useRelease.ts';
 import { useProcessOutput } from './hooks/useProcessOutput.ts';
-import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
+import { APP_NAME, TAB_BOARD, TAB_QUALITY, TAB_RELEASE } from './constants/strings.ts';
 import { TASK_ID_CODEHEALTH, TASK_ID_AUTOFIX } from './components/quality/LaunchButtons.tsx';
+import { TASK_ID_RELEASE_STATUS, TASK_ID_RELEASE_CUT, TASK_ID_RELEASE_RETRO } from './components/release/LaunchButtons.tsx';
 import { ActionProvider } from './contexts/ActionContext.tsx';
 
 export function App() {
@@ -55,6 +58,7 @@ export function App() {
   const detailPanelRef = useFocusTrap(selectedTask != null);
 
   const quality = useQuality();
+  const release = useRelease();
   const processOutput = useProcessOutput();
 
   const { undoEntry, snapshotBeforeAction, handleUndo, dismissUndo } = useUndo({ data, save, showError });
@@ -216,18 +220,18 @@ export function App() {
 
         {/* Tab bar */}
         <div className="panel" style={{
-          marginBottom: productTab === 'quality' ? 0 : undefined,
+          marginBottom: productTab !== 'board' ? 0 : undefined,
         }}>
           <SectionHeader title="" extra={
             <div className="flex w-full">
-              {(['board', 'quality'] as const).map(tab => (
+              {(['board', 'quality', 'release'] as const).map(tab => (
                 <button
                   key={tab}
-                  onClick={() => { setProductTab(tab); if (tab === 'quality') setSelectedTask(null); }}
+                  onClick={() => { setProductTab(tab); if (tab !== 'board') setSelectedTask(null); }}
                   className={`btn-tab ${productTab === tab ? 'btn-tab--active' : 'btn-tab--inactive'}`}
                   style={{ padding: '0 12px', marginBottom: -1 }}
                 >
-                  {tab === 'board' ? TAB_BOARD : TAB_QUALITY}
+                  {tab === 'board' ? TAB_BOARD : tab === 'quality' ? TAB_QUALITY : TAB_RELEASE}
                 </button>
               ))}
             </div>
@@ -236,6 +240,12 @@ export function App() {
           {productTab === 'quality' && (
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
               <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} error={quality.error} onRetry={quality.retry} healthcheckOutput={processOutput.outputs[TASK_ID_CODEHEALTH]} autofixOutput={processOutput.outputs[TASK_ID_AUTOFIX]} onClearOutput={processOutput.clearOutput} />
+            </div>
+          )}
+
+          {productTab === 'release' && (
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+              <ReleasePanel releases={release.releases} stability={release.stability} changelog={release.changelog} loading={release.loading} error={release.error} onRetry={release.retry} statusOutput={processOutput.outputs[TASK_ID_RELEASE_STATUS]} cutOutput={processOutput.outputs[TASK_ID_RELEASE_CUT]} retroOutput={processOutput.outputs[TASK_ID_RELEASE_RETRO]} onClearOutput={processOutput.clearOutput} />
             </div>
           )}
         </div>

@@ -132,7 +132,10 @@ The sub-agent prompt **MUST** include:
   \`cd .devmanager/worktrees/task-{taskId}\`
   This is an isolated git worktree on branch \`task-{taskId}-{slug}\`.
   Do NOT modify files in the main project root. All edits, builds, and commits happen in the worktree.
-  Commit when done."
+  Commit when done.
+  Commit messages MUST use conventional commit format: \`type(scope): description\`
+  Types: feat, fix, refactor, test, style, perf, docs, chore, a11y, security
+  Scopes: use the relevant feature area (e.g. auth, events, profile, groups, notifications, design)"
 
 ### 6. Review result
 Write progress: \`"Reviewing results..."\`
@@ -166,6 +169,8 @@ CONFLICT_FILES=src/App.tsx, src/api.ts
 **If merge fails with conflicts:** Resolve them in the worktree — read both sides, keep BOTH changes. Then rerun \`merge-safe.cjs\` (it's idempotent). Only escalate truly contradictory changes.
 
 The script handles lock acquisition/release automatically (including on failure).
+
+After a successful merge, check if the task was the last pending/in-progress task in its group. If so, mention: "All {group} tasks complete. Run \`/release status\` to check release readiness."
 
 If more in queue: "Next up: {taskName}. Continue?"
 

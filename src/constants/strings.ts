@@ -228,3 +228,13 @@ export const FINDINGS_TITLE = 'Top Findings';
 export const SCORECARD_HEADERS = ['Dimension', 'Score', '', 'Weight', 'Issues', ''];
 export const SCORECARD_CLEAN = 'Clean';
 // SCORECARD_ISSUES is dynamic: `${count} issues`
+
+// -- Release Panel --
+export const TAB_RELEASE = 'Release';
+export const RELEASE_LOADING = 'Loading release data...';
+export const RELEASE_UNAVAILABLE = 'Release data unavailable';
+export const RELEASE_RETRY = 'Retry';
+export const RELEASE_NO_DATA = 'No releases yet. Run /release status to assess release readiness.';
+export const RELEASE_HISTORY_TITLE = 'Release History';
+export const RELEASE_STABILITY_TITLE = 'Stability Breakdown';
+export const RELEASE_CHANGELOG_TITLE = 'Changelog';

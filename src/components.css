@@ -724,6 +724,27 @@
   cursor: pointer;
 }
 
+.release-btn {
+  border: none;
+  border-radius: var(--dm-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.release-btn--idle {
+  background: transparent;
+  color: var(--dm-amber);
+  border: 1.5px solid var(--dm-amber);
+}
+.release-btn--launched {
+  background: var(--dm-success-light);
+  color: var(--dm-success);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+}
+
 /* System launch pulse — sweep animation for bg-running buttons */
 .system-launch-pulse {
   position: absolute;

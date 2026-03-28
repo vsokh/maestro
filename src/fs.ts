@@ -1,6 +1,7 @@
 import { ORCHESTRATOR_SKILL_TEMPLATE } from './orchestrator.ts';
 import { CODEHEALTH_SKILL_TEMPLATE } from './codehealth.ts';
 import { AUTOFIX_SKILL_TEMPLATE } from './autofix.ts';
+import { RELEASE_SKILL_TEMPLATE } from './release.ts';
 import { api } from './api.ts';
 import type { StateData, ProgressEntry, SkillInfo, SkillsConfig } from './types';
 import type { ProjectTemplate } from './templates.ts';
@@ -104,10 +105,21 @@ export async function ensureAutofixSkill(): Promise<boolean> {
   }
 }
 
+export async function ensureReleaseSkill(): Promise<boolean> {
+  try {
+    const result = await api.deploySkill('release', 'SKILL.md', RELEASE_SKILL_TEMPLATE);
+    return result.deployed;
+  } catch (err) {
+    console.error('ensureReleaseSkill failed:', err);
+    return false;
+  }
+}
+
 export async function syncSkills(): Promise<void> {
   await ensureOrchestratorSkill();
   await ensureCodehealthSkill();
   await ensureAutofixSkill();
+  await ensureReleaseSkill();
 }
 
 export async function readSkillsConfig(): Promise<SkillsConfig | null> {
