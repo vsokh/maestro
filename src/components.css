@@ -745,6 +745,81 @@
   cursor: pointer;
 }
 
+/* Release cut split button */
+.release-cut-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+.release-cut-group {
+  display: inline-flex;
+  border-radius: var(--dm-radius-sm);
+  overflow: hidden;
+}
+.release-cut-main {
+  padding: 6px 12px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  border-top-left-radius: var(--dm-radius-sm);
+  border-bottom-left-radius: var(--dm-radius-sm);
+}
+.release-cut-arrow {
+  padding: 6px 6px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  border-top-right-radius: var(--dm-radius-sm);
+  border-bottom-right-radius: var(--dm-radius-sm);
+  margin-left: 1px;
+  font-size: 10px;
+  line-height: 1;
+}
+.release-cut-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  z-index: 100;
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-border);
+  border-radius: var(--dm-radius-sm);
+  box-shadow: var(--dm-shadow-lg);
+  min-width: 180px;
+  overflow: hidden;
+}
+.release-cut-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  transition: background 0.15s;
+}
+.release-cut-option:hover {
+  background: var(--dm-bg);
+}
+.release-cut-option--active {
+  background: var(--dm-accent-bg-subtle);
+}
+.release-cut-option--active:hover {
+  background: var(--dm-accent-bg-subtle);
+}
+.release-cut-check {
+  width: 14px;
+  text-align: center;
+  font-size: 10px;
+}
+.release-cut-hint {
+  margin-left: auto;
+}
+
 /* System launch pulse — sweep animation for bg-running buttons */
 .system-launch-pulse {
   position: absolute;
