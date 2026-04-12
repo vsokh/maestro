@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicholasio/tauri-v2-schema/master/tauri.conf.json",
+  "productName": "Dev Manager",
+  "version": "0.1.0",
+  "identifier": "dev.manager.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Dev Manager",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico"]
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

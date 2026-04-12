@@ -17,5 +17,11 @@ dist/
 .devmanager/merge.lock
 .devmanager/skills.json
 
+# Tauri build artifacts
+apps/tauri/src-tauri/target/
+apps/tauri/src-tauri/gen/
+apps/tauri/dist/
+apps/tauri/node_modules/
+
 # Claude Code worktrees
 .claude/worktrees/
