@@ -4,6 +4,7 @@
 mod commands;
 
 use commands::launch::ProcessStore;
+use commands::projects::ProjectList;
 use std::sync::Mutex;
 use tauri::Manager;
 
@@ -23,11 +24,15 @@ impl ProjectPath {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        // Note: tauri-plugin-dialog skipped due to build policy restrictions.
+        // Using browse_directories command (manual browser) instead.
         .manage(ProjectPath(Mutex::new(String::new())))
         .manage(ProcessStore::new())
+        .manage(ProjectList::new())
         .invoke_handler(tauri::generate_handler![
             set_project_path,
             get_project_info,
+            read_json_file,
             // State
             commands::state::read_state,
             commands::state::write_state,
@@ -47,14 +52,24 @@ fn main() {
             commands::git::git_push,
             // Launch
             commands::launch::launch_process,
+            commands::launch::launch_terminal,
             commands::launch::list_processes,
             commands::launch::kill_process,
             // Backups
             commands::backup::list_backups,
             commands::backup::create_snapshot,
             commands::backup::restore_backup,
-            // Generic
-            read_json_file,
+            // Attachments
+            commands::attachments::save_attachment,
+            commands::attachments::get_attachment_path,
+            commands::attachments::delete_attachment,
+            // Projects
+            commands::projects::list_projects,
+            commands::projects::add_project,
+            commands::projects::browse_directories,
+            // Misc
+            commands::misc::split_tasks,
+            commands::misc::read_changelog,
         ])
         .setup(|app| {
             // Default project path: current working directory
@@ -64,10 +79,14 @@ fn main() {
                 .to_string();
 
             // Or take from CLI args
-            let project_path = std::env::args().nth(1).unwrap_or(cwd);
+            let project_path = std::env::args().nth(1).unwrap_or(cwd.clone());
 
             let state = app.state::<ProjectPath>();
-            state.set(project_path);
+            state.set(project_path.clone());
+
+            // Initialize project list with the starting project
+            let list = app.state::<ProjectList>();
+            list.0.lock().unwrap().push(project_path);
 
             Ok(())
         })
@@ -77,8 +96,17 @@ fn main() {
 
 /// Set the active project path (called from frontend during project switch)
 #[tauri::command]
-fn set_project_path(path: String, project: tauri::State<'_, ProjectPath>) -> Result<bool, String> {
-    project.set(path);
+fn set_project_path(
+    path: String,
+    project: tauri::State<'_, ProjectPath>,
+    list: tauri::State<'_, ProjectList>,
+) -> Result<bool, String> {
+    project.set(path.clone());
+    // Add to project list if not already there
+    let mut paths = list.0.lock().map_err(|e| e.to_string())?;
+    if !paths.contains(&path) {
+        paths.push(path);
+    }
     Ok(true)
 }
 

@@ -161,6 +161,112 @@ pub async fn launch_process(
     })
 }
 
+/// Open a new OS terminal tab/window with the given command.
+/// On Windows: uses Windows Terminal (`wt`). On macOS: `open -a Terminal`. On Linux: `x-terminal-emulator`.
+#[tauri::command]
+pub fn launch_terminal(
+    task_id: Option<i64>,
+    command: String,
+    engine: Option<String>,
+    title: Option<String>,
+    project: State<'_, ProjectPath>,
+) -> Result<bool, String> {
+    let cwd = project.get();
+    let eng = engine.unwrap_or_else(|| "claude".to_string());
+    let cli_name = match eng.as_str() {
+        "claude" => "claude",
+        "codex" => "codex",
+        _ => "cursor-agent",
+    };
+    let tab_title = title.unwrap_or_else(|| format!("Task {}", task_id.unwrap_or(0)));
+    let devmanager_dir = std::path::PathBuf::from(&cwd).join(".devmanager");
+    std::fs::create_dir_all(&devmanager_dir).map_err(|e| e.to_string())?;
+
+    let task_label = task_id
+        .map(|id| id.to_string())
+        .unwrap_or_else(|| "term".to_string());
+
+    #[cfg(windows)]
+    {
+        let script_path = devmanager_dir.join(format!("launch-{}.ps1", task_label));
+        // PowerShell: escape single quotes by doubling
+        let safe_cmd = command.replace('\'', "''");
+        std::fs::write(
+            &script_path,
+            format!("& {} --dangerously-skip-permissions '{}'\n", cli_name, safe_cmd),
+        )
+        .map_err(|e| e.to_string())?;
+
+        std::process::Command::new("wt")
+            .args([
+                "-w", "0", "nt",
+                "--title", &tab_title, "--suppressApplicationTitle",
+                "-d", &cwd,
+                "--", "pwsh", "-NoExit", "-NoLogo", "-File",
+                &script_path.to_string_lossy(),
+            ])
+            .current_dir(&cwd)
+            .spawn()
+            .map_err(|e| format!("Failed to open terminal: {}", e))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let script_path = devmanager_dir.join(format!("launch-{}.sh", task_label));
+        let safe_cwd = cwd.replace('"', "\\\"");
+        let safe_cmd = command.replace('"', "\\\"");
+        std::fs::write(
+            &script_path,
+            format!(
+                "#!/bin/bash\ncd \"{}\" && exec {} --dangerously-skip-permissions \"{}\"\n",
+                safe_cwd, cli_name, safe_cmd
+            ),
+        )
+        .map_err(|e| e.to_string())?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
+                .map_err(|e| e.to_string())?;
+        }
+
+        std::process::Command::new("open")
+            .args(["-a", "Terminal", &script_path.to_string_lossy()])
+            .spawn()
+            .map_err(|e| format!("Failed to open terminal: {}", e))?;
+    }
+
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    {
+        let script_path = devmanager_dir.join(format!("launch-{}.sh", task_label));
+        let safe_cwd = cwd.replace('"', "\\\"");
+        let safe_cmd = command.replace('"', "\\\"");
+        std::fs::write(
+            &script_path,
+            format!(
+                "#!/bin/bash\ncd \"{}\" && {} --dangerously-skip-permissions \"{}\"; exec bash\n",
+                safe_cwd, cli_name, safe_cmd
+            ),
+        )
+        .map_err(|e| e.to_string())?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755))
+                .map_err(|e| e.to_string())?;
+        }
+
+        std::process::Command::new("x-terminal-emulator")
+            .args(["-e", &script_path.to_string_lossy()])
+            .spawn()
+            .map_err(|e| format!("Failed to open terminal: {}", e))?;
+    }
+
+    Ok(true)
+}
+
 #[tauri::command]
 pub fn list_processes(store: State<'_, ProcessStore>) -> Result<Vec<ProcessInfo>, String> {
     let procs = store.processes.lock().map_err(|e| e.to_string())?;

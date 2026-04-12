@@ -36,9 +36,9 @@ export function connectWebSocket(
     );
   }
 
-  // Return a minimal WebSocket-compatible object.
+  // Minimal WebSocket-compatible object.
   // useConnection only calls .close() and does identity checks.
-  const fake = {
+  return {
     close: () => {
       for (const p of unlisteners) {
         p.then((unlisten) => unlisten());
@@ -46,8 +46,6 @@ export function connectWebSocket(
     },
     readyState: 1,
   } as unknown as WebSocket;
-
-  return fake;
 }
 
 export const api = {
@@ -94,32 +92,34 @@ export const api = {
     return { ok: true as const };
   },
 
-  // Quality (read from .devmanager/quality/ directly)
+  // Quality
   readQualityLatest: () => invoke<QualityReport | null>('read_json_file', { relPath: 'quality/latest.json' }).catch(() => null),
   readQualityHistory: () => invoke<QualityHistoryEntry[]>('read_json_file', { relPath: 'quality/history.json' }).catch(() => []),
 
-  // Release (read from .devmanager/release/ directly)
+  // Release
   readReleases: () => invoke<ReleaseEntry[]>('read_json_file', { relPath: 'release/releases.json' }).catch(() => []),
   readStability: () => invoke<StabilityAssessment | null>('read_json_file', { relPath: 'release/stability.json' }).catch(() => null),
-  readChangelog: async (): Promise<{ sections: ChangelogSection[] }> => {
-    // Changelog parsing happens client-side in Tauri (or we skip it for MVP)
-    return { sections: [] };
-  },
+  readChangelog: () => invoke<{ sections: ChangelogSection[] }>('read_changelog'),
 
   // Errors
   readErrorsLatest: () => invoke<ErrorsReport | null>('read_json_file', { relPath: 'errors/latest.json' }).catch(() => null),
   readErrorsHistory: () => invoke<ErrorsHistoryEntry[]>('read_json_file', { relPath: 'errors/history.json' }).catch(() => []),
 
-  // Attachments — for MVP, use file:// URLs
-  saveAttachment: async (_taskId: number, _filename: string, _blob: Blob): Promise<string> => {
-    // TODO: Phase 3 — save to .devmanager/attachments/{taskId}/
-    throw new Error('Attachments not yet supported in desktop app');
+  // Attachments
+  saveAttachment: async (taskId: number, filename: string, blob: Blob): Promise<string> => {
+    const buffer = await blob.arrayBuffer();
+    const data = Array.from(new Uint8Array(buffer));
+    return invoke<string>('save_attachment', { taskId, filename, data });
   },
-  deleteAttachment: async (_taskId: number, _filename: string) => {
+  deleteAttachment: async (taskId: number, filename: string) => {
+    await invoke<boolean>('delete_attachment', { taskId: taskId as unknown as number, filename });
     return { ok: true as const };
   },
-  getAttachmentUrl: (taskId: number, filename: string) =>
-    `file://.devmanager/attachments/${taskId}/${encodeURIComponent(filename)}`,
+  getAttachmentUrl: (taskId: number, filename: string) => {
+    // In Tauri, we'll resolve the path at render time via invoke
+    // For now return a placeholder — components should use convertFileSrc() for real rendering
+    return `tauri://localhost/.devmanager/attachments/${taskId}/${encodeURIComponent(filename)}`;
+  },
 
   // Backups
   listBackups: async () => {
@@ -144,13 +144,13 @@ export const api = {
     });
     return { pid: result.pid };
   },
-  launchTerminal: async (_taskId: number, _command: string, _engine?: string, _title?: string) => {
-    // TODO: Phase 2 — open OS terminal
+  launchTerminal: async (taskId: number, command: string, engine?: string, title?: string) => {
+    await invoke<boolean>('launch_terminal', { taskId, command, engine, title });
     return { ok: true as const };
   },
   listProcesses: () => invoke<Array<{ pid: number; taskId: number; engine: string; startedAt: string }>>('list_processes'),
   getBufferedOutput: async () => {
-    // Output is streamed via events in Tauri, no buffering API needed for MVP
+    // Output is streamed via Tauri events — no buffering API needed
     return {} as Record<string, { output: Array<{ text: string; stream: string; time: number }>; running: boolean; exitCode?: number }>;
   },
   killProcess: async (pid: number) => {
@@ -162,7 +162,7 @@ export const api = {
   getInfo: () => invoke<{ projectPath: string; projectName: string }>('get_project_info'),
 
   // Projects
-  listProjects: async () => [] as Array<{ path: string; name: string; active: boolean }>,
+  listProjects: () => invoke<Array<{ path: string; name: string; active: boolean }>>('list_projects'),
   switchProject: async (path: string) => {
     await invoke<boolean>('set_project_path', { path });
     await invoke<void>('watch_project');
@@ -170,21 +170,21 @@ export const api = {
     return { ok: true as const, projectPath: info.projectPath, projectName: info.projectName };
   },
 
-  // Split tasks — requires Claude CLI, call directly
-  splitTasks: async (_text: string) => {
-    // TODO: Phase 2 — spawn claude CLI for task splitting
-    return { tasks: [] as Array<{ name: string; fullName: string; description: string; group?: string }> };
-  },
+  // Split tasks
+  splitTasks: (text: string) => invoke<{ tasks: Array<{ name: string; fullName: string; description: string; group?: string }> }>('split_tasks', { text }),
 
   // Git
   gitStatus: () => invoke<{ branch: string | null; unpushed: number; commits?: Array<{ hash: string; message: string }>; error?: string }>('git_status'),
   gitPush: () => invoke<{ ok: boolean; output: string }>('git_push').then(r => ({ ok: true as const, output: r.output })),
 
-  // Browse — not needed in desktop app (can use native dialog)
-  browseNative: async () => ({ path: null as string | null }),
-  browse: async (_path?: string) => ({
-    current: '',
-    parent: null as string | null,
-    dirs: [] as Array<{ name: string; path: string; isProject: boolean }>,
-  }),
+  // Browse
+  browseNative: async () => {
+    // No native dialog plugin — return null to let UI fall back to manual browser
+    return { path: null as string | null };
+  },
+  browse: (path?: string) => invoke<{
+    current: string;
+    parent: string | null;
+    dirs: Array<{ name: string; path: string; isProject: boolean }>;
+  }>('browse_directories', { path: path || null }),
 };

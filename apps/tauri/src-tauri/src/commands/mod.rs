@@ -5,3 +5,6 @@ pub mod skills;
 pub mod git;
 pub mod launch;
 pub mod backup;
+pub mod attachments;
+pub mod projects;
+pub mod misc;
