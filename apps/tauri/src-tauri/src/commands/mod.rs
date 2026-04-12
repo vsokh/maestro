@@ -8,3 +8,4 @@ pub mod backup;
 pub mod attachments;
 pub mod projects;
 pub mod misc;
+pub mod browse;

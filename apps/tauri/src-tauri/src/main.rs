@@ -67,6 +67,7 @@ fn main() {
             commands::projects::list_projects,
             commands::projects::add_project,
             commands::projects::browse_directories,
+            commands::browse::browse_native,
             // Misc
             commands::misc::split_tasks,
             commands::misc::read_changelog,

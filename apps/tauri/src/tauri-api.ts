@@ -178,10 +178,7 @@ export const api = {
   gitPush: () => invoke<{ ok: boolean; output: string }>('git_push').then(r => ({ ok: true as const, output: r.output })),
 
   // Browse
-  browseNative: async () => {
-    // No native dialog plugin — return null to let UI fall back to manual browser
-    return { path: null as string | null };
-  },
+  browseNative: () => invoke<{ path: string | null }>('browse_native'),
   browse: (path?: string) => invoke<{
     current: string;
     parent: string | null;
