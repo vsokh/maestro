@@ -1,1 +1,1 @@
-export { validateStateStrict as validateState } from '@dev-manager/engine';
+export { validateStateStrict as validateState } from 'taskgraph';

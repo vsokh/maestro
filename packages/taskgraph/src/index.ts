@@ -1,4 +1,4 @@
-// @dev-manager/engine — domain-agnostic orchestration engine
+// taskgraph — task state machine with dependency-aware ordering
 // Pure functions: state in → new state out. No I/O, no React, no HTTP.
 
 // Types

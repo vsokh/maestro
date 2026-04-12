@@ -1,3 +1,3 @@
-export { sortByDependencies } from '@dev-manager/engine';
-import { sortByDependencies } from '@dev-manager/engine';
+export { sortByDependencies } from 'taskgraph';
+import { sortByDependencies } from 'taskgraph';
 export default sortByDependencies;

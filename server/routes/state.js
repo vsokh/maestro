@@ -1,7 +1,7 @@
 import { readFile, writeFile, readdir, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound, safePath } from '../middleware.js';
-import { validateProgress as validateProgressEntry, validateStateStructure, incrementVersion } from '@dev-manager/engine';
+import { validateProgress as validateProgressEntry, validateStateStructure, incrementVersion } from 'taskgraph';
 
 export async function handleState(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;

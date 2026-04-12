@@ -1,1 +1,1 @@
-export { computePhases } from '@dev-manager/engine';
+export { computePhases } from 'taskgraph';

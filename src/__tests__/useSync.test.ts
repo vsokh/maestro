@@ -9,7 +9,7 @@ vi.mock('../fs.ts', () => ({
 }));
 
 import { useSync } from '../hooks/useSync.ts';
-import { mergeProgressIntoState } from '@dev-manager/engine';
+import { mergeProgressIntoState } from 'taskgraph';
 import { writeState, deleteProgressFile } from '../fs.ts';
 import type { StateData, ProgressEntry } from '../types';
 

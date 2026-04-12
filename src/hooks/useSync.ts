@@ -4,8 +4,8 @@ import {
   mergeProgressIntoState,
   protectDoneTaskRegression,
   isStaleVersion,
-} from '@dev-manager/engine';
-export type { MergeResult } from '@dev-manager/engine';
+} from 'taskgraph';
+export type { MergeResult } from 'taskgraph';
 import {
   writeState,
   readProgressFiles,

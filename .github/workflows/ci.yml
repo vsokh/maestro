@@ -24,10 +24,10 @@ jobs:
         run: npm ci
 
       - name: Build engine
-        run: npm run build --workspace=@dev-manager/engine
+        run: npm run build --workspace=taskgraph
 
       - name: Test engine
-        run: npm test --workspace=@dev-manager/engine
+        run: npm test --workspace=taskgraph
 
       - name: Lint
         run: npm run lint

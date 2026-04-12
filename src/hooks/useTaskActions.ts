@@ -8,7 +8,7 @@ import {
   bulkDeleteTasks as engineBulkDeleteTasks,
   renameGroup as engineRenameGroup,
   deleteGroup as engineDeleteGroup,
-} from '@dev-manager/engine';
+} from 'taskgraph';
 import type { StateData, Task, Epic, Attachment } from '../types';
 
 interface UseTaskActionsParams {

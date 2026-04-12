@@ -13,12 +13,12 @@ import {
 } from '../fs.ts';
 import { useConnection } from './useConnection.ts';
 import { useSync } from './useSync.ts';
-import { mergeProgressIntoState } from '@dev-manager/engine';
+import { mergeProgressIntoState } from 'taskgraph';
 import { useTemplate } from './useTemplate.ts';
 import type { ProjectInfo } from './useTemplate.ts';
 export type { ConnectionStatus } from './useConnection.ts';
-export type { MergeResult } from '@dev-manager/engine';
-export { mergeProgressIntoState } from '@dev-manager/engine';
+export type { MergeResult } from 'taskgraph';
+export { mergeProgressIntoState } from 'taskgraph';
 
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;

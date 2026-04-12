@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeProgressIntoState } from '@dev-manager/engine';
+import { mergeProgressIntoState } from 'taskgraph';
 import type { StateData, Task, ProgressEntry } from '../types';
 
 function makeState(overrides: Partial<StateData> = {}): StateData {

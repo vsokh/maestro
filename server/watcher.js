@@ -2,7 +2,7 @@ import { watch } from 'node:fs';
 import { readFile, stat, mkdir, copyFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateProgress as validateProgressEntry, fixInconsistentTasks } from '@dev-manager/engine';
+import { validateProgress as validateProgressEntry, fixInconsistentTasks } from 'taskgraph';
 
 const DEBOUNCE_MS = 300;
 
@@ -171,7 +171,7 @@ function retryWatch(path, isDir, type, broadcast, watchers) {
   return retryInterval;
 }
 
-// validateState removed — now using fixInconsistentTasks from @dev-manager/engine
+// validateState removed — now using fixInconsistentTasks from taskgraph
 
 // Deploy all CLI helper scripts to .devmanager/bin/ in the target project
 const HELPER_SCRIPTS = ['task-done.cjs', 'task-start.cjs', 'queue-next.cjs', 'merge-safe.cjs'];

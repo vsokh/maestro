@@ -10,7 +10,7 @@ export {
   getBacklogTasks,
   getUnqueuedTasks,
   getAllGroups,
-} from '@dev-manager/engine';
+} from 'taskgraph';
 
 // UI/color functions stay in product
 

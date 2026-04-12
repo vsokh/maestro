@@ -4,7 +4,7 @@ import {
   queueGroup,
   removeFromQueue,
   clearQueue,
-} from '@dev-manager/engine';
+} from 'taskgraph';
 import type { StateData, Task } from '../types';
 
 interface UseQueueManagerParams {

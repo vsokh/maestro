@@ -1,5 +1,5 @@
 // Core validators re-exported from engine
-export { validateState, validateProgress } from '@dev-manager/engine';
+export { validateState, validateProgress } from 'taskgraph';
 
 // Product-specific validators (depend on product types)
 import type { QualityReport, QualityHistoryEntry } from './types';

@@ -2,8 +2,8 @@
 export type {
   Task, TaskStatus, QueueItem, ProgressEntry, StateData,
   Activity, Epic, Feature, Attachment, HistoryEntry,
-} from '@dev-manager/engine';
-export { TASK_STATUSES } from '@dev-manager/engine';
+} from 'taskgraph';
+export { TASK_STATUSES } from 'taskgraph';
 
 // Product-specific types (not in engine)
 
@@ -93,7 +93,7 @@ export interface EpicColor {
 }
 
 export interface UndoEntry {
-  data: import('@dev-manager/engine').StateData;
+  data: import('taskgraph').StateData;
   label: string;
   timestamp: number;
 }
@@ -101,13 +101,13 @@ export interface UndoEntry {
 // WebSocket message types (discriminated union)
 export interface StateMessage {
   type: 'state';
-  data: import('@dev-manager/engine').StateData;
+  data: import('taskgraph').StateData;
   lastModified: number;
 }
 
 export interface ProgressMessage {
   type: 'progress';
-  data: Record<string, import('@dev-manager/engine').ProgressEntry>;
+  data: Record<string, import('taskgraph').ProgressEntry>;
 }
 
 export interface QualityMessage {
