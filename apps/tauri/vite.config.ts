@@ -3,31 +3,28 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 // @ts-expect-error -- __dirname is available in Vite config
-const root = __dirname;
-const repoRoot = resolve(root, '../..');
+const tauriRoot = __dirname;
+const repoRoot = resolve(tauriRoot, '../..');
 
 export default defineConfig({
   plugins: [react()],
-  root,
+  // Root = repo root so Vite can resolve imports from shared src/ and packages/
+  root: repoRoot,
   build: {
-    outDir: 'dist',
+    outDir: resolve(tauriRoot, 'dist'),
+    rollupOptions: {
+      input: resolve(tauriRoot, 'index.html'),
+    },
   },
   resolve: {
     alias: {
-      // Intercept the resolved absolute path of src/api.ts → Tauri IPC adapter.
-      // All hooks do `import { ... } from '../api.ts'` which Vite resolves to
-      // the absolute path of src/api.ts before checking aliases.
-      [resolve(repoRoot, 'src/api.ts')]: resolve(root, 'src/tauri-api.ts'),
+      // Swap src/api.ts → Tauri IPC adapter for all transitive imports
+      [resolve(repoRoot, 'src/api.ts')]: resolve(tauriRoot, 'src/tauri-api.ts'),
     },
   },
-  // Tauri dev server
   server: {
     port: 1420,
     strictPort: true,
-    fs: {
-      // Allow serving files from the repo root (shared src/, packages/)
-      allow: [repoRoot],
-    },
   },
   clearScreen: false,
 });
