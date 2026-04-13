@@ -95,10 +95,12 @@ Rules:
         if (os === 'win32') {
           const scriptPath = join(scriptDir, 'split-run.ps1');
           writeFileSync(scriptPath, [
-            `$prompt = [System.IO.File]::ReadAllText('${promptPath.replace(/'/g, "''")}')`,
-            `$result = & claude -p $prompt --output-format text 2>&1 | Out-String`,
+            `Write-Host "Splitting scratchpad into tasks..." -ForegroundColor Cyan`,
+            `Write-Host ""`,
+            `$result = Get-Content -Path '${promptPath.replace(/'/g, "''")}' -Raw | & claude --output-format text 2>&1 | Out-String`,
             `[System.IO.File]::WriteAllText('${resultPath.replace(/'/g, "''")}', $result.Trim())`,
-            `Write-Host "\`nSplit complete!"`,
+            `Write-Host ""`,
+            `Write-Host "Split complete!" -ForegroundColor Green`,
           ].join('\n'));
 
           spawnProc('wt', [
@@ -112,8 +114,8 @@ Rules:
           const esc = s => s.replace(/"/g, '\\"');
           writeFileSync(scriptPath, [
             '#!/bin/bash',
-            `prompt=$(cat "${esc(promptPath)}")`,
-            `claude -p "$prompt" --output-format text > "${esc(resultPath)}" 2>&1`,
+            'echo "Splitting scratchpad into tasks..."',
+            `cat "${esc(promptPath)}" | claude --output-format text > "${esc(resultPath)}" 2>&1`,
             'echo "\\nSplit complete!"',
           ].join('\n'));
           chmodSync(scriptPath, 0o755);
@@ -123,8 +125,8 @@ Rules:
           const esc = s => s.replace(/"/g, '\\"');
           writeFileSync(scriptPath, [
             '#!/bin/bash',
-            `prompt=$(cat "${esc(promptPath)}")`,
-            `claude -p "$prompt" --output-format text > "${esc(resultPath)}" 2>&1`,
+            'echo "Splitting scratchpad into tasks..."',
+            `cat "${esc(promptPath)}" | claude --output-format text > "${esc(resultPath)}" 2>&1`,
             'echo "Split complete!"; exec bash',
           ].join('\n'));
           chmodSync(scriptPath, 0o755);
