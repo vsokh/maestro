@@ -6,7 +6,7 @@ interface FloatingScratchpadProps {
   onToggle: () => void;
   scratchpadValue: string;
   onScratchpadChange: (text: string) => void;
-  onSplit: (text: string) => void;
+  onSplit: (text: string, terminal?: boolean) => void;
   splitting: boolean;
   arranging?: boolean;
 }

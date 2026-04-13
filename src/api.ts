@@ -34,7 +34,11 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
     headers: body ? { 'Content-Type': 'application/json' } : {},
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`POST ${path}: ${res.status}`);
+  if (!res.ok) {
+    let detail = '';
+    try { const b = await res.json(); detail = b.error || ''; } catch { /* no body */ }
+    throw new Error(detail || `POST ${path}: ${res.status}`);
+  }
   return res.json();
 }
 
@@ -156,9 +160,13 @@ export const api = {
   switchProject: (path: string) => put<{ ok: true; projectPath: string; projectName: string }>('/api/project', { path }),
 
   // Split scratchpad into tasks
-  splitTasks: (text: string) => post<{
+  splitTasks: (text: string, terminal?: boolean) => post<{
+    tasks?: Array<{ name: string; fullName: string; description: string; group?: string }>;
+    terminal?: boolean;
+  }>('/api/split-tasks', { text, terminal }),
+  readSplitResult: () => getOrNull<{
     tasks: Array<{ name: string; fullName: string; description: string; group?: string }>;
-  }>('/api/split-tasks', { text }),
+  }>('/api/split-tasks/result'),
 
   // Git
   gitStatus: () => get<{ branch: string | null; unpushed: number; commits?: Array<{ hash: string; message: string }>; error?: string }>('/api/git/status'),

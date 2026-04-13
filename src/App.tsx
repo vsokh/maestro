@@ -320,7 +320,7 @@ export function App() {
           onToggle={() => setShowScratchpad(!showScratchpad)}
           scratchpadValue={data.scratchpad || ''}
           onScratchpadChange={(text) => save({ ...data, scratchpad: text })}
-          onSplit={(text) => { handleSplitTasks(text); }}
+          onSplit={(text, terminal) => { handleSplitTasks(text, terminal); }}
           splitting={splitting}
           arranging={arranging}
         />

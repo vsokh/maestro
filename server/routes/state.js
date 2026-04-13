@@ -1,5 +1,7 @@
 import { readFile, writeFile, readdir, stat, unlink, mkdir } from 'node:fs/promises';
+import { writeFileSync, mkdirSync, chmodSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
+import { platform } from 'node:os';
 import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound, safePath } from '../middleware.js';
 import { validateStateStructure } from 'taskgraph';
 import { StateWriter } from 'sync-protocol';
@@ -31,7 +33,7 @@ export async function handleState(method, pathname, req, res, url, ctx) {
   // This is product-specific logic, NOT part of sync-protocol
   if (method === 'POST' && pathname === '/api/split-tasks') {
     const body = await parseJsonBody(req);
-    const { text } = body;
+    const { text, terminal } = body;
     if (!text) {
       jsonResponse(res, 400, { error: 'Missing text' });
       return true;
@@ -74,6 +76,66 @@ Rules:
 - Group related tasks under the same epic
 - Use existing epics when they fit, create new ones when needed`;
 
+      // Terminal mode: open Claude in a terminal tab, write result to file
+      if (terminal) {
+        const scriptDir = join(projectPath, '.devmanager');
+        mkdirSync(scriptDir, { recursive: true });
+
+        const promptPath = join(scriptDir, 'split-prompt.txt');
+        const resultPath = join(scriptDir, 'split-result.txt');
+
+        // Clean up previous result
+        try { unlinkSync(resultPath); } catch { /* ok */ }
+
+        writeFileSync(promptPath, prompt);
+
+        const os = platform();
+        const { spawn: spawnProc } = await import('node:child_process');
+
+        if (os === 'win32') {
+          const scriptPath = join(scriptDir, 'split-run.ps1');
+          writeFileSync(scriptPath, [
+            `$prompt = [System.IO.File]::ReadAllText('${promptPath.replace(/'/g, "''")}')`,
+            `$result = & claude -p $prompt --output-format text 2>&1 | Out-String`,
+            `[System.IO.File]::WriteAllText('${resultPath.replace(/'/g, "''")}', $result.Trim())`,
+            `Write-Host "\`nSplit complete!"`,
+          ].join('\n'));
+
+          spawnProc('wt', [
+            '-w', '0', 'nt',
+            '--title', 'Split Tasks', '--suppressApplicationTitle',
+            '-d', projectPath,
+            '--', 'pwsh', '-NoExit', '-NoLogo', '-File', scriptPath,
+          ], { cwd: projectPath, detached: true, stdio: 'ignore' }).unref();
+        } else if (os === 'darwin') {
+          const scriptPath = join(scriptDir, 'split-run.sh');
+          const esc = s => s.replace(/"/g, '\\"');
+          writeFileSync(scriptPath, [
+            '#!/bin/bash',
+            `prompt=$(cat "${esc(promptPath)}")`,
+            `claude -p "$prompt" --output-format text > "${esc(resultPath)}" 2>&1`,
+            'echo "\\nSplit complete!"',
+          ].join('\n'));
+          chmodSync(scriptPath, 0o755);
+          spawnProc('open', ['-a', 'Terminal', scriptPath], { detached: true, stdio: 'ignore' }).unref();
+        } else {
+          const scriptPath = join(scriptDir, 'split-run.sh');
+          const esc = s => s.replace(/"/g, '\\"');
+          writeFileSync(scriptPath, [
+            '#!/bin/bash',
+            `prompt=$(cat "${esc(promptPath)}")`,
+            `claude -p "$prompt" --output-format text > "${esc(resultPath)}" 2>&1`,
+            'echo "Split complete!"; exec bash',
+          ].join('\n'));
+          chmodSync(scriptPath, 0o755);
+          spawnProc('x-terminal-emulator', ['-e', scriptPath], { detached: true, stdio: 'ignore' }).unref();
+        }
+
+        jsonResponse(res, 200, { terminal: true });
+        return true;
+      }
+
+      // Background mode: run Claude inline and return result
       const { execFile: ef } = await import('node:child_process');
       const result = await new Promise((resolve, reject) => {
         ef('claude', ['-p', prompt, '--output-format', 'text'], {
@@ -98,6 +160,23 @@ Rules:
       jsonResponse(res, 200, { tasks });
     } catch (err) {
       jsonResponse(res, 500, { error: err.message });
+    }
+    return true;
+  }
+
+  // GET /api/split-tasks/result — poll for terminal split result
+  if (method === 'GET' && pathname === '/api/split-tasks/result') {
+    const resultPath = join(projectPath, '.devmanager', 'split-result.txt');
+    try {
+      const content = await readFile(resultPath, 'utf-8');
+      const cleaned = content.replace(/^```(?:json)?\n?/gm, '').replace(/\n?```$/gm, '').trim();
+      const tasks = JSON.parse(cleaned);
+      // Clean up temp files
+      try { await unlink(resultPath); } catch { /* ok */ }
+      try { await unlink(join(projectPath, '.devmanager', 'split-prompt.txt')); } catch { /* ok */ }
+      jsonResponse(res, 200, { tasks });
+    } catch {
+      jsonResponse(res, 404, { pending: true });
     }
     return true;
   }

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 interface ScratchpadProps {
   value: string;
   onChange: (value: string) => void;
-  onSplit: (text: string) => void;
+  onSplit: (text: string, terminal?: boolean) => void;
   splitting: boolean;
   arranging?: boolean;
 }
@@ -93,9 +93,9 @@ export function Scratchpad({ value, onChange, onSplit, splitting, arranging }: S
     saveTimer.current = setTimeout(() => onChange(text), 500);
   };
 
-  const handleSplit = () => {
+  const handleSplit = (terminal?: boolean) => {
     if (!localValue.trim()) return;
-    onSplit(localValue.trim());
+    onSplit(localValue.trim(), terminal);
   };
 
   const lineCount = (localValue || '').split('\n').length;
@@ -151,17 +151,31 @@ export function Scratchpad({ value, onChange, onSplit, splitting, arranging }: S
             >Clear</button>
           )}
           <button
-            onClick={handleSplit}
+            onClick={() => handleSplit()}
             disabled={!localValue.trim() || splitting || arranging}
             className="btn-ghost text-12 font-600"
             style={{
               padding: '4px 12px',
               color: localValue.trim() && !splitting && !arranging ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
               border: `1px solid ${localValue.trim() && !splitting && !arranging ? 'var(--dm-accent)' : 'var(--dm-border)'}`,
-              borderRadius: '4px',
+              borderRadius: '4px 0 0 4px',
               opacity: splitting || arranging ? 0.6 : 1,
             }}
           >{arranging ? 'Arranging...' : splitting ? 'Splitting...' : 'Split into tasks'}</button>
+          <button
+            onClick={() => handleSplit(true)}
+            disabled={!localValue.trim() || splitting || arranging}
+            title="Split in terminal"
+            className="btn-ghost text-12 font-600"
+            style={{
+              padding: '4px 6px',
+              color: localValue.trim() && !splitting && !arranging ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
+              border: `1px solid ${localValue.trim() && !splitting && !arranging ? 'var(--dm-accent)' : 'var(--dm-border)'}`,
+              borderLeft: 'none',
+              borderRadius: '0 4px 4px 0',
+              opacity: splitting || arranging ? 0.6 : 1,
+            }}
+          >{'>_'}</button>
         </div>
       </div>
     </div>
