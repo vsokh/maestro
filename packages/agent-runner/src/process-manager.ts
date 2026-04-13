@@ -100,7 +100,15 @@ export class ProcessManager {
           const alreadyWritten = await this.progressWriter.wasRecentlyWritten(
             projectPath, taskId, FALLBACK_PROGRESS_WINDOW_MS,
           );
-          if (!alreadyWritten && code !== 0) {
+          if (code === 0) {
+            // Success: mark done if orchestrator didn't already
+            if (!alreadyWritten) {
+              await this.progressWriter.writeFallbackProgress(projectPath, taskId, {
+                status: 'done',
+                progress: 'Completed',
+              });
+            }
+          } else if (!alreadyWritten) {
             await this.progressWriter.writeFallbackProgress(projectPath, taskId, {
               status: 'in-progress',
               progress: `Process exited with code ${code}`,
