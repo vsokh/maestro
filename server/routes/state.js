@@ -94,13 +94,21 @@ Rules:
 
         if (os === 'win32') {
           const scriptPath = join(scriptDir, 'split-run.ps1');
+          const pf = promptPath.replace(/'/g, "''");
+          const rf = resultPath.replace(/'/g, "''");
           writeFileSync(scriptPath, [
             `Write-Host "Splitting scratchpad into tasks..." -ForegroundColor Cyan`,
-            `Write-Host ""`,
-            `$result = Get-Content -Path '${promptPath.replace(/'/g, "''")}' -Raw | & claude --output-format text 2>&1 | Out-String`,
-            `[System.IO.File]::WriteAllText('${resultPath.replace(/'/g, "''")}', $result.Trim())`,
-            `Write-Host ""`,
-            `Write-Host "Split complete!" -ForegroundColor Green`,
+            `try {`,
+            `  $prompt = [System.IO.File]::ReadAllText('${pf}')`,
+            `  Write-Host "Prompt: $($prompt.Length) chars" -ForegroundColor DarkGray`,
+            `  $output = & claude -p $prompt --output-format text 2>&1`,
+            `  $text = ($output | Out-String).Trim()`,
+            `  [System.IO.File]::WriteAllText('${rf}', $text)`,
+            `  Write-Host ""`,
+            `  Write-Host "Split complete! ($($text.Length) chars written)" -ForegroundColor Green`,
+            `} catch {`,
+            `  Write-Host "ERROR: $_" -ForegroundColor Red`,
+            `}`,
           ].join('\n'));
 
           spawnProc('wt', [
