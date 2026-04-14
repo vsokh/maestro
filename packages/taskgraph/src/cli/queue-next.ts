@@ -67,7 +67,7 @@ try {
   }).trim();
 
   if (branchOutput) {
-    const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*]+/, '').trim()).filter(Boolean);
+    const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*+]+/, '').trim()).filter(Boolean);
     if (branches.length > 0) {
       hasBranch = true;
       branchName = branches[0];

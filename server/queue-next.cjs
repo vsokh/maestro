@@ -121,8 +121,8 @@ try {
   }).trim();
 
   if (branchOutput) {
-    // git branch --list prefixes with "  " or "* " — clean it
-    const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*]+/, '').trim()).filter(Boolean);
+    // git branch --list prefixes with "  ", "* ", or "+ " (worktree) — clean it
+    const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*+]+/, '').trim()).filter(Boolean);
     if (branches.length > 0) {
       hasBranch = true;
       branchName = branches[0];
