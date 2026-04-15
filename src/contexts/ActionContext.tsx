@@ -26,11 +26,15 @@ export interface ActionContextValue {
   handleRetryFailed: (items: { key: number; cmd: string; taskName: string }[], phaseIndex?: number) => void;
   handleLaunchTerminal: (key: number, cmd: string, taskName: string) => void;
   handleArrange: () => void;
+  handleLaunchPipeline: () => void;
+  cancelPipeline: () => void;
   launchedIds: Set<number>;
   launchMode: LaunchMode;
   setLaunchMode: (mode: LaunchMode) => void;
   arranging: boolean;
   setArranging: (v: boolean) => void;
+  pipelineRunning: boolean;
+  pipelinePhase: number;
 
   // Project actions
   pauseTask: (id: number) => void;

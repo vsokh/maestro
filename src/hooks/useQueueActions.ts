@@ -38,6 +38,10 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     handleLaunchPhase,
     handleRetryFailed,
     handleArrange,
+    handleLaunchPipeline,
+    cancelPipeline,
+    pipelineRunning,
+    pipelinePhase,
   } = usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess, onError });
 
   return {
@@ -56,5 +60,9 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     handleRetryFailed,
     handleLaunchTerminal,
     handleArrange,
+    handleLaunchPipeline,
+    cancelPipeline,
+    pipelineRunning,
+    pipelinePhase,
   };
 }

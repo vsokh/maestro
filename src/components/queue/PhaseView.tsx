@@ -8,6 +8,9 @@ import {
   QUEUE_PARALLEL, QUEUE_LAUNCH_PHASE_TITLE, QUEUE_LAUNCH_PHASE,
   QUEUE_REMOVE_PHASE_APPROVE, QUEUE_PHASE_APPROVE, QUEUE_AUTO_LABEL,
   QUEUE_UNAPPROVE_ALL, QUEUE_APPROVE_ALL, QUEUE_UNQUEUE_ALL,
+  QUEUE_LAUNCH_PIPELINE, QUEUE_LAUNCH_PIPELINE_TITLE,
+  QUEUE_STOP_PIPELINE, QUEUE_STOP_PIPELINE_TITLE,
+  QUEUE_PIPELINE_PHASE,
 } from '../../constants/strings.ts';
 import { useActions } from '../../contexts/ActionContext.tsx';
 
@@ -20,9 +23,34 @@ interface PhaseViewProps {
 }
 
 export function PhaseView({ phases, queue, taskMap, processOutputs, onClearOutput }: PhaseViewProps) {
-  const { launchedIds, handleLaunchPhase: onLaunchPhase, handleRetryFailed: onRetryFailed, handleBatchUpdateTasks: onBatchUpdateTasks, handleClearQueue: onClear } = useActions();
+  const { launchedIds, handleLaunchPhase: onLaunchPhase, handleRetryFailed: onRetryFailed, handleBatchUpdateTasks: onBatchUpdateTasks, handleClearQueue: onClear, handleLaunchPipeline, cancelPipeline, pipelineRunning, pipelinePhase } = useActions();
   return (
     <div>
+      {/* Pipeline launch button */}
+      {phases.length > 1 && (
+        <div className="flex-center gap-8" style={{ padding: '4px 12px 0' }}>
+          {pipelineRunning ? (
+            <button
+              onClick={cancelPipeline}
+              title={QUEUE_STOP_PIPELINE_TITLE}
+              className="btn-launch-phase"
+              style={{ padding: '2px 10px', color: 'var(--dm-danger)' }}
+            >{QUEUE_STOP_PIPELINE}</button>
+          ) : (
+            <button
+              onClick={handleLaunchPipeline}
+              title={QUEUE_LAUNCH_PIPELINE_TITLE}
+              className="btn-launch-phase"
+              style={{ padding: '2px 10px' }}
+            >{QUEUE_LAUNCH_PIPELINE}</button>
+          )}
+          {pipelineRunning && pipelinePhase >= 0 && (
+            <span className="text-muted" style={{ fontSize: '10px' }}>
+              {QUEUE_PIPELINE_PHASE} {pipelinePhase + 1} of {phases.length}
+            </span>
+          )}
+        </div>
+      )}
       {phases.map((phaseItems, idx) => (
         <div key={idx}>
           {/* Phase connector line (between phases, not before the first) */}
@@ -38,7 +66,9 @@ export function PhaseView({ phases, queue, taskMap, processOutputs, onClearOutpu
           <div className="phase-label flex-center gap-8" style={{
             padding: '4px 12px 2px',
           }}>
-            <span>Phase {idx + 1}</span>
+            <span style={pipelineRunning && pipelinePhase === idx ? { color: 'var(--dm-accent)' } : undefined}>
+              {pipelineRunning && pipelinePhase === idx ? '\u25B6 ' : ''}Phase {idx + 1}
+            </span>
             {phaseItems.length > 1 ? (
               <>
                 <span style={{ fontWeight: 400, opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>{QUEUE_PARALLEL}</span>
