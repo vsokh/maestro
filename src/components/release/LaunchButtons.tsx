@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { DualLaunchButton } from '../quality/LaunchButtons.tsx';
 import type { TaskOutput } from '../../hooks/useProcessOutput.ts';
 import { api } from '../../api.ts';
+import { resolveModel } from '../../constants/engines.ts';
 import { OutputViewer } from '../queue/OutputViewer.tsx';
 import {
   LAUNCH_RELEASE_STATUS, LAUNCH_RELEASE_STATUS_ACTIVE, LAUNCH_RELEASE_STATUS_CMD,
@@ -71,7 +72,8 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
       setLaunching(true);
       clearLaunchTimer();
       launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
-      const res = await api.launch(TASK_ID_RELEASE_CUT, command);
+      const model = resolveModel(command);
+      const res = await api.launch(TASK_ID_RELEASE_CUT, command, undefined, model);
       pidRef.current = res.pid;
     } catch (err) {
       console.error('Failed to launch Release Cut:', err);
@@ -88,7 +90,8 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
   const handleTerminal = async () => {
     if (busy) return;
     try {
-      await api.launchTerminal(TASK_ID_RELEASE_CUT, command, undefined, 'Release Cut');
+      const model = resolveModel(command);
+      await api.launchTerminal(TASK_ID_RELEASE_CUT, command, undefined, 'Release Cut', model);
       setFlashing(true);
       setTimeout(() => setFlashing(false), 1500);
     } catch (err) {

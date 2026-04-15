@@ -144,10 +144,10 @@ export const api = {
   restoreBackup: (filename: string) => post<{ ok: true }>('/api/backups/restore', { filename }),
 
   // Launch (headless)
-  launch: (taskId: number, command: string, engine?: string) =>
-    post<{ pid: number }>('/api/launch', { taskId, command, engine }),
-  launchTerminal: (taskId: number, command: string, engine?: string, title?: string) =>
-    post<{ ok: true }>('/api/launch/terminal', { taskId, command, engine, title }),
+  launch: (taskId: number, command: string, engine?: string, model?: string) =>
+    post<{ pid: number }>('/api/launch', { taskId, command, engine, model }),
+  launchTerminal: (taskId: number, command: string, engine?: string, title?: string, model?: string) =>
+    post<{ ok: true }>('/api/launch/terminal', { taskId, command, engine, title, model }),
   listProcesses: () => get<Array<{ pid: number; taskId: number; engine: string; startedAt: string }>>('/api/launch'),
   getBufferedOutput: () => get<Record<string, { output: Array<{ text: string; stream: string; time: number }>; running: boolean; exitCode?: number }>>('/api/launch/output'),
   killProcess: (pid: number) => del<{ ok: true }>(`/api/launch/${pid}`),

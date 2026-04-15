@@ -36,6 +36,7 @@ export interface Task {
   commitRef?: string;
   history?: HistoryEntry[];
   engine?: string;
+  model?: string;
   summary?: string;
 }
 
@@ -91,5 +92,6 @@ export interface StateData {
   epics?: Epic[];
   features?: Feature[];
   defaultEngine?: string;
+  defaultModel?: string;
   scratchpad?: string;
 }

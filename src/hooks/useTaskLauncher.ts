@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { api } from '../api.ts';
+import { resolveModel } from '../constants/engines.ts';
 import type { StateData, TaskStatus } from '../types';
 import type { LaunchMode } from './useQueueActions.ts';
 
@@ -22,17 +23,24 @@ export function useTaskLauncher({ data, save, launchMode, onError }: UseTaskLaun
     save({ ...data, tasks });
   };
 
+  const resolveTaskModel = (taskId: number, cmd: string): string | undefined => {
+    const d = dataRef.current;
+    const task = (d?.tasks || []).find(t => t.id === taskId);
+    return resolveModel(cmd, task?.model, d?.defaultModel, task);
+  };
+
   const handleLaunchTask = async (itemKey: number, cmd: string, taskName: string) => {
     try {
       // Skip re-launching tasks that are already running
       const task = (dataRef.current?.tasks || []).find(t => t.id === itemKey);
       if (task?.status === 'in-progress') return;
 
+      const model = resolveTaskModel(itemKey, cmd);
       if (launchMode === 'terminal') {
-        await api.launchTerminal(itemKey, cmd, undefined, taskName);
+        await api.launchTerminal(itemKey, cmd, undefined, taskName, model);
       } else {
         setTaskProgress(itemKey, 'Launching...');
-        await api.launch(itemKey, cmd);
+        await api.launch(itemKey, cmd, undefined, model);
       }
     } catch (err) {
       console.error('Failed to launch task:', err);
@@ -43,7 +51,8 @@ export function useTaskLauncher({ data, save, launchMode, onError }: UseTaskLaun
 
   const handleLaunchTerminal = async (itemKey: number, cmd: string, taskName: string) => {
     try {
-      await api.launchTerminal(itemKey, cmd, undefined, taskName);
+      const model = resolveTaskModel(itemKey, cmd);
+      await api.launchTerminal(itemKey, cmd, undefined, taskName, model);
     } catch (err) {
       console.error('Failed to launch in terminal:', err);
       onError(`Failed to open terminal: ${err instanceof Error ? err.message : err}`);

@@ -213,7 +213,7 @@ describe('useScratchpad', () => {
         await result.current.handleSplitTasks('arrange me');
       });
 
-      expect(mockedApi.launch).toHaveBeenCalledWith(0, '/orchestrator arrange');
+      expect(mockedApi.launch).toHaveBeenCalledWith(0, '/orchestrator arrange', undefined, 'sonnet');
     });
   });
 });

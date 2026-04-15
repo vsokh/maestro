@@ -211,7 +211,7 @@ describe('useQueueActions', () => {
         await result.current.handleLaunchTask(1, '/orchestrator task 1', 'Fix the login button');
       });
 
-      expect(api.launch).toHaveBeenCalledWith(1, '/orchestrator task 1');
+      expect(api.launch).toHaveBeenCalledWith(1, '/orchestrator task 1', undefined, 'sonnet');
     });
 
     it('calls onError on launch failure', async () => {
@@ -239,7 +239,7 @@ describe('useQueueActions', () => {
         await result.current.handleArrange();
       });
 
-      expect(api.launch).toHaveBeenCalledWith(0, '/orchestrator arrange');
+      expect(api.launch).toHaveBeenCalledWith(0, '/orchestrator arrange', undefined, 'sonnet');
     });
   });
 });

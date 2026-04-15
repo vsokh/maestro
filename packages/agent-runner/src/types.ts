@@ -41,7 +41,7 @@ export type AgentEvent =
 // --- Engine adapter ---
 
 export interface EngineAdapter {
-  (command: string): { cmd: string; args: string[] };
+  (command: string, model?: string): { cmd: string; args: string[] };
 }
 
 // --- Results ---

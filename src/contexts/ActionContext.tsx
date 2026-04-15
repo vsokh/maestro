@@ -60,6 +60,7 @@ export interface ActionContextValue {
 
   // Config
   defaultEngine: string | undefined;
+  defaultModel: string | undefined;
 }
 
 const ActionContext = createContext<ActionContextValue | null>(null);

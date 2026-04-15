@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { api } from '../../api.ts';
+import { resolveModel } from '../../constants/engines.ts';
 import type { TaskOutput } from '../../hooks/useProcessOutput.ts';
 import { OutputViewer } from '../queue/OutputViewer.tsx';
 
@@ -25,7 +26,8 @@ export function ErrorTrackerButton({ processOutput, onClearOutput }: ErrorTracke
   const handleTerminal = async () => {
     if (busy) return;
     try {
-      await api.launchTerminal(TASK_ID_ERROR_TRACKER, LAUNCH_CMD, undefined, 'Error Tracker');
+      const model = resolveModel(LAUNCH_CMD);
+      await api.launchTerminal(TASK_ID_ERROR_TRACKER, LAUNCH_CMD, undefined, 'Error Tracker', model);
       setFlashing(true);
       setTimeout(() => setFlashing(false), 1500);
     } catch (err) {
@@ -43,7 +45,8 @@ export function ErrorTrackerButton({ processOutput, onClearOutput }: ErrorTracke
       setLaunching(true);
       clearLaunchTimer();
       launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
-      const res = await api.launch(TASK_ID_ERROR_TRACKER, LAUNCH_CMD);
+      const model = resolveModel(LAUNCH_CMD);
+      const res = await api.launch(TASK_ID_ERROR_TRACKER, LAUNCH_CMD, undefined, model);
       pidRef.current = res.pid;
     } catch (err) {
       console.error('Failed to launch Error Tracker:', err);

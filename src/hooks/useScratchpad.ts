@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { api } from '../api.ts';
+import { resolveModel } from '../constants/engines.ts';
 import type { StateData } from '../types';
 
 interface UseScratchpadParams {
@@ -21,8 +22,9 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
     setShowScratchpad(false);
 
     // Arrange in background — don't block the UI
-    api.launch(0, '/orchestrator arrange').catch(() => { /* best-effort */ });
-  }, []);
+    const arrangeModel = resolveModel('/orchestrator arrange', undefined, data?.defaultModel);
+    api.launch(0, '/orchestrator arrange', undefined, arrangeModel).catch(() => { /* best-effort */ });
+  }, [data?.defaultModel]);
 
   const createTasksFromResult = useCallback((
     result: { tasks: Array<{ name: string; fullName: string; description: string; group?: string }> },

@@ -5,7 +5,7 @@ import {
   HEADER_LIGHT_MODE, HEADER_DARK_MODE,
   HEADER_ENGINE_ARIA, HEADER_ENGINE_TITLE,
 } from '../constants/strings.ts';
-import { ENGINES, getEngine } from '../constants/engines.ts';
+import { ENGINES, getEngine, MODELS, getModel } from '../constants/engines.ts';
 import { api } from '../api.ts';
 
 interface ProjectInfo {
@@ -22,9 +22,11 @@ interface HeaderProps {
   onOpenSkills?: () => void;
   defaultEngine?: string;
   onSetDefaultEngine?: (engineId: string) => void;
+  defaultModel?: string;
+  onSetDefaultModel?: (modelId: string) => void;
 }
 
-export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills, defaultEngine, onSetDefaultEngine }: HeaderProps) {
+export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills, defaultEngine, onSetDefaultEngine, defaultModel, onSetDefaultModel }: HeaderProps) {
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   const [showPicker, setShowPicker] = useState(false);
   const [unpushed, setUnpushed] = useState(0);
@@ -249,6 +251,33 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
             </select>
           </div>
         ) : null}
+        {onSetDefaultModel ? (() => {
+          const currentModel = getModel(defaultModel);
+          return (
+            <div className="flex-center gap-4">
+              <select
+                aria-label="Default model"
+                title="Default Claude model for agents"
+                value={defaultModel || ''}
+                onChange={(e) => onSetDefaultModel(e.target.value)}
+                className="select-field text-11 font-600 border-none cursor-pointer"
+                style={{
+                  padding: '2px 18px 2px 4px',
+                  borderRadius: '4px',
+                  background: 'transparent',
+                  color: currentModel.color,
+                }}
+              >
+                <option value="" style={{ background: 'var(--dm-surface)' }}>Auto model</option>
+                {MODELS.map(m => (
+                  <option key={m.id} value={m.id} style={{ background: 'var(--dm-surface)' }}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );
+        })() : null}
         <button
           onClick={toggleTheme}
           aria-label={HEADER_TOGGLE_THEME_ARIA}

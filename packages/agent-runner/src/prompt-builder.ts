@@ -60,9 +60,14 @@ Be specific about what dependencies you set and what groupings you made.`;
  * Default engine adapters. Maps engine name to spawn command + args.
  */
 export const DEFAULT_ENGINES: Record<string, EngineAdapter> = {
-  claude: (command: string) => ({
+  claude: (command: string, model?: string) => ({
     cmd: 'claude',
-    args: ['--dangerously-skip-permissions', '-p', buildClaudePrompt(command)],
+    args: [
+      ...(model ? ['--model', model] : []),
+      '--dangerously-skip-permissions',
+      '-p',
+      buildClaudePrompt(command),
+    ],
   }),
   codex: (command: string) => ({
     cmd: 'codex',

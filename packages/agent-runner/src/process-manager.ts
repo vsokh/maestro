@@ -34,7 +34,7 @@ export class ProcessManager {
     this.engines = engines ?? DEFAULT_ENGINES;
   }
 
-  launchProcess(projectPath: string, taskId: number, command: string, engine = 'claude'): LaunchResult {
+  launchProcess(projectPath: string, taskId: number, command: string, engine = 'claude', model?: string): LaunchResult {
     // Prevent duplicate launches
     if (taskId && taskId > 0) {
       for (const [, entry] of this.processes) {
@@ -49,7 +49,7 @@ export class ProcessManager {
       throw new Error(`Unknown engine: ${engine}. Supported: ${Object.keys(this.engines).join(', ')}`);
     }
 
-    const { cmd, args } = adapter(command);
+    const { cmd, args } = adapter(command, model);
     const handle = this.spawner.spawn(cmd, args, { cwd: projectPath });
     const pid = handle.pid;
     const output: OutputLine[] = [];

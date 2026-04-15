@@ -7,7 +7,7 @@ import {
   QUEUE_PAUSED_DEFAULT, QUEUE_PAUSE_ARIA, QUEUE_PAUSE_TITLE, QUEUE_REMOVE_ARIA,
   QUEUE_REMOVE_TITLE,
 } from '../../constants/strings.ts';
-import { getEngine } from '../../constants/engines.ts';
+import { getEngine, getModel, resolveModel } from '../../constants/engines.ts';
 import { useActions } from '../../contexts/ActionContext.tsx';
 
 interface QueueItemContentProps {
@@ -18,7 +18,7 @@ interface QueueItemContentProps {
 }
 
 export function QueueItemContent({ item, task, taskMap, variant = 'flat' }: QueueItemContentProps) {
-  const { launchedIds, handleLaunchTask: onLaunch, handleLaunchTerminal: onLaunchTerminal, pauseTask: onPauseTask, handleRemoveFromQueue: onRemove, handleUpdateTask: onUpdateTask, defaultEngine } = useActions();
+  const { launchedIds, handleLaunchTask: onLaunch, handleLaunchTerminal: onLaunchTerminal, pauseTask: onPauseTask, handleRemoveFromQueue: onRemove, handleUpdateTask: onUpdateTask, defaultEngine, defaultModel } = useActions();
   const key = itemKey(item);
   const isLaunched = launchedIds.has(key);
   const status: ItemStatus = getItemStatus(item, taskMap);
@@ -29,6 +29,8 @@ export function QueueItemContent({ item, task, taskMap, variant = 'flat' }: Queu
   const isPaused = status === 'paused';
   const progressColorClass = getProgressClass(status);
   const engine = getEngine(task?.engine || defaultEngine);
+  const resolvedModelId = resolveModel(cmdForItem(item), task?.model, defaultModel, task);
+  const model = resolvedModelId ? getModel(resolvedModelId) : null;
 
   return (
     <>
@@ -77,6 +79,16 @@ export function QueueItemContent({ item, task, taskMap, variant = 'flat' }: Queu
       <div className="flex-1" style={{ minWidth: 0 }}>
         <div className="flex-center gap-2">
           <span className="font-500 text-13 truncate flex-1">{item.taskName}</span>
+          {model && (
+            <span className="text-9 font-600 shrink-0" title={`Model: ${model.label}`} style={{
+              padding: '1px 4px',
+              borderRadius: '3px',
+              color: model.color,
+              border: `1px solid ${model.color}`,
+              opacity: 0.7,
+              lineHeight: 1.2,
+            }}>{model.shortLabel}</span>
+          )}
           {!isManual && (
             <button
               onClick={() => onUpdateTask(item.task, { autoApprove: !task?.autoApprove || undefined })}

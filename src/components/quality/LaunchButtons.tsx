@@ -4,6 +4,7 @@ import {
   LAUNCH_AUTOFIX_CMD, LAUNCH_AUTOFIX, LAUNCH_AUTOFIX_ACTIVE,
 } from '../../constants/strings.ts';
 import { api } from '../../api.ts';
+import { resolveModel } from '../../constants/engines.ts';
 import type { TaskOutput } from '../../hooks/useProcessOutput.ts';
 import { OutputViewer } from '../queue/OutputViewer.tsx';
 
@@ -51,7 +52,8 @@ function DualLaunchButton({
       setLaunching(true);
       clearLaunchTimer();
       launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
-      const res = await api.launch(taskId, command);
+      const model = resolveModel(command);
+      const res = await api.launch(taskId, command, undefined, model);
       pidRef.current = res.pid;
     } catch (err) {
       console.error(`Failed to launch ${terminalTitle}:`, err);
@@ -63,7 +65,8 @@ function DualLaunchButton({
   const handleTerminal = async () => {
     if (busy) return;
     try {
-      await api.launchTerminal(taskId, command, undefined, terminalTitle);
+      const model = resolveModel(command);
+      await api.launchTerminal(taskId, command, undefined, terminalTitle, model);
       setFlashing(true);
       setTimeout(() => setFlashing(false), 1500);
     } catch (err) {

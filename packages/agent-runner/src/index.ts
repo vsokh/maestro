@@ -10,7 +10,7 @@ export type {
 } from './types.js';
 
 // Constants
-export { MAX_OUTPUT_LINES, FALLBACK_PROGRESS_WINDOW_MS, SUPPORTED_ENGINES } from './constants.js';
+export { MAX_OUTPUT_LINES, FALLBACK_PROGRESS_WINDOW_MS, SUPPORTED_ENGINES, SUPPORTED_MODELS } from './constants.js';
 
 // Prompt builder (pure)
 export { buildClaudePrompt, DEFAULT_ENGINES } from './prompt-builder.js';

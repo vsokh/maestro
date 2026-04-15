@@ -1,5 +1,6 @@
 import { useState, useRef, type MutableRefObject } from 'react';
 import { api } from '../api.ts';
+import { resolveModel } from '../constants/engines.ts';
 import { computePhases } from '../utils/computePhases.ts';
 import { itemKey, cmdForItem } from '../components/queue/queueItemUtils.ts';
 import type { StateData, QueueItem } from '../types';
@@ -91,6 +92,12 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
     }
   };
 
+  const resolveTaskModel = (taskId: number, cmd: string): string | undefined => {
+    const d = dataRef.current;
+    const task = (d?.tasks || []).find(t => t.id === taskId);
+    return resolveModel(cmd, task?.model, d?.defaultModel, task);
+  };
+
   /** Launch all phases sequentially — tasks within each phase run in parallel */
   const handleLaunchPipeline = async () => {
     const fresh = dataRef.current;
@@ -140,7 +147,8 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
         for (const item of toLaunch) {
           if (pipelineCancelRef.current) break;
           try {
-            const { pid } = await api.launch(item.key, item.cmd);
+            const model = resolveTaskModel(item.key, item.cmd);
+            const { pid } = await api.launch(item.key, item.cmd, undefined, model);
             pids.push(pid);
           } catch (err) {
             console.error(`Failed to launch task ${item.key}:`, err);
@@ -194,7 +202,8 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
             );
             save({ ...freshNow, tasks });
           }
-          const { pid } = await api.launch(item.key, item.cmd);
+          const model = resolveTaskModel(item.key, item.cmd);
+          const { pid } = await api.launch(item.key, item.cmd, undefined, model);
           await waitForProcess(pid);
         }
       } else {
@@ -207,14 +216,15 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
           save({ ...fresh, tasks });
         }
         for (const item of verified) {
+          const model = resolveTaskModel(item.key, item.cmd);
           if (launchMode === 'terminal') {
             try {
-              await api.launchTerminal(item.key, item.cmd, undefined, item.taskName);
+              await api.launchTerminal(item.key, item.cmd, undefined, item.taskName, model);
             } catch (err) {
               console.error('Failed to launch task in terminal:', err);
             }
           } else {
-            await api.launch(item.key, item.cmd);
+            await api.launch(item.key, item.cmd, undefined, model);
           }
         }
       }
@@ -257,7 +267,8 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
   const handleArrange = async () => {
     try {
       setArranging(true);
-      await api.launch(0, '/orchestrator arrange');
+      const model = resolveModel('/orchestrator arrange', undefined, dataRef.current?.defaultModel);
+      await api.launch(0, '/orchestrator arrange', undefined, model);
     } catch (err) {
       console.error('Failed to launch arrange:', err);
       onError(`Failed to launch arrange: ${err instanceof Error ? err.message : err}`);

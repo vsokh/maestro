@@ -28,13 +28,13 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
   if (method === 'POST' && pathname === '/api/launch') {
     const { getProcessManager } = await import('../process.js');
     const body = await parseJsonBody(req);
-    const { taskId, command, engine } = body;
+    const { taskId, command, engine, model } = body;
     if (taskId == null || !command) {
       jsonResponse(res, 400, { error: 'Missing taskId or command' });
       return true;
     }
     const pm = getProcessManager();
-    const result = pm.launchProcess(projectPath, taskId, command, engine || 'claude');
+    const result = pm.launchProcess(projectPath, taskId, command, engine || 'claude', model || undefined);
     jsonResponse(res, 200, result);
     return true;
   }
@@ -42,7 +42,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
   // POST /api/launch/terminal — open task in a new terminal tab
   if (method === 'POST' && pathname === '/api/launch/terminal') {
     const body = await parseJsonBody(req);
-    const { taskId, command, engine, title } = body;
+    const { taskId, command, engine, model, title } = body;
     if (!command) {
       jsonResponse(res, 400, { error: 'Missing command' });
       return true;
@@ -53,6 +53,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
       return true;
     }
     const eng = engine || 'claude';
+    const modelFlag = model && eng === 'claude' ? `--model ${model} ` : '';
     const tabTitle = title || `Task ${taskId}`;
     const os = platform();
 
@@ -67,7 +68,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
         const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.ps1`);
         // PowerShell single-quote escaping: double any single quotes
         const safeCmd = escapePS(command);
-        writeFileSync(scriptPath, `& ${cliName} --dangerously-skip-permissions '${safeCmd}'\n`);
+        writeFileSync(scriptPath, `& ${cliName} ${modelFlag}--dangerously-skip-permissions '${safeCmd}'\n`);
 
         const { spawn: spawnProc } = await import('node:child_process');
         spawnProc('wt', [
@@ -82,14 +83,14 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
         }).unref();
       } else if (os === 'darwin') {
         const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.sh`);
-        writeFileSync(scriptPath, `#!/bin/bash\ncd "${projectPath.replace(/"/g, '\\"')}" && exec ${cliName} --dangerously-skip-permissions "${command.replace(/"/g, '\\"')}"\n`);
+        writeFileSync(scriptPath, `#!/bin/bash\ncd "${projectPath.replace(/"/g, '\\"')}" && exec ${cliName} ${modelFlag}--dangerously-skip-permissions "${command.replace(/"/g, '\\"')}"\n`);
         chmodSync(scriptPath, 0o755);
 
         const { spawn: spawnProc } = await import('node:child_process');
         spawnProc('open', ['-a', 'Terminal', scriptPath], { detached: true, stdio: 'ignore' }).unref();
       } else {
         const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.sh`);
-        writeFileSync(scriptPath, `#!/bin/bash\ncd "${projectPath.replace(/"/g, '\\"')}" && ${cliName} --dangerously-skip-permissions "${command.replace(/"/g, '\\"')}"; exec bash\n`);
+        writeFileSync(scriptPath, `#!/bin/bash\ncd "${projectPath.replace(/"/g, '\\"')}" && ${cliName} ${modelFlag}--dangerously-skip-permissions "${command.replace(/"/g, '\\"')}"; exec bash\n`);
         chmodSync(scriptPath, 0o755);
 
         const { spawn: spawnProc } = await import('node:child_process');

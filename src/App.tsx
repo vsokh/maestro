@@ -199,7 +199,8 @@ export function App() {
     handleRemoveActivity,
     // Config
     defaultEngine: data?.defaultEngine,
-  }), [taskActions, queueActions, pauseTask, cancelTask, selectedTask, handleSelectTask, handleNavigateToTask, glowTaskId, handleDeleteTask, handleRemoveActivity, data?.defaultEngine, selectMode, selectedTasks, handleToggleTaskSelection, handleBulkDelete, handleBulkStatusChange, handleExitSelectMode]);
+    defaultModel: data?.defaultModel,
+  }), [taskActions, queueActions, pauseTask, cancelTask, selectedTask, handleSelectTask, handleNavigateToTask, glowTaskId, handleDeleteTask, handleRemoveActivity, data?.defaultEngine, data?.defaultModel, selectMode, selectedTasks, handleToggleTaskSelection, handleBulkDelete, handleBulkStatusChange, handleExitSelectMode]);
 
   if (!connected || !data) {
     return (
@@ -218,7 +219,7 @@ export function App() {
   return (
     <ActionProvider value={actions}>
     <div className="min-h-screen flex-col">
-      <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} defaultEngine={data.defaultEngine} onSetDefaultEngine={(engineId: string) => save({ ...data, defaultEngine: engineId })} />
+      <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} defaultEngine={data.defaultEngine} onSetDefaultEngine={(engineId: string) => save({ ...data, defaultEngine: engineId })} defaultModel={data.defaultModel} onSetDefaultModel={(modelId: string) => save({ ...data, defaultModel: modelId || undefined })} />
 
       <div className="dm-container">
 

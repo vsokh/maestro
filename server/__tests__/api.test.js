@@ -968,7 +968,7 @@ describe('POST /api/launch', () => {
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
     expect(getJsonResponse(res)).toEqual({ pid: 42 });
     expect(mockLaunchProcess).toHaveBeenCalledWith(
-      tmpDir, 1, '/orchestrator task 1', 'claude'
+      tmpDir, 1, '/orchestrator task 1', 'claude', undefined
     );
   });
 
@@ -983,7 +983,7 @@ describe('POST /api/launch', () => {
     await handleApi(req, res);
 
     expect(mockLaunchProcess).toHaveBeenCalledWith(
-      tmpDir, 2, '/orchestrator task 2', 'claude'
+      tmpDir, 2, '/orchestrator task 2', 'claude', undefined
     );
   });
 
