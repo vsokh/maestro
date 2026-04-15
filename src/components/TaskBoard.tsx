@@ -106,8 +106,8 @@ export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
     }
   }
 
-  // Epic progress stats across ALL tasks (not just pending)
-  const epicStats = useMemo(() => getEpicStats(tasks, allGroups), [tasks, allGroups]);
+  // Epic progress stats across ALL tasks (not just pending) — hide fully completed epics
+  const epicStats = useMemo(() => getEpicStats(tasks, allGroups).filter(ep => ep.done < ep.total), [tasks, allGroups]);
 
   const handleBoardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Deselect when clicking empty space — ignore if click was inside a card, button, or input

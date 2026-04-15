@@ -3,7 +3,9 @@ import React, { useMemo, useState } from 'react';
 import {
   ACTIVITY_EMPTY, ACTIVITY_REMOVE_ARIA, ACTIVITY_REMOVE_TITLE,
 } from '../constants/strings.ts';
+import { STATUS } from '../constants/statuses.ts';
 import { useActions } from '../contexts/ActionContext.tsx';
+import { TaskPreviewPopup } from './TaskPreviewPopup.tsx';
 
 function isCompleted(label: string) {
   return /completed|done/i.test(label);
@@ -21,6 +23,7 @@ interface ActivityFeedProps {
 export function ActivityFeed({ activity, tasks }: ActivityFeedProps) {
   const { handleRemoveActivity: onRemove, handleNavigateToTask: onNavigateToTask } = useActions();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [previewTaskId, setPreviewTaskId] = useState<number | null>(null);
   const taskIds = useMemo(() => new Set((tasks || []).map(t => t.id)), [tasks]);
   const entries = useMemo(() => {
     return [...activity]
@@ -55,8 +58,13 @@ export function ActivityFeed({ activity, tasks }: ActivityFeedProps) {
     );
   }
 
+  const previewTask = previewTaskId != null ? tasks.find(t => t.id === previewTaskId) || null : null;
+
   return (
     <div style={{ padding: '2px 0' }}>
+      {previewTask && (
+        <TaskPreviewPopup task={previewTask} onClose={() => setPreviewTaskId(null)} />
+      )}
       {entries.map(e => (
         <div key={e.key}>
           <div
@@ -68,8 +76,16 @@ export function ActivityFeed({ activity, tasks }: ActivityFeedProps) {
               opacity: e.isToday ? 1 : 0.6,
               cursor: e.changes ? 'pointer' : undefined,
             }}
-            onClick={e.clickableTaskId != null ? () => onNavigateToTask(e.clickableTaskId!) : e.changes ? () => setExpandedId(expandedId === e.key ? null : e.key) : undefined}
-            onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => onNavigateToTask(e.clickableTaskId!)) : e.changes ? handleKeyActivate(() => setExpandedId(expandedId === e.key ? null : e.key)) : undefined}
+            onClick={e.clickableTaskId != null ? () => {
+              const task = tasks.find(t => t.id === e.clickableTaskId);
+              if (task && task.status === STATUS.DONE) setPreviewTaskId(e.clickableTaskId!);
+              else onNavigateToTask(e.clickableTaskId!);
+            } : e.changes ? () => setExpandedId(expandedId === e.key ? null : e.key) : undefined}
+            onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => {
+              const task = tasks.find(t => t.id === e.clickableTaskId);
+              if (task && task.status === STATUS.DONE) setPreviewTaskId(e.clickableTaskId!);
+              else onNavigateToTask(e.clickableTaskId!);
+            }) : e.changes ? handleKeyActivate(() => setExpandedId(expandedId === e.key ? null : e.key)) : undefined}
           >
             {/* Colored dot */}
             <span className={`activity-dot shrink-0 ${e.completed ? 'activity-dot--completed' : 'activity-dot--default'}`} style={{
