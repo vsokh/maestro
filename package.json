@@ -1,20 +1,20 @@
 {
-  "name": "dev-manager",
+  "name": "maestro",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "bin": {
-    "devmanager": "./bin/devmanager.js"
+    "maestro": "./bin/maestro.js"
   },
   "scripts": {
     "dev": "vite",
     "dev:server": "node server/index.js .",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node bin/devmanager.js .",
+    "start": "node bin/maestro.js .",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "test": "vitest",

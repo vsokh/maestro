@@ -4,18 +4,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.0] — 2026-04-16
+
+### Added
+- Tauri desktop app with full feature parity (terminal launch, attachments, multi-project, split-tasks, changelog)
+- API contract with OpenAPI spec, WebSocket protocol, and configurable HOST
+- Pipeline launcher with phase context injection for orchestrated execution
+- Auto model routing for subagent cost control with game dev and expanded keyword patterns
+- Terminal mode for scratchpad split tasks
+- Error tracker panel rebuilt on clean architecture
+- Extracted agent-runner and sync-protocol packages (onion architecture)
+
 ### Fixed
-- Worktree branch name discovery with '+' prefix in merge-safe script
+- Task preview popup for done tasks, hide completed epics from pill bar
+- Worktree branch name discovery with '+' prefix in merge-safe and git branch output
+- Fallback 'done' progress written when process exits with code 0
+- Scratchpad closes immediately after split, arranges in background
+- Terminal split uses interactive claude session like task launches
+- Claude output streaming to terminal using Tee-Object
+- Prompt piping via stdin for terminal split with error diagnostics
+- Arrange waits to complete during split so phases settle before queue interaction
+- Duplicate activity entries prevented when progress files are re-read
+- Native folder picker for Tauri using PowerShell/osascript/zenity
+- Vite plugin swaps api.ts for tauri-api.ts at resolve time
+- Tauri Vite config with correct root, imports, and entry paths
 - Server validation enhanced with badge-blocked contrast fix
 - State API response validation for data integrity
-- Conflict detection test data for stricter server validation
 - Descriptive error messages and state reset on launch failure
 - Unsafe type casts removed and schema validation added
 - Atomic lock acquisition, referential integrity checks, and consolidated TaskStatus
 - TypeScript errors in EpicGroup guards, TaskBoard map types, and node types
 - Launch button styling with proper padding and positioning
 
+### Changed
+- Renamed @dev-manager/engine to taskgraph
+- Extracted orchestration engine into standalone package
+
 ### Infrastructure
+- Cleaned up repo with rewritten CLAUDE.md and gitignore for .devmanager/ artifacts
+- Removed dead re-exports (activityUtils shim, MergeResult type)
+- Added release skill, changelog, and updated skill templates
 - Updated test data for stricter server validation
 
 ## [v0.4.0] - 2026-03-29
