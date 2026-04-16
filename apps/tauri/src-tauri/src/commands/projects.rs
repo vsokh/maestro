@@ -79,7 +79,7 @@ pub fn browse_directories(path: Option<String>) -> Result<serde_json::Value, Str
                 if name.starts_with('.') {
                     continue;
                 }
-                let is_project = entry_path.join(".devmanager").exists()
+                let is_project = entry_path.join(".maestro").exists()
                     || entry_path.join(".git").exists();
                 dirs.push(serde_json::json!({
                     "name": name,

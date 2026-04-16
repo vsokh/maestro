@@ -6,7 +6,7 @@ export async function handleQuality(method, pathname, req, res, url, ctx) {
 
   // GET /api/quality/latest
   if (method === 'GET' && pathname === '/api/quality/latest') {
-    const filePath = join(projectPath, '.devmanager', 'quality', 'latest.json');
+    const filePath = join(projectPath, '.maestro', 'quality', 'latest.json');
     const result = await readJsonOrNull(filePath);
     if (!result) {
       jsonResponse(res, 404, { error: 'Quality report not found' });
@@ -18,7 +18,7 @@ export async function handleQuality(method, pathname, req, res, url, ctx) {
 
   // GET /api/quality/history
   if (method === 'GET' && pathname === '/api/quality/history') {
-    const filePath = join(projectPath, '.devmanager', 'quality', 'history.json');
+    const filePath = join(projectPath, '.maestro', 'quality', 'history.json');
     const result = await readJsonOrNull(filePath);
     if (!result) {
       jsonResponse(res, 404, { error: 'Quality history not found' });

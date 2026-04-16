@@ -2,14 +2,14 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
-import { requireDevManagerDir } from './find-devmanager.js';
+import { requireMaestroDir } from './find-maestro.js';
 
 // --- Argument parsing ---
 
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.error('Usage: node .devmanager/bin/merge-safe.cjs <taskId>');
+  console.error('Usage: node .maestro/bin/merge-safe.cjs <taskId>');
   process.exit(1);
 }
 
@@ -19,10 +19,10 @@ if (isNaN(taskId)) {
   process.exit(1);
 }
 
-const devmanagerDir = requireDevManagerDir();
-const projectRoot = path.dirname(devmanagerDir);
-const lockFile = path.join(devmanagerDir, 'merge.lock');
-const worktreeRelative = `.devmanager/worktrees/task-${taskId}`;
+const maestroDir = requireMaestroDir();
+const projectRoot = path.dirname(maestroDir);
+const lockFile = path.join(maestroDir, 'merge.lock');
+const worktreeRelative = `.maestro/worktrees/task-${taskId}`;
 const worktreeAbsolute = path.join(projectRoot, worktreeRelative);
 
 // --- Helpers ---

@@ -148,7 +148,7 @@ export async function handleSkills(method, pathname, req, res, url, ctx) {
 
   // GET /api/skills-config
   if (method === 'GET' && pathname === '/api/skills-config') {
-    const configPath = join(projectPath, '.devmanager', 'skills.json');
+    const configPath = join(projectPath, '.maestro', 'skills.json');
     const result = await readJsonOrNull(configPath);
     jsonResponse(res, 200, result ? result.data : {});
     return true;
@@ -157,7 +157,7 @@ export async function handleSkills(method, pathname, req, res, url, ctx) {
   // PUT /api/skills-config
   if (method === 'PUT' && pathname === '/api/skills-config') {
     const body = await parseJsonBody(req);
-    const configDir = join(projectPath, '.devmanager');
+    const configDir = join(projectPath, '.maestro');
     await ensureDir(configDir);
     await writeFile(join(configDir, 'skills.json'), JSON.stringify(body, null, 2), 'utf-8');
     jsonResponse(res, 200, { ok: true });

@@ -70,10 +70,10 @@ describe('handleAttachments', () => {
       expect(result).toBe(true);
       const body = JSON.parse(res.end.mock.calls[0][0]);
       expect(body.ok).toBe(true);
-      expect(body.path).toBe('.devmanager/attachments/5/test.png');
+      expect(body.path).toBe('.maestro/attachments/5/test.png');
 
       // Verify file was written
-      const content = await readFile(join(tmpDir, '.devmanager', 'attachments', '5', 'test.png'));
+      const content = await readFile(join(tmpDir, '.maestro', 'attachments', '5', 'test.png'));
       expect(content.toString()).toBe('file content here');
     });
 
@@ -90,7 +90,7 @@ describe('handleAttachments', () => {
 
   describe('GET /api/attachments/:taskId/:filename', () => {
     it('serves an attachment with correct MIME type', async () => {
-      const attachDir = join(tmpDir, '.devmanager', 'attachments', '5');
+      const attachDir = join(tmpDir, '.maestro', 'attachments', '5');
       await mkdir(attachDir, { recursive: true });
       await writeFile(join(attachDir, 'image.png'), Buffer.from('PNG data'));
 
@@ -103,7 +103,7 @@ describe('handleAttachments', () => {
     });
 
     it('uses application/octet-stream for unknown extensions', async () => {
-      const attachDir = join(tmpDir, '.devmanager', 'attachments', '5');
+      const attachDir = join(tmpDir, '.maestro', 'attachments', '5');
       await mkdir(attachDir, { recursive: true });
       await writeFile(join(attachDir, 'file.xyz'), 'data');
 
@@ -126,12 +126,12 @@ describe('handleAttachments', () => {
   describe('path traversal protection', () => {
     // matchRoute decodes URL params, so ..%2F becomes ../
     // Paths are resolved under projectPath, so we need enough ../
-    // to escape: projectPath/.devmanager/attachments/<taskId> needs 3+ levels
+    // to escape: projectPath/.maestro/attachments/<taskId> needs 3+ levels
 
     it('rejects path traversal in taskId for POST', async () => {
       const res = mockRes();
       const req = mockReq(['file content']);
-      // Use enough ../ to escape projectPath: .devmanager/attachments/../../../../x
+      // Use enough ../ to escape projectPath: .maestro/attachments/../../../../x
       const traversal = '..%2F..%2F..%2F..%2Fetc';
       const url = mockUrl(`/api/attachments/${traversal}?name=evil.png`);
       await handleAttachments('POST', `/api/attachments/${traversal}`, req, res, url, mockCtx(tmpDir));
@@ -181,7 +181,7 @@ describe('handleAttachments', () => {
 
   describe('DELETE /api/attachments/:taskId/:filename', () => {
     it('deletes an attachment', async () => {
-      const attachDir = join(tmpDir, '.devmanager', 'attachments', '5');
+      const attachDir = join(tmpDir, '.maestro', 'attachments', '5');
       await mkdir(attachDir, { recursive: true });
       await writeFile(join(attachDir, 'file.txt'), 'data');
 

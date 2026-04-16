@@ -60,7 +60,7 @@ describe('handleBackups', () => {
 
   describe('GET /api/backups', () => {
     it('returns list of backup files', async () => {
-      const backupDir = join(tmpDir, '.devmanager', 'backups');
+      const backupDir = join(tmpDir, '.maestro', 'backups');
       await mkdir(backupDir, { recursive: true });
       await writeFile(join(backupDir, 'state-1000.json'), '{}');
       await writeFile(join(backupDir, 'state-2000.json'), '{}');
@@ -82,7 +82,7 @@ describe('handleBackups', () => {
     });
 
     it('ignores non-state files', async () => {
-      const backupDir = join(tmpDir, '.devmanager', 'backups');
+      const backupDir = join(tmpDir, '.maestro', 'backups');
       await mkdir(backupDir, { recursive: true });
       await writeFile(join(backupDir, 'state-1000.json'), '{}');
       await writeFile(join(backupDir, 'other.txt'), 'nope');
@@ -96,7 +96,7 @@ describe('handleBackups', () => {
 
   describe('POST /api/backups/snapshot', () => {
     it('creates a backup of state.json', async () => {
-      const devDir = join(tmpDir, '.devmanager');
+      const devDir = join(tmpDir, '.maestro');
       await mkdir(devDir, { recursive: true });
       await writeFile(join(devDir, 'state.json'), JSON.stringify({ project: 'test' }));
 
@@ -124,7 +124,7 @@ describe('handleBackups', () => {
 
   describe('POST /api/backups/restore', () => {
     it('restores a backup', async () => {
-      const devDir = join(tmpDir, '.devmanager');
+      const devDir = join(tmpDir, '.maestro');
       const backupDir = join(devDir, 'backups');
       await mkdir(backupDir, { recursive: true });
       const backupData = { project: 'restored' };

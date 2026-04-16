@@ -58,12 +58,12 @@ export async function handleProjects(method, pathname, req, res, url, ctx) {
         if (!entry.isDirectory()) continue;
         // Skip hidden dirs and node_modules
         if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-        // Check if it's a project (has .devmanager/ or .git/ or package.json)
+        // Check if it's a project (has .maestro/ or .git/ or package.json)
         let isProject = false;
         try {
           const subPath = join(resolved, entry.name);
           const subEntries = await readdir(subPath);
-          isProject = subEntries.includes('.devmanager') || subEntries.includes('.git') || subEntries.includes('package.json');
+          isProject = subEntries.includes('.maestro') || subEntries.includes('.git') || subEntries.includes('package.json');
         } catch { /* can't read = skip */ }
         dirs.push({ name: entry.name, path: join(resolved, entry.name), isProject });
       }

@@ -5,13 +5,13 @@ import path from 'path';
 import os from 'os';
 
 /**
- * Integration tests for .devmanager/bin/ CLI scripts.
+ * Integration tests for .maestro/bin/ CLI scripts.
  *
- * Each test creates a temp directory with a .devmanager/ structure,
+ * Each test creates a temp directory with a .maestro/ structure,
  * runs the script via node, and asserts on stdout/stderr/files.
  */
 
-const SCRIPTS_DIR = path.resolve(__dirname, '../../.devmanager/bin');
+const SCRIPTS_DIR = path.resolve(__dirname, '../../.maestro/bin');
 
 let tmpDir: string;
 
@@ -35,20 +35,20 @@ function run(script: string, args: string[] = [], cwd?: string): { stdout: strin
 }
 
 function writeState(state: object) {
-  const devDir = path.join(tmpDir, '.devmanager');
+  const devDir = path.join(tmpDir, '.maestro');
   fs.mkdirSync(devDir, { recursive: true });
   fs.writeFileSync(path.join(devDir, 'state.json'), JSON.stringify(state));
 }
 
 function readProgress(taskId: number) {
-  const p = path.join(tmpDir, '.devmanager', 'progress', `${taskId}.json`);
+  const p = path.join(tmpDir, '.maestro', 'progress', `${taskId}.json`);
   return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'devmanager-test-'));
-  // Create .devmanager dir so scripts can find it
-  fs.mkdirSync(path.join(tmpDir, '.devmanager'), { recursive: true });
+  // Create .maestro dir so scripts can find it
+  fs.mkdirSync(path.join(tmpDir, '.maestro'), { recursive: true });
 });
 
 afterEach(() => {
@@ -81,10 +81,10 @@ describe('task-start.cjs', () => {
   });
 
   it('creates progress directory if missing', () => {
-    // .devmanager exists but progress/ does not
+    // .maestro exists but progress/ does not
     const result = run('task-start.cjs', ['7']);
     expect(result.exitCode).toBe(0);
-    expect(fs.existsSync(path.join(tmpDir, '.devmanager', 'progress', '7.json'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.maestro', 'progress', '7.json'))).toBe(true);
   });
 });
 
@@ -196,7 +196,7 @@ describe('queue-next.cjs', () => {
       tasks: [{ id: 5, name: 'Test' }],
       queue: [{ task: 5, taskName: 'Test', notes: '' }],
     });
-    const notesDir = path.join(tmpDir, '.devmanager', 'notes');
+    const notesDir = path.join(tmpDir, '.maestro', 'notes');
     fs.mkdirSync(notesDir, { recursive: true });
     fs.writeFileSync(path.join(notesDir, '5.md'), '# Notes');
 
@@ -215,8 +215,8 @@ describe('queue-next.cjs', () => {
   });
 
   it('fails when state.json is missing', () => {
-    // Remove the .devmanager dir so state.json can't be found
-    fs.rmSync(path.join(tmpDir, '.devmanager'), { recursive: true });
+    // Remove the .maestro dir so state.json can't be found
+    fs.rmSync(path.join(tmpDir, '.maestro'), { recursive: true });
     const result = run('queue-next.cjs');
     expect(result.exitCode).toBe(1);
   });
@@ -260,7 +260,7 @@ describe('merge-safe.cjs', () => {
     execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
     execSync('git -c user.name=Test -c user.email=test@test.com commit --allow-empty -m "init"', { cwd: tmpDir, stdio: 'pipe' });
     // Create worktree dir so it passes that check... but no branch exists
-    const worktreeDir = path.join(tmpDir, '.devmanager', 'worktrees', 'task-999');
+    const worktreeDir = path.join(tmpDir, '.maestro', 'worktrees', 'task-999');
     fs.mkdirSync(worktreeDir, { recursive: true });
 
     const result = run('merge-safe.cjs', ['999']);

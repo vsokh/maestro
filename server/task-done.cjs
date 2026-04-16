@@ -4,10 +4,10 @@
  * task-done.cjs — Mark a task as done via progress file
  *
  * Usage:
- *   node .devmanager/bin/task-done.cjs <taskId> --commit <commitRef>
+ *   node .maestro/bin/task-done.cjs <taskId> --commit <commitRef>
  *
  * What it does:
- *   - Writes to .devmanager/progress/{taskId}.json with status: "done"
+ *   - Writes to .maestro/progress/{taskId}.json with status: "done"
  *   - The UI automatically merges this, removes task from queue, and adds activity
  *   - Does NOT touch state.json (avoids concurrent write races)
  *
@@ -24,7 +24,7 @@ const path = require('path');
 const args = process.argv.slice(2);
 
 function printUsage() {
-  console.error('Usage: node .devmanager/bin/task-done.cjs <taskId> --commit <commitRef>');
+  console.error('Usage: node .maestro/bin/task-done.cjs <taskId> --commit <commitRef>');
   console.error('');
   console.error('Options:');
   console.error('  --commit <ref>   Git commit hash (required)');
@@ -54,14 +54,14 @@ if (!commitRef) {
   printUsage();
 }
 
-// --- Find .devmanager/ by walking up directories ---
+// --- Find .maestro/ by walking up directories ---
 
 function findDevManagerDir(startDir) {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
 
   while (true) {
-    const candidate = path.join(dir, '.devmanager');
+    const candidate = path.join(dir, '.maestro');
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
       return candidate;
     }
@@ -75,7 +75,7 @@ function findDevManagerDir(startDir) {
 
 const devmanagerDir = findDevManagerDir(process.cwd());
 if (!devmanagerDir) {
-  console.error('Error: Could not find .devmanager/ in current directory or any parent.');
+  console.error('Error: Could not find .maestro/ in current directory or any parent.');
   process.exit(1);
 }
 

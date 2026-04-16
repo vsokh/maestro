@@ -4,7 +4,7 @@
  * queue-next.cjs — Print the next queued task as key=value pairs
  *
  * Usage:
- *   node .devmanager/bin/queue-next.cjs
+ *   node .maestro/bin/queue-next.cjs
  *
  * Output format (key=value, one per line — easy for LLMs to parse):
  *   TASK_ID=42
@@ -37,7 +37,7 @@ function findDevManagerDir(startDir) {
   const root = path.parse(dir).root;
 
   while (true) {
-    const candidate = path.join(dir, '.devmanager');
+    const candidate = path.join(dir, '.maestro');
     if (fs.existsSync(path.join(candidate, 'state.json'))) {
       return candidate;
     }
@@ -51,7 +51,7 @@ function findDevManagerDir(startDir) {
 
 const devmanagerDir = findDevManagerDir(process.cwd());
 if (!devmanagerDir) {
-  console.error('Error: Could not find .devmanager/state.json in current directory or any parent.');
+  console.error('Error: Could not find .maestro/state.json in current directory or any parent.');
   process.exit(1);
 }
 
@@ -105,7 +105,7 @@ console.log(`NOTES=${notesOneLine}`);
 
 // --- Resume detection ---
 
-// Check for .devmanager/notes/{taskId}.md
+// Check for .maestro/notes/{taskId}.md
 const notesFile = path.join(devmanagerDir, 'notes', `${taskId}.md`);
 const hasNotes = fs.existsSync(notesFile);
 console.log(`HAS_NOTES=${hasNotes ? 'yes' : 'no'}`);

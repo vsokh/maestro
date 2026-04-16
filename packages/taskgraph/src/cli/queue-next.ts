@@ -2,11 +2,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
-import { requireDevManagerDir } from './find-devmanager.js';
+import { requireMaestroDir } from './find-maestro.js';
 
-const devmanagerDir = requireDevManagerDir();
-const stateFile = path.join(devmanagerDir, 'state.json');
-const projectRoot = path.dirname(devmanagerDir);
+const maestroDir = requireMaestroDir();
+const stateFile = path.join(maestroDir, 'state.json');
+const projectRoot = path.dirname(maestroDir);
 
 // --- Read state ---
 
@@ -53,7 +53,7 @@ console.log(`NOTES=${notesOneLine}`);
 
 // --- Resume detection ---
 
-const notesFile = path.join(devmanagerDir, 'notes', `${taskId}.md`);
+const notesFile = path.join(maestroDir, 'notes', `${taskId}.md`);
 const hasNotes = fs.existsSync(notesFile);
 console.log(`HAS_NOTES=${hasNotes ? 'yes' : 'no'}`);
 
@@ -81,7 +81,7 @@ if (hasBranch) {
   console.log(`BRANCH=${branchName}`);
 }
 
-const worktreeDir = path.join(devmanagerDir, 'worktrees', `task-${taskId}`);
+const worktreeDir = path.join(maestroDir, 'worktrees', `task-${taskId}`);
 const hasWorktree = fs.existsSync(worktreeDir);
 console.log(`HAS_WORKTREE=${hasWorktree ? 'yes' : 'no'}`);
 

@@ -1,8 +1,19 @@
-import { watch } from 'node:fs';
+import { watch, existsSync, renameSync } from 'node:fs';
 import { readFile, stat, mkdir, copyFile, readdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WatcherOrchestrator } from 'sync-protocol';
+
+// --- Migrate legacy .devmanager → .maestro ---
+
+function migrateIfNeeded(projectPath) {
+  const legacy = join(projectPath, '.maestro');
+  const modern = join(projectPath, '.maestro');
+  if (existsSync(legacy) && !existsSync(modern)) {
+    renameSync(legacy, modern);
+    console.log(`Migrated .devmanager → .maestro in ${projectPath}`);
+  }
+}
 
 // --- Adapter: FileReaderPort → node:fs ---
 
@@ -56,7 +67,7 @@ const HELPER_SCRIPTS = ['task-done.cjs', 'task-start.cjs', 'queue-next.cjs', 'me
 async function ensureHelperScripts(projectPath) {
   const serverDir = dirname(fileURLToPath(import.meta.url));
   const engineCliDir = join(serverDir, '..', 'packages', 'taskgraph', 'dist', 'cli');
-  const targetDir = join(projectPath, '.devmanager', 'bin');
+  const targetDir = join(projectPath, '.maestro', 'bin');
 
   let needsMkdir = true;
 
@@ -94,6 +105,9 @@ async function ensureHelperScripts(projectPath) {
 // --- Start watcher ---
 
 export function startWatcher(projectPath, broadcast) {
+  // Migrate .devmanager → .maestro if needed
+  migrateIfNeeded(projectPath);
+
   // Deploy CLI helper scripts
   ensureHelperScripts(projectPath);
 
@@ -103,10 +117,10 @@ export function startWatcher(projectPath, broadcast) {
     nodeFileReader, nodeFileWatcher, broadcastPort, nodeTimer,
   );
 
-  const stateFile = join(projectPath, '.devmanager', 'state.json');
-  const progressDir = join(projectPath, '.devmanager', 'progress');
-  const qualityDir = join(projectPath, '.devmanager', 'quality');
-  const errorsDir = join(projectPath, '.devmanager', 'errors');
+  const stateFile = join(projectPath, '.maestro', 'state.json');
+  const progressDir = join(projectPath, '.maestro', 'progress');
+  const qualityDir = join(projectPath, '.maestro', 'quality');
+  const errorsDir = join(projectPath, '.maestro', 'errors');
 
   return orchestrator.start(projectPath, [
     { path: stateFile, type: 'state', isDir: false },

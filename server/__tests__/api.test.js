@@ -116,7 +116,7 @@ let devmanagerDir;
 
 beforeEach(async () => {
   tmpDir = await mkdtemp(join(tmpdir(), 'api-test-'));
-  devmanagerDir = join(tmpDir, '.devmanager');
+  devmanagerDir = join(tmpDir, '.maestro');
   await mkdir(devmanagerDir, { recursive: true });
 
   mockGetActiveProject.mockReturnValue(tmpDir);
@@ -1246,12 +1246,12 @@ describe('Error handling', () => {
     // Point to a project path that will cause readFile to throw a non-ENOENT error
     // inside the skills route. We create a file where a directory is expected.
     // Instead, we can use the progress route with a directory that causes readdir to throw.
-    // Simplest: make getActiveProject return a path where .devmanager/state.json
+    // Simplest: make getActiveProject return a path where .maestro/state.json
     // contains invalid content and use a route that reads JSON (but readJsonOrNull
     // handles ENOENT, not parse errors — parse errors will throw and be caught).
     const badDir = join(tmpDir, 'bad-project');
-    await mkdir(join(badDir, '.devmanager'), { recursive: true });
-    await writeFile(join(badDir, '.devmanager', 'state.json'), '{invalid json!!!}');
+    await mkdir(join(badDir, '.maestro'), { recursive: true });
+    await writeFile(join(badDir, '.maestro', 'state.json'), '{invalid json!!!}');
     mockGetActiveProject.mockReturnValue(badDir);
 
     const req = mockReq('GET', '/api/state');

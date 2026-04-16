@@ -7,12 +7,12 @@ use crate::ProjectPath;
 
 fn backups_dir(project: &str) -> PathBuf {
     PathBuf::from(project)
-        .join(".devmanager")
+        .join(".maestro")
         .join("backups")
 }
 
 fn state_file(project: &str) -> PathBuf {
-    PathBuf::from(project).join(".devmanager").join("state.json")
+    PathBuf::from(project).join(".maestro").join("state.json")
 }
 
 #[derive(serde::Serialize)]

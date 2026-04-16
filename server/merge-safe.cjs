@@ -4,12 +4,12 @@
  * merge-safe.cjs — Safely merge a task branch to master with lock management
  *
  * Usage:
- *   node .devmanager/bin/merge-safe.cjs <taskId>
+ *   node .maestro/bin/merge-safe.cjs <taskId>
  *
  * What it does:
  *   1. Discovers branch name (git branch --list "task-{taskId}-*")
- *   2. Discovers worktree path (.devmanager/worktrees/task-{taskId})
- *   3. Acquires .devmanager/merge.lock (waits up to 60s if locked)
+ *   2. Discovers worktree path (.maestro/worktrees/task-{taskId})
+ *   3. Acquires .maestro/merge.lock (waits up to 60s if locked)
  *   4. Rebases branch onto master inside worktree
  *   5. Merges branch into master from project root
  *   6. Cleans up worktree and branch
@@ -24,7 +24,7 @@
  *   MERGE_FAILED=<reason>
  *   CONFLICT_FILES=file1, file2
  *   LOCK_RELEASED=yes
- *   WORKTREE=.devmanager/worktrees/task-42
+ *   WORKTREE=.maestro/worktrees/task-42
  *   BRANCH=task-42-google-login
  *
  * Exit codes:
@@ -41,7 +41,7 @@ const { execSync } = require('child_process');
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.error('Usage: node .devmanager/bin/merge-safe.cjs <taskId>');
+  console.error('Usage: node .maestro/bin/merge-safe.cjs <taskId>');
   process.exit(1);
 }
 
@@ -51,14 +51,14 @@ if (isNaN(taskId)) {
   process.exit(1);
 }
 
-// --- Find .devmanager/ by walking up directories ---
+// --- Find .maestro/ by walking up directories ---
 
 function findDevManagerDir(startDir) {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
 
   while (true) {
-    const candidate = path.join(dir, '.devmanager');
+    const candidate = path.join(dir, '.maestro');
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
       return candidate;
     }
@@ -72,13 +72,13 @@ function findDevManagerDir(startDir) {
 
 const devmanagerDir = findDevManagerDir(process.cwd());
 if (!devmanagerDir) {
-  console.error('Error: Could not find .devmanager/ in current directory or any parent.');
+  console.error('Error: Could not find .maestro/ in current directory or any parent.');
   process.exit(1);
 }
 
 const projectRoot = path.dirname(devmanagerDir);
 const lockFile = path.join(devmanagerDir, 'merge.lock');
-const worktreeRelative = `.devmanager/worktrees/task-${taskId}`;
+const worktreeRelative = `.maestro/worktrees/task-${taskId}`;
 const worktreeAbsolute = path.join(projectRoot, worktreeRelative);
 
 // --- Helper: run git command ---

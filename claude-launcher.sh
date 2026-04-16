@@ -37,19 +37,19 @@ title="$(urldecode "$title")"
 [ -z "$title" ] && title="Claude Code"
 
 # Validate command against allowlist (prevents injection via crafted URLs)
-if [[ ! "$cmd" =~ ^/orchestrator\ (next|arrange|status|task\ [0-9]+|[0-9]+)$ ]] && [[ ! "$cmd" =~ ^Read\ \.devmanager/ ]]; then
+if [[ ! "$cmd" =~ ^/orchestrator\ (next|arrange|status|task\ [0-9]+|[0-9]+)$ ]] && [[ ! "$cmd" =~ ^Read\ \.maestro/ ]]; then
   echo "ERROR: Invalid command format: $cmd" >&2
   exit 1
 fi
 
-# Special: __launch_file runs .devmanager/launch.sh (multi-tab launch)
+# Special: __launch_file runs .maestro/launch.sh (multi-tab launch)
 if [ "$cmd" = "__launch_file" ]; then
-  exec bash "$dir/.devmanager/launch.sh"
+  exec bash "$dir/.maestro/launch.sh"
 fi
 
 # Write launch script (avoids shell interpolation)
-mkdir -p "$dir/.devmanager"
-script_path="$dir/.devmanager/launch-single.sh"
+mkdir -p "$dir/.maestro"
+script_path="$dir/.maestro/launch-single.sh"
 cat > "$script_path" << SCRIPT_EOF
 #!/bin/bash
 cd "$(printf '%s' "$dir" | sed 's/"/\\"/g')" && claude --dangerously-skip-permissions "$(printf '%s' "$cmd" | sed 's/"/\\"/g')"; exec bash

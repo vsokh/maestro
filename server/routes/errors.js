@@ -6,7 +6,7 @@ export async function handleErrors(method, pathname, req, res, url, ctx) {
 
   // GET /api/errors/latest
   if (method === 'GET' && pathname === '/api/errors/latest') {
-    const filePath = join(projectPath, '.devmanager', 'errors', 'latest.json');
+    const filePath = join(projectPath, '.maestro', 'errors', 'latest.json');
     const result = await readJsonOrNull(filePath);
     if (!result) {
       jsonResponse(res, 404, { error: 'Errors report not found' });
@@ -18,7 +18,7 @@ export async function handleErrors(method, pathname, req, res, url, ctx) {
 
   // GET /api/errors/history
   if (method === 'GET' && pathname === '/api/errors/history') {
-    const filePath = join(projectPath, '.devmanager', 'errors', 'history.json');
+    const filePath = join(projectPath, '.maestro', 'errors', 'history.json');
     const result = await readJsonOrNull(filePath);
     if (!result) {
       jsonResponse(res, 200, []);

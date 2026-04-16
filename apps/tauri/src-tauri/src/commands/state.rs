@@ -6,7 +6,7 @@ use tauri::State;
 use crate::ProjectPath;
 
 fn state_file(project: &str) -> PathBuf {
-    PathBuf::from(project).join(".devmanager").join("state.json")
+    PathBuf::from(project).join(".maestro").join("state.json")
 }
 
 fn now_iso() -> String {
@@ -112,7 +112,7 @@ pub fn write_state(
         }
     }
 
-    // Ensure .devmanager/ directory exists
+    // Ensure .maestro/ directory exists
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }

@@ -6,7 +6,7 @@ use tauri::State;
 use crate::ProjectPath;
 
 fn progress_dir(project: &str) -> PathBuf {
-    PathBuf::from(project).join(".devmanager").join("progress")
+    PathBuf::from(project).join(".maestro").join("progress")
 }
 
 #[tauri::command]

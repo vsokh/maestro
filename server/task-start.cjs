@@ -4,10 +4,10 @@
  * task-start.cjs — Mark a task as in-progress via progress file
  *
  * Usage:
- *   node .devmanager/bin/task-start.cjs <taskId>
+ *   node .maestro/bin/task-start.cjs <taskId>
  *
  * What it does:
- *   - Writes to .devmanager/progress/{taskId}.json with status: "in-progress"
+ *   - Writes to .maestro/progress/{taskId}.json with status: "in-progress"
  *   - The UI automatically merges this and removes the task from the queue
  *   - Does NOT touch state.json (avoids concurrent write races)
  *
@@ -24,7 +24,7 @@ const path = require('path');
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.error('Usage: node .devmanager/bin/task-start.cjs <taskId>');
+  console.error('Usage: node .maestro/bin/task-start.cjs <taskId>');
   process.exit(1);
 }
 
@@ -34,14 +34,14 @@ if (isNaN(taskId)) {
   process.exit(1);
 }
 
-// --- Find .devmanager/ by walking up directories ---
+// --- Find .maestro/ by walking up directories ---
 
 function findDevManagerDir(startDir) {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
 
   while (true) {
-    const candidate = path.join(dir, '.devmanager');
+    const candidate = path.join(dir, '.maestro');
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
       return candidate;
     }
@@ -55,7 +55,7 @@ function findDevManagerDir(startDir) {
 
 const devmanagerDir = findDevManagerDir(process.cwd());
 if (!devmanagerDir) {
-  console.error('Error: Could not find .devmanager/ in current directory or any parent.');
+  console.error('Error: Could not find .maestro/ in current directory or any parent.');
   process.exit(1);
 }
 

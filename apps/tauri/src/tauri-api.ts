@@ -118,7 +118,7 @@ export const api = {
   getAttachmentUrl: (taskId: number, filename: string) => {
     // In Tauri, we'll resolve the path at render time via invoke
     // For now return a placeholder — components should use convertFileSrc() for real rendering
-    return `tauri://localhost/.devmanager/attachments/${taskId}/${encodeURIComponent(filename)}`;
+    return `tauri://localhost/.maestro/attachments/${taskId}/${encodeURIComponent(filename)}`;
   },
 
   // Backups

@@ -1,5 +1,5 @@
 /**
- * Bundle CLI scripts into standalone CJS files for deployment to .devmanager/bin/
+ * Bundle CLI scripts into standalone CJS files for deployment to .maestro/bin/
  * These scripts must be self-contained (no require('taskgraph') at runtime).
  */
 import * as esbuild from 'esbuild';

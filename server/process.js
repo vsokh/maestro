@@ -28,7 +28,7 @@ const nodeSpawnPort = {
 const nodeProgressWriter = {
   async wasRecentlyWritten(projectPath, taskId, windowMs) {
     try {
-      const progressFile = join(projectPath, '.devmanager', 'progress', `${taskId}.json`);
+      const progressFile = join(projectPath, '.maestro', 'progress', `${taskId}.json`);
       const s = await fsStat(progressFile);
       return (Date.now() - s.mtimeMs) < windowMs;
     } catch {
@@ -36,7 +36,7 @@ const nodeProgressWriter = {
     }
   },
   async writeFallbackProgress(projectPath, taskId, entry) {
-    const progressDir = join(projectPath, '.devmanager', 'progress');
+    const progressDir = join(projectPath, '.maestro', 'progress');
     await mkdir(progressDir, { recursive: true });
     const progressFile = join(progressDir, `${taskId}.json`);
     await writeFile(progressFile, JSON.stringify(entry, null, 2), 'utf-8');

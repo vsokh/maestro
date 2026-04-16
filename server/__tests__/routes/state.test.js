@@ -60,7 +60,7 @@ describe('handleState', () => {
 
   describe('GET /api/state', () => {
     it('returns state data when file exists', async () => {
-      const devDir = join(tmpDir, '.devmanager');
+      const devDir = join(tmpDir, '.maestro');
       await mkdir(devDir, { recursive: true });
       const stateData = { project: 'test', tasks: [] };
       await writeFile(join(devDir, 'state.json'), JSON.stringify(stateData));
@@ -94,13 +94,13 @@ describe('handleState', () => {
       expect(body.lastModified).toBeDefined();
 
       // Verify file was written with incremented _v
-      const written = JSON.parse(await readFile(join(tmpDir, '.devmanager', 'state.json'), 'utf-8'));
+      const written = JSON.parse(await readFile(join(tmpDir, '.maestro', 'state.json'), 'utf-8'));
       expect(written._v).toBe(1);
       expect(written.project).toBe('test');
     });
 
     it('returns 409 when file on disk is newer (concurrency conflict)', async () => {
-      const devDir = join(tmpDir, '.devmanager');
+      const devDir = join(tmpDir, '.maestro');
       await mkdir(devDir, { recursive: true });
       const statePath = join(devDir, 'state.json');
       const currentData = { project: 'test', tasks: [] };
@@ -118,7 +118,7 @@ describe('handleState', () => {
 
   describe('GET /api/progress', () => {
     it('returns progress entries', async () => {
-      const progDir = join(tmpDir, '.devmanager', 'progress');
+      const progDir = join(tmpDir, '.maestro', 'progress');
       await mkdir(progDir, { recursive: true });
       await writeFile(join(progDir, '1.json'), JSON.stringify({ status: 'done' }));
       await writeFile(join(progDir, '2.json'), JSON.stringify({ status: 'in-progress' }));
@@ -142,7 +142,7 @@ describe('handleState', () => {
   describe('DELETE /api/progress/:taskId — path traversal', () => {
     it('rejects path traversal in taskId', async () => {
       const res = mockRes();
-      // Need enough ../ to escape projectPath: .devmanager/progress/../../../../x.json
+      // Need enough ../ to escape projectPath: .maestro/progress/../../../../x.json
       const traversal = '..%2F..%2F..%2F..%2Fetc';
       await handleState('DELETE', `/api/progress/${traversal}`, mockReq(), res, mockUrl(`/api/progress/${traversal}`), mockCtx(tmpDir));
       expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
@@ -153,7 +153,7 @@ describe('handleState', () => {
 
   describe('DELETE /api/progress/:taskId', () => {
     it('deletes a progress file', async () => {
-      const progDir = join(tmpDir, '.devmanager', 'progress');
+      const progDir = join(tmpDir, '.maestro', 'progress');
       await mkdir(progDir, { recursive: true });
       await writeFile(join(progDir, '42.json'), '{}');
 

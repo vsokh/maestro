@@ -52,7 +52,7 @@ You design game systems. You do NOT implement code — you produce design docume
 - Game Design Document (GDD) sections
 
 ## Output format
-Write design specs to \`.devmanager/specs/\` as markdown files. Include diagrams where helpful (ASCII or mermaid).
+Write design specs to \`.maestro/specs/\` as markdown files. Include diagrams where helpful (ASCII or mermaid).
 
 ## Guidelines
 - Always consider player motivation and fun factor
@@ -107,7 +107,7 @@ You test the game, find bugs, verify fixes, and document issues.
 - Screenshot capture for visual bugs
 
 ## Output format
-Write test reports to \`.devmanager/specs/\` as markdown. Include:
+Write test reports to \`.maestro/specs/\` as markdown. Include:
 - Steps to reproduce
 - Expected vs actual behavior
 - Screenshots (if visual)

@@ -179,7 +179,7 @@ pub fn launch_terminal(
         _ => "cursor-agent",
     };
     let tab_title = title.unwrap_or_else(|| format!("Task {}", task_id.unwrap_or(0)));
-    let devmanager_dir = std::path::PathBuf::from(&cwd).join(".devmanager");
+    let devmanager_dir = std::path::PathBuf::from(&cwd).join(".maestro");
     std::fs::create_dir_all(&devmanager_dir).map_err(|e| e.to_string())?;
 
     let task_label = task_id

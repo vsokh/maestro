@@ -56,7 +56,7 @@ The play buttons can open a named terminal tab via the `claudecode://` protocol.
 ## Architecture
 
 **Frontend:** Vite + React 19 + TypeScript. Inline styles with CSS custom properties.
-**Backend:** Node.js bridge server — HTTP API, WebSocket for live updates, file watcher for `.devmanager/` changes.
+**Backend:** Node.js bridge server — HTTP API, WebSocket for live updates, file watcher for `.maestro/` changes.
 
 ```
 src/                          server/
@@ -83,7 +83,7 @@ src/                          server/
     └── ProjectPicker.tsx     # Landing screen + project templates
 ```
 
-### State file: `.devmanager/state.json`
+### State file: `.maestro/state.json`
 
 Single source of truth for the bidirectional sync between Dev Manager and Claude Code.
 

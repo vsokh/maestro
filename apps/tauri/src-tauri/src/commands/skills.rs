@@ -23,7 +23,7 @@ fn agents_dir(project: &str) -> PathBuf {
 
 fn skills_config_path(project: &str) -> PathBuf {
     PathBuf::from(project)
-        .join(".devmanager")
+        .join(".maestro")
         .join("skills.json")
 }
 

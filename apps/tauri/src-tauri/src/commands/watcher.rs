@@ -8,24 +8,24 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::ProjectPath;
 
-/// Start watching .devmanager/ for state, progress, quality, and errors changes.
+/// Start watching .maestro/ for state, progress, quality, and errors changes.
 /// Emits Tauri events that the frontend listens to (same role as WebSocket in the browser app).
 #[tauri::command]
 pub fn watch_project(app: AppHandle, project: State<'_, ProjectPath>) -> Result<(), String> {
     let project_path = project.get();
-    let devmanager_dir = PathBuf::from(&project_path).join(".devmanager");
+    let maestro_dir = PathBuf::from(&project_path).join(".maestro");
 
     // Ensure the directory exists
-    fs::create_dir_all(&devmanager_dir).map_err(|e| e.to_string())?;
+    fs::create_dir_all(&maestro_dir).map_err(|e| e.to_string())?;
 
     let (tx, rx) = mpsc::channel::<notify::Result<Event>>();
     let mut watcher =
         RecommendedWatcher::new(tx, Config::default().with_poll_interval(Duration::from_secs(1)))
             .map_err(|e| e.to_string())?;
 
-    // Watch the .devmanager directory recursively
+    // Watch the .maestro directory recursively
     watcher
-        .watch(&devmanager_dir, RecursiveMode::Recursive)
+        .watch(&maestro_dir, RecursiveMode::Recursive)
         .map_err(|e| e.to_string())?;
 
     let app_handle = app.clone();
@@ -44,7 +44,7 @@ pub fn watch_project(app: AppHandle, project: State<'_, ProjectPath>) -> Result<
                     for path in &event.paths {
                         let rel = path
                             .strip_prefix(
-                                PathBuf::from(&project_for_thread).join(".devmanager"),
+                                PathBuf::from(&project_for_thread).join(".maestro"),
                             )
                             .ok();
 
@@ -84,7 +84,7 @@ pub fn watch_project(app: AppHandle, project: State<'_, ProjectPath>) -> Result<
                                 last_progress_emit = Instant::now();
                                 // Read all progress files and emit
                                 let progress_dir = PathBuf::from(&project_for_thread)
-                                    .join(".devmanager")
+                                    .join(".maestro")
                                     .join("progress");
                                 if let Ok(entries) = fs::read_dir(&progress_dir) {
                                     let mut result = serde_json::Map::new();

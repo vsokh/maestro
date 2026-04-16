@@ -45,7 +45,7 @@ export async function handleState(method, pathname, req, res, url, ctx) {
     }
 
     try {
-      const stateFile = join(projectPath, '.devmanager', 'state.json');
+      const stateFile = join(projectPath, '.maestro', 'state.json');
       let existingEpics = [];
       try {
         const stateContent = await readFile(stateFile, 'utf-8');
@@ -78,7 +78,7 @@ Rules:
 
       // Terminal mode: open interactive Claude session, same as task launch
       if (terminal) {
-        const scriptDir = join(projectPath, '.devmanager');
+        const scriptDir = join(projectPath, '.maestro');
         mkdirSync(scriptDir, { recursive: true });
 
         const promptPath = join(scriptDir, 'split-prompt.txt');
@@ -90,7 +90,7 @@ Rules:
         writeFileSync(promptPath, prompt);
 
         // Short command for claude — it reads the full prompt from the file
-        const splitCmd = `Read .devmanager/split-prompt.txt for instructions. Follow them to split the notes into tasks. Write ONLY the raw JSON array (no markdown fences) to .devmanager/split-result.txt`;
+        const splitCmd = `Read .maestro/split-prompt.txt for instructions. Follow them to split the notes into tasks. Write ONLY the raw JSON array (no markdown fences) to .maestro/split-result.txt`;
 
         const os = platform();
         const { spawn: spawnProc } = await import('node:child_process');
@@ -159,14 +159,14 @@ Rules:
 
   // GET /api/split-tasks/result — poll for terminal split result
   if (method === 'GET' && pathname === '/api/split-tasks/result') {
-    const resultPath = join(projectPath, '.devmanager', 'split-result.txt');
+    const resultPath = join(projectPath, '.maestro', 'split-result.txt');
     try {
       const content = await readFile(resultPath, 'utf-8');
       const cleaned = content.replace(/^```(?:json)?\n?/gm, '').replace(/\n?```$/gm, '').trim();
       const tasks = JSON.parse(cleaned);
       // Clean up temp files
       try { await unlink(resultPath); } catch { /* ok */ }
-      try { await unlink(join(projectPath, '.devmanager', 'split-prompt.txt')); } catch { /* ok */ }
+      try { await unlink(join(projectPath, '.maestro', 'split-prompt.txt')); } catch { /* ok */ }
       jsonResponse(res, 200, { tasks });
     } catch {
       jsonResponse(res, 404, { pending: true });
@@ -176,7 +176,7 @@ Rules:
 
   // GET /api/state — delegated to StateWriter
   if (method === 'GET' && pathname === '/api/state') {
-    const statePath = join(projectPath, '.devmanager', 'state.json');
+    const statePath = join(projectPath, '.maestro', 'state.json');
     const result = await stateWriter.readState(statePath);
     if (!result) {
       jsonResponse(res, 404, { error: 'State file not found' });
@@ -189,7 +189,7 @@ Rules:
   // PUT /api/state — delegated to StateWriter
   if (method === 'PUT' && pathname === '/api/state') {
     const body = await parseJsonBody(req);
-    const stateDir = join(projectPath, '.devmanager');
+    const stateDir = join(projectPath, '.maestro');
     const statePath = join(stateDir, 'state.json');
 
     const result = await stateWriter.writeState(statePath, stateDir, body);
@@ -210,7 +210,7 @@ Rules:
 
   // GET /api/progress — delegated to StateWriter
   if (method === 'GET' && pathname === '/api/progress') {
-    const progDir = join(projectPath, '.devmanager', 'progress');
+    const progDir = join(projectPath, '.maestro', 'progress');
     const entries = await stateWriter.readProgress(progDir);
     jsonResponse(res, 200, entries);
     return true;
@@ -219,7 +219,7 @@ Rules:
   // DELETE /api/progress/:taskId
   params = matchRoute(method, pathname, 'DELETE', '/api/progress/:taskId');
   if (params) {
-    const filePath = safePath(projectPath, '.devmanager', 'progress', `${params.taskId}.json`);
+    const filePath = safePath(projectPath, '.maestro', 'progress', `${params.taskId}.json`);
     if (!filePath) {
       jsonResponse(res, 400, { error: 'Invalid path' });
       return true;

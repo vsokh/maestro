@@ -42,22 +42,22 @@ if not defined title set "title=Claude Code"
 :: Validate command against allowlist (prevents injection via crafted URLs)
 echo !cmd! | findstr /r /c:"^/orchestrator " >nul 2>&1
 if errorlevel 1 (
-  echo !cmd! | findstr /r /c:"^Read \.devmanager/" >nul 2>&1
+  echo !cmd! | findstr /r /c:"^Read \.maestro/" >nul 2>&1
   if errorlevel 1 (
     echo ERROR: Invalid command format: !cmd!
     exit /b 1
   )
 )
 
-:: Special: __launch_file runs .devmanager/launch.cmd (multi-tab launch)
+:: Special: __launch_file runs .maestro/launch.cmd (multi-tab launch)
 if "!cmd!"=="__launch_file" (
-  call "!dir!\.devmanager\launch.cmd"
+  call "!dir!\.maestro\launch.cmd"
   exit /b
 )
 
-:: Write launch script into .devmanager/ (keeps temp files together for easy cleanup)
-if not exist "!dir!\.devmanager" mkdir "!dir!\.devmanager"
-set "tmpfile=!dir!\.devmanager\launch-single.ps1"
+:: Write launch script into .maestro/ (keeps temp files together for easy cleanup)
+if not exist "!dir!\.maestro" mkdir "!dir!\.maestro"
+set "tmpfile=!dir!\.maestro\launch-single.ps1"
 :: Escape single quotes for PowerShell (double them)
 set "safecmd=!cmd:'=''!"
 set "safetitle=!title:'=''!"

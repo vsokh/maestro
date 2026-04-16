@@ -18,7 +18,7 @@ function escapePS(s) {
 }
 
 // Allowlist pattern for commands passed to terminal launchers
-const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^\/codehealth(\s+(scan|quick|diff))?$|^\/autofix$|^\/error-tracker(\s+(scan|status|investigate\s+\S+))?$|^\/release(\s+(status|changelog|cut|retroactive|gate)(\s+(major|minor|patch))?)?$|^Read \.devmanager\//;
+const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^\/codehealth(\s+(scan|quick|diff))?$|^\/autofix$|^\/error-tracker(\s+(scan|status|investigate\s+\S+))?$|^\/release(\s+(status|changelog|cut|retroactive|gate)(\s+(major|minor|patch))?)?$|^Read \.maestro\//;
 
 export async function handleLaunch(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
@@ -61,7 +61,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
       const cliName = eng === 'claude' ? 'claude' : eng === 'codex' ? 'codex' : 'cursor-agent';
 
       // Layer 2: Write temp script files to avoid shell string interpolation
-      const scriptDir = join(projectPath, '.devmanager');
+      const scriptDir = join(projectPath, '.maestro');
       mkdirSync(scriptDir, { recursive: true });
 
       if (os === 'win32') {

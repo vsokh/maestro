@@ -7,7 +7,7 @@ export async function handleBackups(method, pathname, req, res, url, ctx) {
 
   // GET /api/backups
   if (method === 'GET' && pathname === '/api/backups') {
-    const backupDir = join(projectPath, '.devmanager', 'backups');
+    const backupDir = join(projectPath, '.maestro', 'backups');
     const files = [];
     try {
       const entries = await readdir(backupDir, { withFileTypes: true });
@@ -30,8 +30,8 @@ export async function handleBackups(method, pathname, req, res, url, ctx) {
 
   // POST /api/backups/snapshot
   if (method === 'POST' && pathname === '/api/backups/snapshot') {
-    const statePath = join(projectPath, '.devmanager', 'state.json');
-    const backupDir = join(projectPath, '.devmanager', 'backups');
+    const statePath = join(projectPath, '.maestro', 'state.json');
+    const backupDir = join(projectPath, '.maestro', 'backups');
     await ensureDir(backupDir);
 
     try {
@@ -79,8 +79,8 @@ export async function handleBackups(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'Invalid backup filename' });
       return true;
     }
-    const backupPath = join(projectPath, '.devmanager', 'backups', filename);
-    const statePath = join(projectPath, '.devmanager', 'state.json');
+    const backupPath = join(projectPath, '.maestro', 'backups', filename);
+    const statePath = join(projectPath, '.maestro', 'state.json');
     try {
       await stat(backupPath);
     } catch {

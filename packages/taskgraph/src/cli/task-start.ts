@@ -1,14 +1,14 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { requireDevManagerDir } from './find-devmanager.js';
+import { requireMaestroDir } from './find-maestro.js';
 
 // --- Argument parsing ---
 
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.error('Usage: node .devmanager/bin/task-start.cjs <taskId>');
+  console.error('Usage: node .maestro/bin/task-start.cjs <taskId>');
   process.exit(1);
 }
 
@@ -18,11 +18,11 @@ if (isNaN(taskId)) {
   process.exit(1);
 }
 
-const devmanagerDir = requireDevManagerDir();
+const maestroDir = requireMaestroDir();
 
 // --- Write progress file ---
 
-const progressDir = path.join(devmanagerDir, 'progress');
+const progressDir = path.join(maestroDir, 'progress');
 fs.mkdirSync(progressDir, { recursive: true });
 
 const progressFile = path.join(progressDir, `${taskId}.json`);

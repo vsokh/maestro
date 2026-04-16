@@ -323,7 +323,7 @@ describe('useTaskActions', () => {
     });
 
     it('calls saveAttachment from fs.ts and updates task', async () => {
-      vi.mocked(saveAttachment).mockResolvedValue('.devmanager/attachments/1/screenshot.png');
+      vi.mocked(saveAttachment).mockResolvedValue('.maestro/attachments/1/screenshot.png');
       const task = makeTask(1);
       const { result, save } = setup({ data: { tasks: [task] } });
       const file = new File(['data'], 'screenshot.png', { type: 'image/png' });

@@ -2,20 +2,20 @@ node_modules/
 dist/
 
 # Runtime state — per-project, auto-generated
-.devmanager/state.json
-.devmanager/bin/
-.devmanager/notes/
-.devmanager/progress/
-.devmanager/quality/
-.devmanager/errors/
-.devmanager/release/
-.devmanager/backups/
-.devmanager/attachments/
-.devmanager/worktrees/
-.devmanager/specs/
-.devmanager/launch*
-.devmanager/merge.lock
-.devmanager/skills.json
+.maestro/state.json
+.maestro/bin/
+.maestro/notes/
+.maestro/progress/
+.maestro/quality/
+.maestro/errors/
+.maestro/release/
+.maestro/backups/
+.maestro/attachments/
+.maestro/worktrees/
+.maestro/specs/
+.maestro/launch*
+.maestro/merge.lock
+.maestro/skills.json
 
 # Tauri build artifacts
 apps/tauri/src-tauri/target/

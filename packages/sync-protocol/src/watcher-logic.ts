@@ -27,7 +27,7 @@ export class WatcherOrchestrator {
   }
 
   /**
-   * Start watching a project's .devmanager directory.
+   * Start watching a project's .maestro directory.
    * Returns a cleanup function.
    */
   start(projectPath: string, targets: WatchTarget[]): () => void {

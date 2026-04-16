@@ -214,7 +214,7 @@ describe('handleSkills', () => {
 
   describe('GET /api/skills-config', () => {
     it('returns skills config when it exists', async () => {
-      const devDir = join(tmpDir, '.devmanager');
+      const devDir = join(tmpDir, '.maestro');
       await mkdir(devDir, { recursive: true });
       const config = { skills: ['a', 'b'] };
       await writeFile(join(devDir, 'skills.json'), JSON.stringify(config));
@@ -246,7 +246,7 @@ describe('handleSkills', () => {
       expect(body.ok).toBe(true);
 
       // Verify file
-      const written = JSON.parse(await readFile(join(tmpDir, '.devmanager', 'skills.json'), 'utf-8'));
+      const written = JSON.parse(await readFile(join(tmpDir, '.maestro', 'skills.json'), 'utf-8'));
       expect(written).toEqual(config);
     });
   });

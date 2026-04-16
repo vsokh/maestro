@@ -42,7 +42,7 @@ export async function handleRelease(method, pathname, req, res, url, ctx) {
 
   // GET /api/release/releases
   if (method === 'GET' && pathname === '/api/release/releases') {
-    const filePath = join(projectPath, '.devmanager', 'release', 'releases.json');
+    const filePath = join(projectPath, '.maestro', 'release', 'releases.json');
     const result = await readJsonOrNull(filePath);
     jsonResponse(res, 200, result ? result.data : []);
     return true;
@@ -50,7 +50,7 @@ export async function handleRelease(method, pathname, req, res, url, ctx) {
 
   // GET /api/release/stability
   if (method === 'GET' && pathname === '/api/release/stability') {
-    const filePath = join(projectPath, '.devmanager', 'release', 'stability.json');
+    const filePath = join(projectPath, '.maestro', 'release', 'stability.json');
     const result = await readJsonOrNull(filePath);
     jsonResponse(res, 200, result ? result.data : null);
     return true;

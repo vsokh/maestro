@@ -111,11 +111,11 @@ fn set_project_path(
     Ok(true)
 }
 
-/// Read any JSON file from .devmanager/{relPath}
+/// Read any JSON file from .maestro/{relPath}
 #[tauri::command]
 fn read_json_file(rel_path: String, project: tauri::State<'_, ProjectPath>) -> Result<serde_json::Value, String> {
     let path = std::path::PathBuf::from(project.get())
-        .join(".devmanager")
+        .join(".maestro")
         .join(&rel_path);
     if !path.exists() {
         return Err("not_found".to_string());

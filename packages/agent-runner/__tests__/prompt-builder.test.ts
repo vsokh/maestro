@@ -7,7 +7,7 @@ describe('buildClaudePrompt', () => {
     expect(prompt).toContain('task #42');
     expect(prompt).toContain('progress/42.json');
     expect(prompt).toContain('headless execution');
-    expect(prompt).toContain('DO NOT WRITE TO .devmanager/state.json');
+    expect(prompt).toContain('DO NOT WRITE TO .maestro/state.json');
   });
 
   it('translates /codehealth', () => {

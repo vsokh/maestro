@@ -104,5 +104,5 @@ The `/release` skill (deployed from `src/release.ts`) provides 5 commands:
 ## Integration
 
 - **Orchestrator**: sub-agent prompts include conventional commit instructions; post-merge hints suggest `/release status` when all group tasks complete
-- **Codehealth**: stability score and gates read from `.devmanager/quality/` files
-- **Dev Manager**: `/release cut` writes activity signal to `.devmanager/progress/release.json`
+- **Codehealth**: stability score and gates read from `.maestro/quality/` files
+- **Dev Manager**: `/release cut` writes activity signal to `.maestro/progress/release.json`

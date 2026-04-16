@@ -29,10 +29,10 @@ Philosophy: a high score means an agent can work autonomously with confidence. A
 
 | File | Purpose | Who writes |
 |------|---------|-----------|
-| \\\`.devmanager/quality/latest.json\\\` | Current scores + findings | This skill |
-| \\\`.devmanager/quality/history.json\\\` | Score history (max 20 entries) | This skill |
-| \\\`.devmanager/quality/backlog.json\\\` | Prioritized fix queue | This skill |
-| \\\`.devmanager/state.json\\\` | Dev-manager tasks | Only via scan mode |
+| \\\`.maestro/quality/latest.json\\\` | Current scores + findings | This skill |
+| \\\`.maestro/quality/history.json\\\` | Score history (max 20 entries) | This skill |
+| \\\`.maestro/quality/backlog.json\\\` | Prioritized fix queue | This skill |
+| \\\`.maestro/state.json\\\` | Dev-manager tasks | Only via scan mode |
 
 ---
 
@@ -176,7 +176,7 @@ Collect all findings. Sort by:
 2. Dimension weight (high > medium)
 3. Effort (small fixes first within same severity — quick wins)
 
-Write to \\\`.devmanager/quality/backlog.json\\\`:
+Write to \\\`.maestro/quality/backlog.json\\\`:
 
 \\\`\\\`\\\`json
 {
@@ -266,7 +266,7 @@ vs last scan: lint -2, tests +4, coverage +2%, bundle +1KB
 
 ## Creating tasks in dev-manager (automatic on scan)
 
-Every scan reads \\\`backlog.json\\\` and creates/updates tasks in \\\`.devmanager/state.json\\\` under the **Quality** group.
+Every scan reads \\\`backlog.json\\\` and creates/updates tasks in \\\`.maestro/state.json\\\` under the **Quality** group.
 
 ### Mapping rules
 
@@ -283,7 +283,7 @@ Every scan reads \\\`backlog.json\\\` and creates/updates tasks in \\\`.devmanag
 ### Process
 
 1. Read \\\`backlog.json\\\` — filter to high + medium severity, \\\`"status": "open"\\\`
-2. Read \\\`.devmanager/state.json\\\` — get current tasks + next available ID
+2. Read \\\`.maestro/state.json\\\` — get current tasks + next available ID
 3. **Group findings by dimension** — create ONE task per dimension if multiple related findings exist, or separate tasks if they're in different areas
 4. Set \\\`group\\\` = \\\`"Quality"\\\`. Add Quality epic if not present.
 5. **De-duplicate:** check if a task with similar name already exists. Skip if found. If an existing task is already done, and the finding reappeared, create a new task (regression).

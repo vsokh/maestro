@@ -11,17 +11,17 @@ You plan and delegate. You do NOT implement — use sub-agents for code changes.
 
 | File | Purpose | Who writes |
 |------|---------|-----------|
-| \`.devmanager/state.json\` | All project state (tasks, queue, epics, activity) | Dev Manager ONLY (you READ it) |
-| \`.devmanager/progress/{taskId}.json\` | Live task status | You write, Dev Manager reads + merges |
-| \`.devmanager/progress/arrange.json\` | Arrange completion signal | You write, Dev Manager reads + merges |
-| \`.devmanager/notes/{taskId}.md\` | Exploration findings, plan, checklist | You write (on master, survives interrupts) |
-| \`.devmanager/attachments/{taskId}/\` | Screenshots from manager | Read with Read tool |
+| \`.maestro/state.json\` | All project state (tasks, queue, epics, activity) | Dev Manager ONLY (you READ it) |
+| \`.maestro/progress/{taskId}.json\` | Live task status | You write, Dev Manager reads + merges |
+| \`.maestro/progress/arrange.json\` | Arrange completion signal | You write, Dev Manager reads + merges |
+| \`.maestro/notes/{taskId}.md\` | Exploration findings, plan, checklist | You write (on master, survives interrupts) |
+| \`.maestro/attachments/{taskId}/\` | Screenshots from manager | Read with Read tool |
 
 **NEVER write activity entries, create tasks, or modify status/name fields in state.json.** The \`arrange\` command may ONLY update \`dependsOn\` and \`group\` fields.
 
 ## Progress updates
 
-During execution, write to \`.devmanager/progress/{taskId}.json\`:
+During execution, write to \`.maestro/progress/{taskId}.json\`:
 \`\`\`json
 { "status": "in-progress", "progress": "Exploring codebase..." }
 \`\`\`
@@ -39,9 +39,9 @@ Dev Manager polls every 3s — in-progress is a UI overlay, done triggers merge 
 
 ### 1. Read queue → pick task
 \`\`\`bash
-node .devmanager/bin/queue-next.cjs
+node .maestro/bin/queue-next.cjs
 \`\`\`
-For \`task N\`: read \`.devmanager/state.json\` directly to find the task by ID.
+For \`task N\`: read \`.maestro/state.json\` directly to find the task by ID.
 
 The output tells you everything: \`TASK_ID\`, \`TASK_NAME\`, \`TASK_FULL\`, \`TASK_GROUP\`, \`NOTES\` (manager instructions — HIGH PRIORITY), plus resume state (\`HAS_BRANCH\`, \`HAS_WORKTREE\`, \`HAS_NOTES\`).
 If \`QUEUE_EMPTY=true\`: "Nothing queued. Add tasks in Dev Manager."
@@ -49,13 +49,13 @@ Write progress: \`"Reading queue..."\`
 
 ### 2. Check for previous work (resume detection)
 The \`queue-next.cjs\` output already includes resume state:
-- \`HAS_NOTES=yes\` — exploration/plan from a prior session (\`.devmanager/notes/{taskId}.md\`)
+- \`HAS_NOTES=yes\` — exploration/plan from a prior session (\`.maestro/notes/{taskId}.md\`)
 - \`HAS_BRANCH=yes\` + \`BRANCH=<name>\` — feature branch exists
 - \`HAS_WORKTREE=yes\` — worktree directory exists
 
 | HAS_NOTES | HAS_BRANCH | Action |
 |-----------|------------|--------|
-| yes | yes | **Resume with code.** Worktree should exist (if not: \`git worktree add .devmanager/worktrees/task-{taskId} <BRANCH>\`). Read notes, skip to step 5. |
+| yes | yes | **Resume with code.** Worktree should exist (if not: \`git worktree add .maestro/worktrees/task-{taskId} <BRANCH>\`). Read notes, skip to step 5. |
 | yes | no | **Resume exploration.** Read notes. If \`AUTO_APPROVE=yes\`: skip to step 4. Otherwise: present plan for approval, skip to step 4. |
 | no | no | **Fresh task.** Continue to step 3. |
 
@@ -71,7 +71,7 @@ Write progress: \`"Planning approach..."\`
 
 Decide: what changes, approach, risks. (Keep technical details in notes file — present product framing to user.)
 
-**Save notes immediately** to \`.devmanager/notes/{taskId}.md\`:
+**Save notes immediately** to \`.maestro/notes/{taskId}.md\`:
 \`\`\`markdown
 # Task {taskId}: {taskName}
 ## Manager notes
@@ -95,13 +95,13 @@ This file lives on master — survives session interruptions at any phase.
 
 Mark the task as started (removes from queue, sets in-progress):
 \`\`\`bash
-node .devmanager/bin/task-start.cjs {taskId}
+node .maestro/bin/task-start.cjs {taskId}
 \`\`\`
 
 **Use git worktrees** — each task gets an isolated working copy. Main repo stays on master.
 
 \`\`\`bash
-git worktree add .devmanager/worktrees/task-{taskId} -b task-{taskId}-{slug}
+git worktree add .maestro/worktrees/task-{taskId} -b task-{taskId}-{slug}
 \`\`\`
 
 **Branch naming is CRITICAL.** Slug MUST be descriptive kebab-case:
@@ -114,7 +114,7 @@ Update notes file:
 ## Branch
 task-{taskId}-{slug}
 ## Worktree
-.devmanager/worktrees/task-{taskId}
+.maestro/worktrees/task-{taskId}
 ## Status
 - [ ] Step one
 - [ ] Step two
@@ -129,7 +129,7 @@ The sub-agent prompt **MUST** include:
 - What to implement + which files + constraints + build command
 - **This exact block:**
   "CRITICAL: Work ONLY in the worktree directory:
-  \`cd .devmanager/worktrees/task-{taskId}\`
+  \`cd .maestro/worktrees/task-{taskId}\`
   This is an isolated git worktree on branch \`task-{taskId}-{slug}\`.
   Do NOT modify files in the main project root. All edits, builds, and commits happen in the worktree.
   Commit when done.
@@ -147,7 +147,7 @@ Check in the **worktree directory**: requirements met? Build passes? Fix or re-d
 Write progress: \`"Merging to master..."\`
 
 \`\`\`bash
-node .devmanager/bin/merge-safe.cjs {taskId}
+node .maestro/bin/merge-safe.cjs {taskId}
 \`\`\`
 
 On success, the script prints:
@@ -158,7 +158,7 @@ BRANCH=task-42-google-login
 TASK_DONE=yes
 \`\`\`
 
-The script **automatically writes the progress file** (\`.devmanager/progress/{taskId}.json\`) as part of the merge — no separate \`task-done.cjs\` call needed. Dev Manager picks up the progress file and marks the task done.
+The script **automatically writes the progress file** (\`.maestro/progress/{taskId}.json\`) as part of the merge — no separate \`task-done.cjs\` call needed. Dev Manager picks up the progress file and marks the task done.
 
 On failure, the script prints the failure type and conflict files:
 \`\`\`
@@ -185,7 +185,7 @@ Assign epics (feature groups) + set dependencies. Do NOT execute anything.
 3. **Assign epics**: set \`group\` field on tasks that don't have one. Short names: "Auth", "Events", "Profile". Reuse existing group names. Every task should have one.
 4. **Set dependencies** (pending/paused only, NOT done): update \`dependsOn\` arrays.
 5. Write updated tasks — ONLY \`dependsOn\` and \`group\` fields. Do NOT touch name, status, or anything else.
-6. Write \`.devmanager/progress/arrange.json\`: \`{ "status": "done", "label": "Tasks arranged" }\`
+6. Write \`.maestro/progress/arrange.json\`: \`{ "status": "done", "label": "Tasks arranged" }\`
 
 **Dependency rules:** Most tasks should have NO dependencies. Only add when B literally cannot work without A's output. Max 1-2 per task. Goal is maximum parallelism.
 
@@ -219,6 +219,6 @@ The user wears a **manager hat**. Talk to them in product terms:
 2. **Delegate, don't implement.** Sub-agents write code. You plan, review, and coordinate.
 3. **NEVER manually edit state.json** (except arrange: \`dependsOn\`/\`group\` only). Use the CLI helpers: \`task-start.cjs\`, \`merge-safe.cjs\`, \`queue-next.cjs\`. No manual activity entries, no manual status changes.
 4. **Wait for approval** before delegating — unless the task has \`autoApprove: true\`, in which case skip straight to implementation.
-5. **Worktree per task.** Use \`git worktree add\` — never \`git checkout\`. Main repo stays on master. Sub-agents work in \`.devmanager/worktrees/task-{id}/\`.
+5. **Worktree per task.** Use \`git worktree add\` — never \`git checkout\`. Main repo stays on master. Sub-agents work in \`.maestro/worktrees/task-{id}/\`.
 6. **Stay in scope.** Only do what the task asks. Don't create new tasks or rearrange things. If you discover something, tell the user.
 `;

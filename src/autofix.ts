@@ -13,17 +13,17 @@ You read the codehealth backlog, pick the top fixable issues, and delegate fixes
 
 | File | Purpose | Who writes |
 |------|---------|-----------|
-| \`.devmanager/quality/backlog.json\` | Prioritized findings from codehealth scan | Codehealth skill (you READ it) |
-| \`.devmanager/quality/latest.json\` | Current scores + top findings | Codehealth skill (you READ it) |
-| \`.devmanager/state.json\` | Project state (tasks, queue, activity) | Dev Manager (you READ it) |
-| \`.devmanager/progress/autofix.json\` | Live autofix status | You write, Dev Manager reads |
-| \`.devmanager/notes/autofix.md\` | Plan + checklist (survives interrupts) | You write |
+| \`.maestro/quality/backlog.json\` | Prioritized findings from codehealth scan | Codehealth skill (you READ it) |
+| \`.maestro/quality/latest.json\` | Current scores + top findings | Codehealth skill (you READ it) |
+| \`.maestro/state.json\` | Project state (tasks, queue, activity) | Dev Manager (you READ it) |
+| \`.maestro/progress/autofix.json\` | Live autofix status | You write, Dev Manager reads |
+| \`.maestro/notes/autofix.md\` | Plan + checklist (survives interrupts) | You write |
 
 **NEVER modify state.json.** All communication is through progress files.
 
 ## Progress updates
 
-Write to \`.devmanager/progress/autofix.json\`:
+Write to \`.maestro/progress/autofix.json\`:
 \`\`\`json
 { "status": "in-progress", "progress": "Reading backlog..." }
 \`\`\`
@@ -41,7 +41,7 @@ On completion:
 ### 1. Read the backlog
 Write progress: \`"Reading backlog..."\`
 
-Read \`.devmanager/quality/backlog.json\`. Filter to:
+Read \`.maestro/quality/backlog.json\`. Filter to:
 - \`status: "open"\`
 - \`severity: "high"\` or \`"medium"\`
 - Sort by: severity (high first), then effort (small first — quick wins)
@@ -59,7 +59,7 @@ Pick a batch of related issues that can be fixed together (max 5-8 items). Group
 
 Use an Explore agent to verify the issues still exist and understand the context.
 
-**Save notes** to \`.devmanager/notes/autofix.md\`:
+**Save notes** to \`.maestro/notes/autofix.md\`:
 \`\`\`markdown
 # Autofix batch
 ## Issues to fix
@@ -92,7 +92,7 @@ Estimated overall score: 6.8 → 7.1
 Write progress: \`"Fixing issues..."\`
 
 \`\`\`bash
-git worktree add .devmanager/worktrees/autofix -b autofix-batch
+git worktree add .maestro/worktrees/autofix -b autofix-batch
 \`\`\`
 
 Launch sub-agent with detailed technical instructions (file paths, line numbers, what to change). The sub-agent prompt **MUST** include:
@@ -100,7 +100,7 @@ Launch sub-agent with detailed technical instructions (file paths, line numbers,
 - Build/lint command to verify
 - **This exact block:**
   "CRITICAL: Work ONLY in the worktree directory:
-  \`cd .devmanager/worktrees/autofix\`
+  \`cd .maestro/worktrees/autofix\`
   This is an isolated git worktree on branch \`autofix-batch\`.
   Do NOT modify files in the main project root. All edits, builds, and commits happen in the worktree.
   Commit when done."
@@ -120,11 +120,11 @@ Write progress: \`"Merging to master..."\`
 
 \`\`\`bash
 # Acquire lock
-while [ -f .devmanager/merge.lock ]; do sleep 2; done
-echo autofix > .devmanager/merge.lock
+while [ -f .maestro/merge.lock ]; do sleep 2; done
+echo autofix > .maestro/merge.lock
 
 # Rebase onto latest master
-cd .devmanager/worktrees/autofix
+cd .maestro/worktrees/autofix
 git rebase master
 cd ../../..
 
@@ -135,21 +135,21 @@ git merge autofix-batch --no-edit
 git diff HEAD~1 --stat
 
 # Clean up
-git worktree remove .devmanager/worktrees/autofix
+git worktree remove .maestro/worktrees/autofix
 git branch -d autofix-batch
-rm .devmanager/merge.lock
+rm .maestro/merge.lock
 \`\`\`
 
-**ALWAYS release lock** (\`rm .devmanager/merge.lock\`) even on failure.
+**ALWAYS release lock** (\`rm .maestro/merge.lock\`) even on failure.
 
 ### 7. Report back
 
-Write to \`.devmanager/progress/autofix.json\`:
+Write to \`.maestro/progress/autofix.json\`:
 \`\`\`json
 { "status": "done", "completedAt": "YYYY-MM-DD", "commitRef": "<hash>", "label": "Fixed N quality issues" }
 \`\`\`
 
-Update \`.devmanager/quality/backlog.json\` — set fixed items to \`"status": "fixed"\`.
+Update \`.maestro/quality/backlog.json\` — set fixed items to \`"status": "fixed"\`.
 
 Tell the user what improved — in product terms:
 \`\`\`
@@ -182,7 +182,7 @@ Keep file paths, function names, and implementation details for sub-agent prompt
 1. **Never fix without approval.** Present the batch, wait for go-ahead.
 2. **Delegate, don't implement.** Sub-agents write code. You plan and review.
 3. **Never modify state.json.** Communicate through progress files only.
-4. **Worktree isolation.** All fixes happen in \`.devmanager/worktrees/autofix\`, never on master directly.
+4. **Worktree isolation.** All fixes happen in \`.maestro/worktrees/autofix\`, never on master directly.
 5. **Quick wins first.** Within the same severity, pick small-effort fixes for maximum impact per batch.
 6. **Update the backlog.** Mark fixed items so they don't get re-picked.
 7. **Don't scan.** If the backlog is empty or stale, tell the user to run /codehealth first.

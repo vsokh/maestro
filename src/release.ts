@@ -11,13 +11,13 @@ You manage releases: assess stability, generate changelogs, check release gates,
 
 | File | Purpose | Who writes |
 |------|---------|-----------|
-| \`.devmanager/quality/latest.json\` | Current codehealth scores + baseline | Codehealth skill (you READ) |
-| \`.devmanager/quality/backlog.json\` | Prioritized findings | Codehealth skill (you READ) |
-| \`.devmanager/quality/history.json\` | Score history over time | Codehealth skill (you READ + annotate) |
-| \`.devmanager/release/releases.json\` | Release history metadata | You write |
-| \`.devmanager/release/legacy-commits.json\` | Legacy commit type classifications | You write (retroactive only) |
-| \`.devmanager/release/stability.json\` | Cached stability assessment | You write |
-| \`.devmanager/progress/release.json\` | Dev Manager activity signal | You write |
+| \`.maestro/quality/latest.json\` | Current codehealth scores + baseline | Codehealth skill (you READ) |
+| \`.maestro/quality/backlog.json\` | Prioritized findings | Codehealth skill (you READ) |
+| \`.maestro/quality/history.json\` | Score history over time | Codehealth skill (you READ + annotate) |
+| \`.maestro/release/releases.json\` | Release history metadata | You write |
+| \`.maestro/release/legacy-commits.json\` | Legacy commit type classifications | You write (retroactive only) |
+| \`.maestro/release/stability.json\` | Cached stability assessment | You write |
+| \`.maestro/progress/release.json\` | Dev Manager activity signal | You write |
 | \`CHANGELOG.md\` | Project changelog (Keep a Changelog format) | You write |
 | \`package.json\` | Version field | You update (version only) |
 
@@ -65,7 +65,7 @@ Show stability score, what's in the next release, and any blockers.
 4. **List commits since tag**: \`git log {lastTag}..HEAD --oneline\`
 5. **Run stability assessment** (see algorithm below)
 6. **Check release gates** (see gates below)
-7. **Write results** to \`.devmanager/release/stability.json\`:
+7. **Write results** to \`.maestro/release/stability.json\`:
    \\\`\\\`\\\`json
    {
      "score": 72,
@@ -180,7 +180,7 @@ Full release flow: gates → bump → changelog → commit → tag → activity 
 
 6. **Annotated tag**: \`git tag -a v{version} -m "Release v{version}"\`
 
-7. **Write release metadata** to \`.devmanager/release/releases.json\`:
+7. **Write release metadata** to \`.maestro/release/releases.json\`:
    \\\`\\\`\\\`json
    {
      "version": "v{version}",
@@ -195,9 +195,9 @@ Full release flow: gates → bump → changelog → commit → tag → activity 
    \\\`\\\`\\\`
    Append to array (create file with \`[]\` if missing).
 
-8. **Annotate codehealth history**: if \`.devmanager/quality/history.json\` exists, add \`"version": "v{version}"\` field to the most recent entry.
+8. **Annotate codehealth history**: if \`.maestro/quality/history.json\` exists, add \`"version": "v{version}"\` field to the most recent entry.
 
-9. **Write activity signal** to \`.devmanager/progress/release.json\`:
+9. **Write activity signal** to \`.maestro/progress/release.json\`:
    \\\`\\\`\\\`json
    { "status": "done", "label": "Released v{version}" }
    \\\`\\\`\\\`
@@ -227,7 +227,7 @@ One-time command: classify all legacy commits, create milestone tags, generate i
    - Everything else → chore
    - If message already has conventional commit prefix, use it as-is
 
-3. **Save classifications** to \`.devmanager/release/legacy-commits.json\`:
+3. **Save classifications** to \`.maestro/release/legacy-commits.json\`:
    \\\`\\\`\\\`json
    {
      "classifiedAt": "YYYY-MM-DD",
@@ -251,7 +251,7 @@ One-time command: classify all legacy commits, create milestone tags, generate i
 
 7. **Generate initial CHANGELOG.md** with sections for each milestone tag, plus an Unreleased section for commits after the last tag.
 
-8. **Write release metadata** to \`.devmanager/release/releases.json\` — one entry per milestone:
+8. **Write release metadata** to \`.maestro/release/releases.json\` — one entry per milestone:
    \\\`\\\`\\\`json
    [
      {
@@ -269,7 +269,7 @@ One-time command: classify all legacy commits, create milestone tags, generate i
 
 9. **Update package.json** version to match the latest milestone tag.
 
-10. **Commit**: \`git add CHANGELOG.md package.json .devmanager/release/ && git commit -m "chore(release): retroactive versioning"\`
+10. **Commit**: \`git add CHANGELOG.md package.json .maestro/release/ && git commit -m "chore(release): retroactive versioning"\`
 
 ---
 
@@ -292,8 +292,8 @@ Check all release gates. Report pass/fail/warn with reasons.
 
 1. **Build**: run \`npm run build\` and check exit code
 2. **Tests**: run \`npm run test:run\` and parse output for pass/fail counts
-3. **Codehealth**: read \`.devmanager/quality/latest.json\` → \`overallScore\` field
-4. **Regressions**: read \`.devmanager/quality/backlog.json\` → count items with severity "high" and status "open"
+3. **Codehealth**: read \`.maestro/quality/latest.json\` → \`overallScore\` field
+4. **Regressions**: read \`.maestro/quality/backlog.json\` → count items with severity "high" and status "open"
 5. **Backlog**: same as regressions (combined high-severity count)
 6. **Lint**: run \`npm run lint\` and count error lines
 
@@ -339,9 +339,9 @@ STABILITY = buildTest×0.30 + codehealth×0.20 + fixRatio×0.20
 ### How to compute
 
 1. **Build/Test**: run \`npm run build\` (check exit 0) and \`npm run test:run\` (parse passing/total). Run \`npm run lint\` for error count.
-2. **Codehealth**: read \`.devmanager/quality/latest.json\` → \`overallScore\`
+2. **Codehealth**: read \`.maestro/quality/latest.json\` → \`overallScore\`
 3. **Fix Ratio**: \`git log -20 --oneline\` → count commits starting with "fix" or "Fix"
-4. **Backlog**: read \`.devmanager/quality/backlog.json\` → count items by severity where status is "open"
+4. **Backlog**: read \`.maestro/quality/backlog.json\` → count items by severity where status is "open"
 5. **Regressions**: same data source, filter high-severity open items
 6. **Fix Decay**: \`git log --oneline\` → count commits from HEAD until first fix commit
 
@@ -403,6 +403,6 @@ Rules:
 2. **Never rewrite git history.** Tags are additive. Retroactive tags use \`git tag -a v{x} {hash}\`.
 3. **Changelog is user-facing.** Write for someone who uses the product, not the developer.
 4. **Stability is deterministic.** Same inputs always produce same score — no subjective adjustments.
-5. **Read codehealth data, don't re-scan.** Use existing \`.devmanager/quality/\` files. If stale, suggest running \`/codehealth\` first.
+5. **Read codehealth data, don't re-scan.** Use existing \`.maestro/quality/\` files. If stale, suggest running \`/codehealth\` first.
 6. **One source of truth per concern.** Version lives in package.json. History lives in git tags. Changelog lives in CHANGELOG.md.
 `;

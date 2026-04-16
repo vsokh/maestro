@@ -9,7 +9,7 @@ const MAX_SIZE: usize = 10 * 1024 * 1024; // 10 MB
 
 fn attachments_dir(project: &str, task_id: i64) -> PathBuf {
     PathBuf::from(project)
-        .join(".devmanager")
+        .join(".maestro")
         .join("attachments")
         .join(task_id.to_string())
 }

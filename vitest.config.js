@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     exclude: [
       '**/node_modules/**',
-      '.devmanager/worktrees/**',
+      '.maestro/worktrees/**',
       '.claude/worktrees/**',
     ],
   },

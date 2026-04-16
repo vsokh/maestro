@@ -1,14 +1,14 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { requireDevManagerDir } from './find-devmanager.js';
+import { requireMaestroDir } from './find-maestro.js';
 
 // --- Argument parsing ---
 
 const args = process.argv.slice(2);
 
 function printUsage(): never {
-  console.error('Usage: node .devmanager/bin/task-done.cjs <taskId> --commit <commitRef>');
+  console.error('Usage: node .maestro/bin/task-done.cjs <taskId> --commit <commitRef>');
   console.error('');
   console.error('Options:');
   console.error('  --commit <ref>   Git commit hash (required)');
@@ -38,11 +38,11 @@ if (!commitRef) {
   printUsage();
 }
 
-const devmanagerDir = requireDevManagerDir();
+const maestroDir = requireMaestroDir();
 
 // --- Write progress file ---
 
-const progressDir = path.join(devmanagerDir, 'progress');
+const progressDir = path.join(maestroDir, 'progress');
 fs.mkdirSync(progressDir, { recursive: true });
 
 const progressFile = path.join(progressDir, `${taskId}.json`);

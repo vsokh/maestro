@@ -23,7 +23,7 @@ type WebSocketMessage =
 
 ### `state`
 
-Broadcast when `.devmanager/state.json` changes on disk (debounced, deduped by content hash, version-guarded).
+Broadcast when `.maestro/state.json` changes on disk (debounced, deduped by content hash, version-guarded).
 
 ```json
 {
@@ -46,7 +46,7 @@ Broadcast when `.devmanager/state.json` changes on disk (debounced, deduped by c
 
 ### `progress`
 
-Broadcast when any file in `.devmanager/progress/` changes. Agents write `{taskId}.json` here while executing.
+Broadcast when any file in `.maestro/progress/` changes. Agents write `{taskId}.json` here while executing.
 
 ```json
 {
@@ -71,7 +71,7 @@ The client merges progress into state locally (via `mergeProgressIntoState` from
 
 ### `quality`
 
-Broadcast when `.devmanager/quality/latest.json` changes.
+Broadcast when `.maestro/quality/latest.json` changes.
 
 ```json
 {
@@ -93,7 +93,7 @@ Broadcast when `.devmanager/quality/latest.json` changes.
 
 ### `errors`
 
-Broadcast when any file in `.devmanager/errors/` changes.
+Broadcast when any file in `.maestro/errors/` changes.
 
 ```json
 {

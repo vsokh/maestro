@@ -50,7 +50,7 @@ describe('handleQuality', () => {
 
   describe('GET /api/quality/latest', () => {
     it('returns quality report when it exists', async () => {
-      const qualityDir = join(tmpDir, '.devmanager', 'quality');
+      const qualityDir = join(tmpDir, '.maestro', 'quality');
       await mkdir(qualityDir, { recursive: true });
       const report = { score: 85, dimensions: {} };
       await writeFile(join(qualityDir, 'latest.json'), JSON.stringify(report));
@@ -74,7 +74,7 @@ describe('handleQuality', () => {
 
   describe('GET /api/quality/history', () => {
     it('returns quality history when it exists', async () => {
-      const qualityDir = join(tmpDir, '.devmanager', 'quality');
+      const qualityDir = join(tmpDir, '.maestro', 'quality');
       await mkdir(qualityDir, { recursive: true });
       const history = [{ date: '2026-01-01', score: 80 }];
       await writeFile(join(qualityDir, 'history.json'), JSON.stringify(history));

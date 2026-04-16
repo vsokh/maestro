@@ -39,7 +39,7 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'File type not allowed. Accepted: png, jpg, jpeg, gif, webp, svg' });
       return true;
     }
-    const attachDir = safePath(projectPath, '.devmanager', 'attachments', taskId);
+    const attachDir = safePath(projectPath, '.maestro', 'attachments', taskId);
     if (!attachDir) {
       jsonResponse(res, 400, { error: 'Invalid path' });
       return true;
@@ -63,7 +63,7 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
     }
     jsonResponse(res, 200, {
       ok: true,
-      path: `.devmanager/attachments/${taskId}/${filename}`,
+      path: `.maestro/attachments/${taskId}/${filename}`,
     });
     return true;
   }
@@ -71,7 +71,7 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
   // GET /api/attachments/:taskId/:filename
   params = matchRoute(method, pathname, 'GET', '/api/attachments/:taskId/:filename');
   if (params) {
-    const filePath = safePath(projectPath, '.devmanager', 'attachments', params.taskId, params.filename);
+    const filePath = safePath(projectPath, '.maestro', 'attachments', params.taskId, params.filename);
     if (!filePath) {
       jsonResponse(res, 400, { error: 'Invalid path' });
       return true;
@@ -98,7 +98,7 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
   // DELETE /api/attachments/:taskId/:filename
   params = matchRoute(method, pathname, 'DELETE', '/api/attachments/:taskId/:filename');
   if (params) {
-    const filePath = safePath(projectPath, '.devmanager', 'attachments', params.taskId, params.filename);
+    const filePath = safePath(projectPath, '.maestro', 'attachments', params.taskId, params.filename);
     if (!filePath) {
       jsonResponse(res, 400, { error: 'Invalid path' });
       return true;

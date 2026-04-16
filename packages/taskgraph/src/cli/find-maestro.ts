@@ -14,8 +14,8 @@ export function findMaestroDir(startDir: string): string | null {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
       return candidate;
     }
-    // Migrate legacy .dev-manager → .maestro
-    const legacy = path.join(dir, '.dev-manager');
+    // Migrate legacy .devmanager → .maestro
+    const legacy = path.join(dir, '.devmanager');
     if (fs.existsSync(legacy) && fs.statSync(legacy).isDirectory()) {
       fs.renameSync(legacy, candidate);
       return candidate;

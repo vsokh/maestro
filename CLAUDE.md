@@ -77,7 +77,7 @@ Node.js HTTP + WebSocket server on port 4545. Thin adapters implementing package
 - `routes/launch.js` — HTTP interface to `ProcessManager` from agent-runner
 - `routes/` — also: projects, git, skills, quality, errors, release, attachments, backups
 
-## State file: `.devmanager/state.json`
+## State file: `.maestro/state.json`
 
 Single source of truth. Bridge server watches it and pushes changes via WebSocket. Writes use optimistic locking (`_lastModified` + `_v` version counter).
 
@@ -87,7 +87,7 @@ Template in `src/orchestrator.ts`. Auto-deployed to `.claude/skills/orchestrator
 
 The orchestrator reads the queue, explores the codebase, plans, gets user approval, delegates to sub-agents in git worktrees, reviews, and merges back to master.
 
-**CRITICAL:** Agents write to `.devmanager/progress/{taskId}.json`, NEVER to `state.json` directly. The UI merges progress files into state automatically.
+**CRITICAL:** Agents write to `.maestro/progress/{taskId}.json`, NEVER to `state.json` directly. The UI merges progress files into state automatically.
 
 ## CI
 

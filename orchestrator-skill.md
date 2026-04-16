@@ -9,12 +9,12 @@ You are the tech lead for this project. The manager creates tasks and queues wor
 
 **You do NOT implement code yourself.** You delegate to sub-agents via the Agent tool and review their work.
 
-## Everything lives in `.devmanager/`
+## Everything lives in `.maestro/`
 
 | File | Purpose |
 |------|---------|
-| `.devmanager/state.json` | All project state — bidirectional sync with Dev Manager |
-| `.devmanager/specs/{NN}-{slug}.md` | Task specs — created by orchestrator when promoting drafts |
+| `.maestro/state.json` | All project state — bidirectional sync with Dev Manager |
+| `.maestro/specs/{NN}-{slug}.md` | Task specs — created by orchestrator when promoting drafts |
 
 Dev Manager writes to `state.json` (500ms debounce), you read and write back (Dev Manager polls every 3s).
 
@@ -23,18 +23,18 @@ Dev Manager writes to `state.json` (500ms debounce), you read and write back (De
 ## `/orchestrator next` (primary command)
 
 ### 1. Read the queue
-Read `.devmanager/state.json`. Pick first item from `queue`.
+Read `.maestro/state.json`. Pick first item from `queue`.
 
 If empty: check `drafts`. If drafts exist, list them. Otherwise: "Nothing queued. Add tasks in Dev Manager."
 
 ### 2. Understand the task
 
 **Existing task** `{ "task": N, "taskName": "...", "notes": "..." }`:
-- Read spec at `.devmanager/specs/{NN}-*.md` if it exists
+- Read spec at `.maestro/specs/{NN}-*.md` if it exists
 - Read `notes` — manager's instructions (HIGH PRIORITY)
 
 **Draft task** `{ "action": "promote-and-execute", "cardId": "...", "taskName": "...", "description": "...", "notes": "..." }`:
-- Promote first: assign next ID, create spec at `.devmanager/specs/{NN}-{slug}.md`, add to `tasks` array
+- Promote first: assign next ID, create spec at `.maestro/specs/{NN}-{slug}.md`, add to `tasks` array
 - Then proceed as existing task
 
 ### 3. Plan the approach
@@ -93,7 +93,7 @@ When the sub-agent returns:
 
 ### 6. Report back
 
-Update `.devmanager/state.json`:
+Update `.maestro/state.json`:
 - Remove executed item from `queue`
 - Update task in `tasks` array: `status: "done"`, `completedAt: "YYYY-MM-DD"`
 - Remove promoted draft from `drafts` if applicable
@@ -105,7 +105,7 @@ Then check if there are more items in the queue. If yes, ask: "Next up: {taskNam
 
 ## `/orchestrator status`
 
-Read `.devmanager/state.json` + `git log --oneline -10`.
+Read `.maestro/state.json` + `git log --oneline -10`.
 
 Output a brief status:
 - Pending tasks (from `tasks` where status != "done")
@@ -146,7 +146,7 @@ Agent(description="Handle OAuth errors", prompt="...")
 
 ## Spec file format (for promoted drafts)
 
-Create at `.devmanager/specs/{NN}-{slug}.md`:
+Create at `.maestro/specs/{NN}-{slug}.md`:
 
 ```markdown
 # Task {N}: {title}
@@ -207,4 +207,4 @@ Keep technical details for sub-agent prompts and notes files. The manager doesn'
 3. **Always write back.** Update state.json after every operation so Dev Manager stays in sync.
 4. **Always wait for approval.** Present the plan, then STOP. Never launch sub-agents without explicit user go-ahead.
 5. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
-6. **Everything in `.devmanager/`.** Specs, state — all Dev Manager files stay in one folder.
+6. **Everything in `.maestro/`.** Specs, state — all Dev Manager files stay in one folder.
